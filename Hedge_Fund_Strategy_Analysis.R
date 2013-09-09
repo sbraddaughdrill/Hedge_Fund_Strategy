@@ -535,7 +535,8 @@ readability_all_stats <- c(tagged_text_desc_stats,hyph_text_en_desc_stats,readab
 #token_stats <- c("token","desc","stop","stem")
 token_stats <- c("token","desc")
 
-
+#sample_data_all_backup <- sample_data_all
+#sample_data_all <- sample_data_all_backup
 #sample_data_all <- sample_data_all[1:50,]
 
 
@@ -554,6 +555,11 @@ for (l in 1:nrow(readbl_vars))
                              token_measures=token_stats,
                              dc_word_list=Dale.Chall_word_list,
                              stop_words=myStopwords_all,
+                             #treetag_dir="C:/TreeTagger",
+                             treetag_dir="\\\\tsclient\\C\\TreeTagger",
+                             #treetag_dir="\\tsclient\C\TreeTagger",
+                             #treetag_dir=treetag_directory,
+                             debug=TRUE,
                              simplify=FALSE, USE.NAMES=FALSE)
   
   sample_read_stats <- pblapply(sample_results, "[[","readstats")
