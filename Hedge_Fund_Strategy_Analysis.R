@@ -32,9 +32,9 @@ options(max.print = 500)
 # Memory limit
 #memory.limit(size = 8183)
 
-# Set location (1=HOME,2=WORK,3=CORALSEA FROM HOME,4=CORALSEA FROM WORK,5=CORALSEA FROM WORK) 
+# Set location (1=HOME,2=WORK,3=CORALSEA FROM HOME,4=CORALSEA FROM WORK,5=CORALSEA FROM LAPTOP) 
 
-Location <- 3
+Location <- 5
 
 
 if (Location == 1) {
@@ -65,6 +65,14 @@ if (Location == 1) {
   #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
   output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
   function_directory <- normalizePath("//tsclient/C/Users/bdaughdr/Dropbox/Research/R/", winslash = "\\", mustWork = TRUE)
+  treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE)       
+  
+} else if (Location == 5) {
+  #setwd("//tsclient/C/Research_temp2/")
+  input_directory <- normalizePath("//tsclient/C/Users/S. Brad Daughdrill/Documents/My Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
+  #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
+  output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
+  function_directory <- normalizePath("//tsclient/C/Users/S. Brad Daughdrill/Documents/My Dropbox/Research/R/", winslash = "\\", mustWork = TRUE)
   treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE)       
   
 } else {
