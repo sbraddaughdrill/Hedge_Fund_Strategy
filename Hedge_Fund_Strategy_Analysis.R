@@ -33,8 +33,7 @@ options(max.print = 500)
 #memory.limit(size = 8183)
 
 # Set location (1=HOME,2=WORK,3=CORALSEA FROM HOME,4=CORALSEA FROM WORK,5=CORALSEA FROM LAPTOP) 
-
-Location <- 5
+Location <- 1
 
 
 if (Location == 1) {
@@ -555,11 +554,11 @@ for (l in 1:nrow(readbl_vars))
                              token_measures=token_stats,
                              dc_word_list=Dale.Chall_word_list,
                              stop_words=myStopwords_all,
-                             #treetag_dir="C:/TreeTagger",
-                             treetag_dir="\\\\tsclient\\C\\TreeTagger",
+                             treetag_dir="C:/TreeTagger",
+                             #treetag_dir="\\\\tsclient\\C\\TreeTagger",
                              #treetag_dir="\\tsclient\C\TreeTagger",
                              #treetag_dir=treetag_directory,
-                             debug=TRUE,
+                             debug=FALSE,
                              simplify=FALSE, USE.NAMES=FALSE)
   
   sample_read_stats <- pblapply(sample_results, "[[","readstats")
