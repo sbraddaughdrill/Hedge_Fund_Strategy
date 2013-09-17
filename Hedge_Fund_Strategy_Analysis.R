@@ -33,7 +33,7 @@ options(max.print = 500)
 #memory.limit(size = 8183)
 
 # Set location (1=HOME,2=WORK,3=CORALSEA FROM HOME,4=CORALSEA FROM WORK,5=CORALSEA FROM LAPTOP) 
-Location <- 1
+Location <- 3
 
 
 if (Location == 1) {
@@ -102,7 +102,7 @@ update.packages(ask=FALSE, checkBuilt=TRUE)
 #Load External Packages
 external_packages <- c("compare","cwhmisc","data.table","fastmatch","foreign","formatR","gdata","gtools",
                        "Hmisc","koRpus","mitools","pbapply","plyr","R.oo","reshape2","rJava","RWeka","RWekajars",
-                       "Snowball","sqldf","stringr","tcltk","tm")
+                       "Snowball","SnowballC","sqldf","stringr","tcltk","tm")
 invisible(unlist(sapply(external_packages,load_external_packages, repo_str=repo, simplify=FALSE, USE.NAMES=FALSE)))
 installed_packages <- list_installed_packages(external_packages)
 
@@ -612,6 +612,8 @@ rm2(tagged_text_desc_stats,hyph_text_en_desc_stats,readability_stats,readability
 ###############################################################################
 cat("SECTION: TEMP - EXPAND YEARS", "\n")
 ###############################################################################
+
+l <- 1
 
 sample_data_all <- read.csv(file=paste(output_directory,"sample_data_all.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
 for(i in which(sapply(sample_data_all,class)=="character"))
@@ -1284,17 +1286,17 @@ for (m in 1:nrow(readbl_vars))
   }
   
   #AGGREGATE
-  for (a in 1:length(measures))
-  {
-    
-    for (b in 1:nrow(percentiles))
-    {
-      calculate_cosine_similarity("agg",file_type_str,measures[a],percentiles[b,],input_db,output_db,output_directory,"cosine_normalized",sample_data_all,identifier)
+  #for (a in 1:length(measures))
+  #{
+  #  
+  #  for (b in 1:nrow(percentiles))
+  #  {
+  #    calculate_cosine_similarity("agg",file_type_str,measures[a],percentiles[b,],input_db,output_db,output_directory,"cosine_normalized",sample_data_all,identifier)
+  #    
+  #    progress_function(outer_loop_count=a, outer_loop_start_val=1, outer_loop_end_val=length(measures), inner_loop_count=b, inner_loop_start_val=1, inner_loop_end_val=nrow(percentiles))
       
-      progress_function(outer_loop_count=a, outer_loop_start_val=1, outer_loop_end_val=length(measures), inner_loop_count=b, inner_loop_start_val=1, inner_loop_end_val=nrow(percentiles))
-      
-    }
-  }
+  #  }
+  #}
   
   capture.output(gc(),file='NUL')
   
