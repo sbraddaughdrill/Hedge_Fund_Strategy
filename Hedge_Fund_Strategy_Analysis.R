@@ -160,8 +160,8 @@ percentiles_cols[7,] <- data.frame(order=7,isnum=0,ischar=1,isdate=0,isfactor=0,
 percentiles_cols[8,] <- data.frame(order=8,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="Column_DV",stringsAsFactors=FALSE)
 
 #percentile_vals <- c(0.990,0.950,0.900)
-#percentile_vals <- c(0.900,0.750,0.500,0.250,0.100,0.050)
-percentile_vals <- c(0.900)
+percentile_vals <- c(0.900,0.750,0.500,0.250,0.100,0.050)
+#percentile_vals <- c(0.900)
 
 percentiles <- as.data.frame(matrix(NA, ncol=percentiles_cols_count, nrow=length(percentile_vals)),stringsAsFactors=FALSE)
 colnames(percentiles) <- percentiles_cols[,6]
@@ -440,6 +440,10 @@ cat("SECTION: FORMAT TEXT", "\n")
 ###############################################################################
 
 sample_data_all <- read.csv(file=paste(output_directory,"EurekahedgeHF_Excel_aca_merge_trim",".csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
+colnames(sample_data_all)[match("Fund.ID",names(sample_data_all))] <- "Fund_ID"
+colnames(sample_data_all)[match("Fund.Name",names(sample_data_all))] <- "Fund_Name"
+sample_data_all  <- sample_data_all[order(sample_data_all[,"Fund_ID"],sample_data_all[,"Fund_Name"],sample_data_all[,"yr"]),]
+
 for(i in which(sapply(sample_data_all,class)=="character"))
 {
   sample_data_all[[i]] = trim(sample_data_all[[i]])
@@ -481,6 +485,8 @@ sample_data_all_trim2 <- sample_data_all_trim[sample_data_all_trim[,"ios_word_co
 
 sample_data_all_trim3 <- subset(sample_data_all_trim2,select=-c(ios_word_count))
 
+row.names(sample_data_all_trim3)  <- seq(nrow(sample_data_all_trim3))
+
 write.csv(sample_data_all_trim3,file=paste(output_directory,"sample_data_all.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
 
 rm2(sample_data_all,sample_data_all_ios_len,sample_data_all_trim,sample_data_all_trim2,sample_data_all_trim3)
@@ -505,7 +511,7 @@ for (i in 1:ncol(sample_data_all))
 
 
 ###TEMP - ASSUME TEXT IS SAME EVERY YEAR###
-sample_data_all <- sample_data_all[,c("Fund.ID","Strategy")]
+sample_data_all <- sample_data_all[,c("Fund_ID","Strategy")]
 sample_data_all <- unique(sample_data_all)
 
 sample_data_all <- data.frame(ID=seq(1,nrow(sample_data_all)),sample_data_all,stringsAsFactors=FALSE)
@@ -554,10 +560,10 @@ for (l in 1:nrow(readbl_vars))
                              token_measures=token_stats,
                              dc_word_list=Dale.Chall_word_list,
                              stop_words=myStopwords_all,
-                             treetag_dir="C:/TreeTagger",
+                             #treetag_dir="C:/TreeTagger",
                              #treetag_dir="\\\\tsclient\\C\\TreeTagger",
                              #treetag_dir="\\tsclient\C\TreeTagger",
-                             #treetag_dir=treetag_directory,
+                             treetag_dir=treetag_directory,
                              debug=FALSE,
                              simplify=FALSE, USE.NAMES=FALSE)
   
@@ -570,10 +576,10 @@ for (l in 1:nrow(readbl_vars))
   sample_read_stats_df[,1] <- paste("", formatC(sample_read_stats_df[,1], width=6, format="d", flag="0"), sep="")
   colnames(sample_read_stats_df) <- c("ID",readability_all_stats_temp)
   
-  #sample_data_all_temp <- cbind(subset(sample_data_all,select=c("ID","Fund.ID","yr")),subset(sample_data_all,select=c(readbl_vars[l,1])))
+  #sample_data_all_temp <- cbind(subset(sample_data_all,select=c("ID","Fund_ID","yr")),subset(sample_data_all,select=c(readbl_vars[l,1])))
   #sample_data_all_temp <- subset(sample_data_all,select=c("ID","yr","crsp_fundno"))
   
-  sample_read_stats_df_merge <- merge(sample_data_all[,c("ID","Fund.ID")], sample_read_stats_df, by.x=c("ID") , by.y=c("ID"), all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables=NA)
+  sample_read_stats_df_merge <- merge(sample_data_all[,c("ID","Fund_ID")], sample_read_stats_df, by.x=c("ID") , by.y=c("ID"), all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables=NA)
   
   rm2(sample_read_stats_df)
   
@@ -593,7 +599,7 @@ for (l in 1:nrow(readbl_vars))
   colnames(sample_tokens_df) <- c("ID",token_stats)
   #colnames(sample_tokens_df) <- c(token_stats)
   
-  sample_tokens_df_merge <- merge(sample_data_all[,c("ID","Fund.ID")], sample_tokens_df, by.x=c("ID") , by.y=c("ID"), all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables=NA)
+  sample_tokens_df_merge <- merge(sample_data_all[,c("ID","Fund_ID")], sample_tokens_df, by.x=c("ID") , by.y=c("ID"), all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables=NA)
   
   rm2(sample_tokens_df)
   
@@ -656,15 +662,15 @@ for (i in 1:ncol(sample_tokens_df_merge))
 
 
 
-sample_read_stats_df_merge_full <- merge(subset(sample_data_all,select=-c(Fund.Name,Strategy)), sample_read_stats_df_merge, 
-                                         by.x=c("Fund.ID") , by.y=c("Fund.ID"), 
+sample_read_stats_df_merge_full <- merge(subset(sample_data_all,select=-c(Fund_Name,Strategy)), sample_read_stats_df_merge, 
+                                         by.x=c("Fund_ID") , by.y=c("Fund_ID"), 
                                          all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables=NA)
 
 write.csv(sample_read_stats_df_merge_full, file=paste(output_directory,readbl_vars[l,3],"_full",".csv",sep=""),row.names=FALSE)
 
 
-sample_tokens_df_merge_full <- merge(subset(sample_data_all,select=-c(Fund.Name,Strategy)), sample_tokens_df_merge, 
-                                     by.x=c("Fund.ID") , by.y=c("Fund.ID"), 
+sample_tokens_df_merge_full <- merge(subset(sample_data_all,select=-c(Fund_Name,Strategy)), sample_tokens_df_merge, 
+                                     by.x=c("Fund_ID") , by.y=c("Fund_ID"), 
                                      all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables=NA)
 
 write.csv(sample_tokens_df_merge_full, file=paste(output_directory,readbl_vars[l,4],"_full",".csv",sep=""),row.names=FALSE)
@@ -675,6 +681,7 @@ cat("SECTION: COMPUTE SIMILARITY STATISTICS", "\n")
 ###############################################################################
 
 sample_data_all <- read.csv(file=paste(output_directory,"sample_data_all.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
+
 for(i in which(sapply(sample_data_all,class)=="character"))
 {
   sample_data_all[[i]] = trim(sample_data_all[[i]])
@@ -733,7 +740,7 @@ for (m in 1:nrow(readbl_vars))
   tokens_all_temp <- tokens_all_temp[!(rowSums(is.na(tokens_all_temp[,1:ncol(tokens_all_temp)]))==ncol(tokens_all_temp)),]
   
   
-  tokens_all_temp <- tokens_all_temp[order(tokens_all_temp[,"Fund.ID"],tokens_all_temp[,"yr"]),] 
+  tokens_all_temp <- tokens_all_temp[order(tokens_all_temp[,"Fund_ID"],tokens_all_temp[,"yr"]),] 
   
   #Trim strings
   tokens_all_temp[,"token"] <- trim(tokens_all_temp[,"token"])
@@ -800,12 +807,12 @@ for (m in 1:nrow(readbl_vars))
   #Stem Words;
   #==============================================================================;
   
-  tokens_all_temp <- tokens_all_temp[order(tokens_all_temp[,"Fund.ID"],tokens_all_temp[,"yr"]),] 
+  tokens_all_temp <- tokens_all_temp[order(tokens_all_temp[,"Fund_ID"],tokens_all_temp[,"yr"]),] 
   
-  tokens_all_temp_dt <- data.table(tokens_all_temp[(tokens_all_temp[,"Remove"]==0),], key = c("Fund.ID","yr"))
-  tokens_all_temp1 <- tokens_all_temp_dt[,list(word=stem_words(token,myStopwords_all)),by="Fund.ID,yr"]
+  tokens_all_temp_dt <- data.table(tokens_all_temp[(tokens_all_temp[,"Remove"]==0),], key = c("Fund_ID","yr"))
+  tokens_all_temp1 <- tokens_all_temp_dt[,list(word=stem_words(token,myStopwords_all)),by="Fund_ID,yr"]
   tokens_all_temp1 <- as.data.frame(tokens_all_temp1,stringsAsFactors=FALSE)
-  tokens_all_temp  <- data.frame(Fund.ID=tokens_all_temp1[,"Fund.ID"],
+  tokens_all_temp  <- data.frame(Fund_ID=tokens_all_temp1[,"Fund_ID"],
                                  yr=tokens_all_temp1[,"yr"],
                                  token=tokens_all_temp1[,"word"],
                                  Remove=0,stringsAsFactors=FALSE)
@@ -813,7 +820,7 @@ for (m in 1:nrow(readbl_vars))
   rm2(tokens_all_temp_dt,tokens_all_temp1)
   
   #==============================================================================;
-  #Find Unique Words for Each Fund.ID;
+  #Find Unique Words for Each Fund_ID;
   #==============================================================================;
   
   colnames(tokens_all_temp)[match("Fund.ID",names(tokens_all_temp))] <- "Fund_ID"
