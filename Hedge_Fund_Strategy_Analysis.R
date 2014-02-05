@@ -40,14 +40,14 @@ if (Location == 1) {
   #setwd("C:/Research_temp2/")
   input_directory <- normalizePath("C:/Users/Brad/Dropbox/Research/Fund_Strategies/Data/",winslash="\\", mustWork=TRUE)
   output_directory <- normalizePath("C:/Research_temp2/",winslash="\\", mustWork=TRUE)
-  function_directory <- normalizePath("C:/Users/Brad/Dropbox/Research/R/", winslash = "\\", mustWork = TRUE)
+  function_directory <- normalizePath("C:/Users/Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
   treetag_directory <- normalizePath("C:/TreeTagger",winslash="\\", mustWork=TRUE)    
   
 } else if (Location == 2) {
   #setwd("C:/Research_temp2/")
   input_directory <- normalizePath("C:/Users/bdaughdr/Dropbox/Research/Fund_Strategies/Data/",winslash="\\", mustWork=TRUE)
   output_directory <- normalizePath("C:/Research_temp2/",winslash="\\", mustWork=TRUE)
-  function_directory <- normalizePath("C:/Users/bdaughdr/Dropbox/Research/R/",winslash="\\", mustWork=TRUE) 
+  function_directory <- normalizePath("C:/Users/bdaughdr/Dropbox/Research_Methods/R/",winslash="\\", mustWork=TRUE) 
   treetag_directory <- normalizePath("C:/TreeTagger",winslash="\\", mustWork=TRUE)    
   
 } else if (Location == 3) {
@@ -55,7 +55,7 @@ if (Location == 1) {
   input_directory <- normalizePath("//tsclient/C/Users/Brad/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
   #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
   output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
-  function_directory <- normalizePath("//tsclient/C/Users/Brad/Dropbox/Research/R/", winslash = "\\", mustWork = TRUE)
+  function_directory <- normalizePath("//tsclient/C/Users/Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
   treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE)    
   
 } else if (Location == 4) {
@@ -63,7 +63,7 @@ if (Location == 1) {
   input_directory <- normalizePath("//tsclient/C/Users/bdaughdr/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
   #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
   output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
-  function_directory <- normalizePath("//tsclient/C/Users/bdaughdr/Dropbox/Research/R/", winslash = "\\", mustWork = TRUE)
+  function_directory <- normalizePath("//tsclient/C/Users/bdaughdr/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
   treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE)       
   
 } else if (Location == 5) {
@@ -71,7 +71,7 @@ if (Location == 1) {
   input_directory <- normalizePath("//tsclient/C/Users/S. Brad Daughdrill/Documents/My Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
   #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
   output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
-  function_directory <- normalizePath("//tsclient/C/Users/S. Brad Daughdrill/Documents/My Dropbox/Research/R/", winslash = "\\", mustWork = TRUE)
+  function_directory <- normalizePath("//tsclient/C/Users/S. Brad Daughdrill/Documents/My Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
   treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE)       
   
 } else {
@@ -375,12 +375,16 @@ EurekahedgeHF_Excel_aca_NAV_AUM_melt <- merge(EurekahedgeHF_Excel_aca_NAV_melt, 
                                               by.x=c("Fund.ID","date","yr","month"), by.y=c("Fund.ID","date","yr","month"), 
                                               all.x=TRUE, all.y=TRUE, sort=FALSE,suffixes=c(".x",".y"),incomparables=NA)
 
+EurekahedgeHF_Excel_aca_NAV_AUM_melt <- EurekahedgeHF_Excel_aca_NAV_AUM_melt[rowSums(is.na(EurekahedgeHF_Excel_aca_NAV_AUM_melt[,1:ncol(EurekahedgeHF_Excel_aca_NAV_AUM_melt)]))<ncol(EurekahedgeHF_Excel_aca_NAV_AUM_melt),]
+
 EurekahedgeHF_Excel_aca_NAV_AUM_melt <- EurekahedgeHF_Excel_aca_NAV_AUM_melt[order(EurekahedgeHF_Excel_aca_NAV_AUM_melt[,"Fund.ID"],
                                                                                    EurekahedgeHF_Excel_aca_NAV_AUM_melt[,"date"],
                                                                                    EurekahedgeHF_Excel_aca_NAV_AUM_melt[,"yr"],
                                                                                    EurekahedgeHF_Excel_aca_NAV_AUM_melt[,"month"]),]
 
 row.names(EurekahedgeHF_Excel_aca_NAV_AUM_melt) <- seq(nrow(EurekahedgeHF_Excel_aca_NAV_AUM_melt))
+
+
 
 write.csv(EurekahedgeHF_Excel_aca_NAV_AUM_melt, file=paste(output_directory,file="EurekahedgeHF_Excel_aca_NAV_AUM_melt",".csv",sep=""),row.names=FALSE)
 
@@ -461,6 +465,12 @@ Exposure_comb <- Exposure_comb[,c("Fund.ID",colnames(Exposure_comb)[-which(colna
 EurekahedgeHF_Excel_aca_Instruments_Traded_merge <- merge(Instruments_Traded_comb, Exposure_comb, by.x=c("Fund.ID"), by.y=c("Fund.ID"), 
                                                           all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables=NA)
 
+EurekahedgeHF_Excel_aca_Instruments_Traded_merge <- EurekahedgeHF_Excel_aca_Instruments_Traded_merge[rowSums(is.na(EurekahedgeHF_Excel_aca_Instruments_Traded_merge[,1:ncol(EurekahedgeHF_Excel_aca_Instruments_Traded_merge)]))<ncol(EurekahedgeHF_Excel_aca_Instruments_Traded_merge),]
+
+EurekahedgeHF_Excel_aca_Instruments_Traded_merge <- EurekahedgeHF_Excel_aca_Instruments_Traded_merge[order(EurekahedgeHF_Excel_aca_Instruments_Traded_merge[,"Fund.ID"]),]
+
+row.names(EurekahedgeHF_Excel_aca_Instruments_Traded_merge) <- seq(nrow(EurekahedgeHF_Excel_aca_Instruments_Traded_merge))
+
 rm(EurekahedgeHF_Excel_aca_Instruments_Traded)
 rm(Instruments_Traded,Instruments_Traded_comb)
 rm(Exposure,Exposure_comb)
@@ -504,6 +514,12 @@ EurekahedgeHF_Excel_aca[,"Dead.Date"] <- as.Date(EurekahedgeHF_Excel_aca[,"Dead.
 
 EurekahedgeHF_Excel_aca[,"Inception.Date"] <- gsub(pattern="/", replacement="-", x=EurekahedgeHF_Excel_aca[,"Inception.Date"])
 EurekahedgeHF_Excel_aca[,"Inception.Date"] <- as.Date(EurekahedgeHF_Excel_aca[,"Inception.Date"],format="%m-%d-%Y")
+
+EurekahedgeHF_Excel_aca <- EurekahedgeHF_Excel_aca[rowSums(is.na(EurekahedgeHF_Excel_aca[,1:ncol(EurekahedgeHF_Excel_aca)]))<ncol(EurekahedgeHF_Excel_aca),]
+
+EurekahedgeHF_Excel_aca <- EurekahedgeHF_Excel_aca[order(EurekahedgeHF_Excel_aca[,"Fund.ID"]),]
+
+row.names(EurekahedgeHF_Excel_aca) <- seq(nrow(EurekahedgeHF_Excel_aca))
 
 write.csv(EurekahedgeHF_Excel_aca, file=paste(output_directory,file="EurekahedgeHF_Excel_aca",".csv",sep=""),row.names=FALSE)
 
@@ -590,6 +606,8 @@ EurekahedgeHF_Excel_aca_monthly_ret <- data.frame(EurekahedgeHF_Excel_aca_monthl
                                                month=month(EurekahedgeHF_Excel_aca_monthly_ret[,"date"]),
                                                stringsAsFactors=FALSE)
 
+EurekahedgeHF_Excel_aca_monthly_ret <- EurekahedgeHF_Excel_aca_monthly_ret[rowSums(is.na(EurekahedgeHF_Excel_aca_monthly_ret[,1:ncol(EurekahedgeHF_Excel_aca_monthly_ret)]))<ncol(EurekahedgeHF_Excel_aca_monthly_ret),]
+
 EurekahedgeHF_Excel_aca_monthly_ret <- EurekahedgeHF_Excel_aca_monthly_ret[order(EurekahedgeHF_Excel_aca_monthly_ret[,"Fund.ID"],
                                                                                  EurekahedgeHF_Excel_aca_monthly_ret[,"date"],
                                                                                  EurekahedgeHF_Excel_aca_monthly_ret[,"yr"],
@@ -664,6 +682,8 @@ for(i in 1:length(yearly_ret_cols))
   
 }
 
+EurekahedgeHF_Excel_aca_yearly_ret <- EurekahedgeHF_Excel_aca_yearly_ret[rowSums(is.na(EurekahedgeHF_Excel_aca_yearly_ret[,1:ncol(EurekahedgeHF_Excel_aca_yearly_ret)]))<ncol(EurekahedgeHF_Excel_aca_yearly_ret),]
+
 EurekahedgeHF_Excel_aca_yearly_ret <- EurekahedgeHF_Excel_aca_yearly_ret[order(EurekahedgeHF_Excel_aca_yearly_ret[,"Fund.ID"],
                                                                                EurekahedgeHF_Excel_aca_yearly_ret[,"yr"]),]
 
@@ -713,6 +733,8 @@ EurekahedgeHF_Excel_aca_merge <- EurekahedgeHF_Excel_aca_merge[EurekahedgeHF_Exc
 #                                           yr=year(EurekahedgeHF_Excel_aca_full[,"date"]),
 #                                           month=month(EurekahedgeHF_Excel_aca_full[,"date"]),
 #                                           stringsAsFactors=FALSE)
+
+EurekahedgeHF_Excel_aca_merge <- EurekahedgeHF_Excel_aca_merge[rowSums(is.na(EurekahedgeHF_Excel_aca_merge[,1:ncol(EurekahedgeHF_Excel_aca_merge)]))<ncol(EurekahedgeHF_Excel_aca_merge),]
 
 EurekahedgeHF_Excel_aca_merge <- EurekahedgeHF_Excel_aca_merge[order(EurekahedgeHF_Excel_aca_merge[,"Fund.ID"],
                                                                      EurekahedgeHF_Excel_aca_merge[,"Fund.Name"],
