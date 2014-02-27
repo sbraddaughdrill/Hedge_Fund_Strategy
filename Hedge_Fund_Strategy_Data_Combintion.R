@@ -214,13 +214,13 @@ import_crsp_file_year <- function(table_name,fundnos,year_cutoff_low,year_cutoff
   return(table)
 }
 
-aggregate_crsp_variable <- function(tna_data,other_variable_data,variable){
+aggregate_crsp_variable <- function(tna_data,other_variable_data,variable,id_var){
   
   #tna_data <- monthly_tna_full
   #other_variable_data <- monthly_ret
   #variable <- "mret"
   #variable <- "mnav"
-  
+  #id_var <- "wficn"
   
   other_variable_data <- other_variable_data[,c("crsp_fundno","yr","month",variable)]
   
@@ -228,42 +228,42 @@ aggregate_crsp_variable <- function(tna_data,other_variable_data,variable){
                      by.x=c("crsp_fundno","yr","month"), by.y=c("crsp_fundno","yr","month"), 
                      all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
   
-  temp_data <- temp_data[c(identifier,"crsp_fundno","yr","month","mtna",variable)]
+  temp_data <- temp_data[c(id_var,"crsp_fundno","yr","month","mtna",variable)]
   
-  temp_data <- temp_data[order(temp_data[,identifier], 
+  temp_data <- temp_data[order(temp_data[,id_var], 
                                temp_data[,"crsp_fundno"],                                         
                                temp_data[,"yr"], 
                                temp_data[,"month"]),] 
   
   temp_data_trim <- subset(temp_data,select=-c(crsp_fundno))
   
-  temp_data_trim <- temp_data_trim[c(identifier,"yr","month","mtna",variable)]
+  temp_data_trim <- temp_data_trim[c(id_var,"yr","month","mtna",variable)]
   
-  temp_data_trim <- temp_data_trim[order(temp_data_trim[,identifier], 
+  temp_data_trim <- temp_data_trim[order(temp_data_trim[,id_var], 
                                          temp_data_trim[,"yr"], 
                                          temp_data_trim[,"month"]),] 
   
-  #test0 <- temp_data_trim[temp_data_trim[,identifier]==100166 & temp_data_trim[,"yr"]==2000,]
+  #test0 <- temp_data_trim[temp_data_trim[,id_var]==100166 & temp_data_trim[,"yr"]==2000,]
   
   #sumtna <- as.data.frame(data.table(temp_data_trim)[, list(summtna=sum(mtna)),by="Fund_ID,yr,month"],stringsAsFactors=FALSE)
-  sumtna <- as.data.frame(data.table(temp_data_trim)[, list(summtna=sum(mtna)),by=eval(paste(identifier,",yr,month",sep=""))],stringsAsFactors=FALSE)
+  sumtna <- as.data.frame(data.table(temp_data_trim)[, list(summtna=sum(mtna)),by=eval(paste(id_var,",yr,month",sep=""))],stringsAsFactors=FALSE)
   
   #rm2(temp_data_trim)
   
   temp_data_sum_tna <- merge(temp_data[,-match(variable,names(temp_data))], sumtna, 
-                             by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
+                             by.x=c(id_var,"yr","month"), by.y=c(id_var,"yr","month"), 
                              all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
   
   #rm2(sumtna)
   
-  temp_data_sum_tna <- temp_data_sum_tna[c(identifier,"crsp_fundno","yr","month","mtna","summtna")]
+  temp_data_sum_tna <- temp_data_sum_tna[c(id_var,"crsp_fundno","yr","month","mtna","summtna")]
   
-  temp_data_sum_tna <- temp_data_sum_tna[order(temp_data_sum_tna[,identifier], 
+  temp_data_sum_tna <- temp_data_sum_tna[order(temp_data_sum_tna[,id_var], 
                                                temp_data_sum_tna[,"crsp_fundno"], 
                                                temp_data_sum_tna[,"yr"], 
                                                temp_data_sum_tna[,"month"]),] 
   
-  #test1 <- temp_data_sum_tna[temp_data_sum_tna[,identifier]==100166 & temp_data_sum_tna[,"yr"]==2000,]
+  #test1 <- temp_data_sum_tna[temp_data_sum_tna[,id_var]==100166 & temp_data_sum_tna[,"yr"]==2000,]
   
   temp_data_weights0 <- as.data.frame(data.table(temp_data_sum_tna)[, list(weight=mtna/summtna),by="crsp_fundno,yr,month"],stringsAsFactors=FALSE)
   
@@ -275,20 +275,20 @@ aggregate_crsp_variable <- function(tna_data,other_variable_data,variable){
   
   #rm2(temp_data,temp_data_weights0)
   
-  temp_data_weights <- temp_data_weights[c(identifier,"crsp_fundno","yr","month","weight",variable)]
+  temp_data_weights <- temp_data_weights[c(id_var,"crsp_fundno","yr","month","weight",variable)]
   
-  temp_data_weights <- temp_data_weights[order(temp_data_weights[,identifier], 
+  temp_data_weights <- temp_data_weights[order(temp_data_weights[,id_var], 
                                                temp_data_weights[,"crsp_fundno"], 
                                                temp_data_weights[,"yr"], 
                                                temp_data_weights[,"month"]),] 
   
-  #test2 <- temp_data_weights[temp_data_weights[,identifier]==100166 & temp_data_weights[,"yr"]==2000,]
+  #test2 <- temp_data_weights[temp_data_weights[,id_var]==100166 & temp_data_weights[,"yr"]==2000,]
   
   temp_weighted <- temp_data_weights[,"weight"]* temp_data_weights[,variable]
   
   temp_data_agg1 <- cbind(temp_data_weights,temp_weighted)
   
-  #test3 <- temp_data_agg1[temp_data_agg1[,identifier]==100166 & temp_data_agg1[,"yr"]==2000,]
+  #test3 <- temp_data_agg1[temp_data_agg1[,id_var]==100166 & temp_data_agg1[,"yr"]==2000,]
   
   #rm2(temp_data_weights,temp_weighted)
   
@@ -296,20 +296,20 @@ aggregate_crsp_variable <- function(tna_data,other_variable_data,variable){
   
   #rm2(temp_data_agg1)
   
-  temp_data_agg1_trim <- temp_data_agg1_trim[order(temp_data_agg1_trim[,identifier], 
+  temp_data_agg1_trim <- temp_data_agg1_trim[order(temp_data_agg1_trim[,id_var], 
                                                    temp_data_agg1_trim[,"yr"], 
                                                    temp_data_agg1_trim[,"month"]),] 
   
   #temp_data_agg <- as.data.frame(data.table(temp_data_agg1_trim)[, list(agg_temp=sum(temp_weighted)),
   #                                                               by="Fund_ID,yr,month"],stringsAsFactors=FALSE)
   temp_data_agg <- as.data.frame(data.table(temp_data_agg1_trim)[, list(agg_temp=sum(temp_weighted)),
-                                                                 by=eval(paste(identifier,",yr,month",sep=""))],stringsAsFactors=FALSE)
+                                                                 by=eval(paste(id_var,",yr,month",sep=""))],stringsAsFactors=FALSE)
   
   
   
   colnames(temp_data_agg)[4] <- paste(variable,"_agg",sep="")
   
-  #test4 <- temp_data_agg[temp_data_agg[,identifier]==100166 & temp_data_agg[,"yr"]==2000,]
+  #test4 <- temp_data_agg[temp_data_agg[,id_var]==100166 & temp_data_agg[,"yr"]==2000,]
   
   #rm2(temp_data_agg1_trim)
   
@@ -346,7 +346,7 @@ empty.df<- function(header){
   
 }
 
-calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,text_type){
+calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,text_type,id_var){
   
   #i <- 1
   #i <- 2
@@ -357,10 +357,10 @@ calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,
   #group_var <- "Main.Investment.Strategy"
   #group_var_value <- text_group_vars[i]
   #text_type <- text_variables[j]
-  
+  #id_var <- identifier
   
   temp_stacked <- merged_data[(toupper(merged_data[,group_var])==group_var_value & !(is.na(merged_data[,group_var]))),]
-  temp_stacked <- temp_stacked[order(temp_stacked[,"yr"],temp_stacked[,identifier]),] 
+  temp_stacked <- temp_stacked[order(temp_stacked[,"yr"],temp_stacked[,id_var]),] 
   row.names(temp_stacked) <- seq(nrow(temp_stacked))
   
   #for (k in 1:2)
@@ -371,8 +371,8 @@ calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,
     
     temp_years <- get(paste("years",text_type,text_percentages[k],sep="_"))
     
-    temp_avg <- data.frame(yr=integer(),group=character(),identifier=integer(),avg_similarity=numeric(),stringsAsFactors=FALSE) 
-    colnames(temp_avg)[match("identifier",names(temp_avg))] <- identifier
+    temp_avg <- data.frame(yr=integer(),group=character(),id_temp=integer(),avg_similarity=numeric(),stringsAsFactors=FALSE) 
+    colnames(temp_avg)[match("id_temp",names(temp_avg))] <- id_var
     
     for (l in 1:length(temp_years))
     {
@@ -388,56 +388,56 @@ calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,
       temp_data <- trim_by_format(temp_data,"character")
       temp_data <- unknown_to_NA(temp_data,unknowns_strings)
       
-      temp_data <- temp_data[order(temp_data[,"yr"],temp_data[,identifier]),] 
+      temp_data <- temp_data[order(temp_data[,"yr"],temp_data[,id_var]),] 
       
       temp_col_mat_df <- as.matrix(temp_data[,3:ncol(temp_data)])
       
       #Make diagonal NA
       diag(temp_col_mat_df) <- NA
       
-      temp_id_cat <- unique(temp_stacked[,c(identifier,group_var)],comparables=FALSE)
+      temp_id_cat <- unique(temp_stacked[,c(id_var,group_var)],comparables=FALSE)
       temp_id_cat <- temp_id_cat[!(is.na(temp_id_cat[,group_var])),]
       
-      temp_data_obj <- merge(temp_id_cat, temp_data[,c("yr",identifier)], 
-                             by.x=c(identifier), by.y=c(identifier), all.x=FALSE, all.y=TRUE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-      #temp_data_obj <- merge(temp_id_cat, temp_data[,c("yr",identifier)], 
-      #                       by.x=c(identifier), by.y=c(identifier), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+      temp_data_obj <- merge(temp_id_cat, temp_data[,c("yr",id_var)], 
+                             by.x=c(id_var), by.y=c(id_var), all.x=FALSE, all.y=TRUE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+      #temp_data_obj <- merge(temp_id_cat, temp_data[,c("yr",id_var)], 
+      #                       by.x=c(id_var), by.y=c(id_var), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
       
-      temp_data_obj <- temp_data_obj[order(temp_data_obj[,"yr"],temp_data_obj[,identifier]),] 
+      temp_data_obj <- temp_data_obj[order(temp_data_obj[,"yr"],temp_data_obj[,id_var]),] 
       
       temp_data_full <- data.frame(yr=temp_data_obj[,"yr"],
                                    group=temp_data_obj[,group_var],
-                                   identifier=temp_data_obj[,identifier],
+                                   id_temp=temp_data_obj[,id_var],
                                    temp_col_mat_df,stringsAsFactors=FALSE)
-      colnames(temp_data_full)[match("identifier",names(temp_data_full))] <- identifier
+      colnames(temp_data_full)[match("id_temp",names(temp_data_full))] <- id_var
       
-      temp_data_full <- temp_data_full[order(temp_data_full[,"yr"],temp_data_full[,identifier]),] 
+      temp_data_full <- temp_data_full[order(temp_data_full[,"yr"],temp_data_full[,id_var]),] 
       
       #Seperate by group
       temp_data_full_no_na <- temp_data_full[!(is.na(temp_data_full[,"group"])),]
       
       if (nrow(temp_data_full_no_na)>0)
       {
-        temp_data_full_no_na_ids <- paste("X",temp_data_full_no_na[,identifier],sep="")
-        temp_data_full_no_na_trim <- temp_data_full_no_na[,c("yr","group",identifier,temp_data_full_no_na_ids)]
-        temp_data_full_no_na_trim[,identifier] <- as.integer(temp_data_full_no_na_trim[,identifier])
+        temp_data_full_no_na_ids <- paste("X",temp_data_full_no_na[,id_var],sep="")
+        temp_data_full_no_na_trim <- temp_data_full_no_na[,c("yr","group",id_var,temp_data_full_no_na_ids)]
+        temp_data_full_no_na_trim[,id_var] <- as.integer(temp_data_full_no_na_trim[,id_var])
         
         temp_data_full_cat_temp <- temp_data_full_no_na_trim[toupper(temp_data_full_no_na_trim[,"group"])==group_var_value,]
         
-        temp_data_full_cat_temp_ids <- paste("X",temp_data_full_cat_temp[,identifier],sep="")
-        temp_data_full_cat_temp_trim <- temp_data_full_cat_temp[,c("yr","group",identifier,temp_data_full_cat_temp_ids)]
+        temp_data_full_cat_temp_ids <- paste("X",temp_data_full_cat_temp[,id_var],sep="")
+        temp_data_full_cat_temp_trim <- temp_data_full_cat_temp[,c("yr","group",id_var,temp_data_full_cat_temp_ids)]
         
         if (nrow(temp_data_full_cat_temp)==1)
         {
-          #temp_data_full_cat_temp_ids <- paste("X",temp_data_full_cat_temp[,identifier],sep="")
-          #temp_data_full_cat_temp_trim <- temp_data_full_cat_temp[,c("yr","group",identifier,temp_data_full_cat_temp_ids)]
+          #temp_data_full_cat_temp_ids <- paste("X",temp_data_full_cat_temp[,id_var],sep="")
+          #temp_data_full_cat_temp_trim <- temp_data_full_cat_temp[,c("yr","group",id_var,temp_data_full_cat_temp_ids)]
           
           temp_data_full_cat_temp_avg <- data.frame(yr=temp_data_full_cat_temp_trim[,"yr"],
                                                     group=temp_data_full_cat_temp_trim[,"group"],
-                                                    identifier=temp_data_full_cat_temp_trim[,identifier],
+                                                    id_temp=temp_data_full_cat_temp_trim[,id_var],
                                                     avg_similarity=temp_data_full_cat_temp_trim[,4],
                                                     stringsAsFactors=FALSE)
-          colnames(temp_data_full_cat_temp_avg)[match("identifier",names(temp_data_full_cat_temp_avg))] <- identifier
+          colnames(temp_data_full_cat_temp_avg)[match("id_temp",names(temp_data_full_cat_temp_avg))] <- id_var
           
           temp_avg <- rbind(temp_avg,temp_data_full_cat_temp_avg)
           
@@ -446,15 +446,15 @@ calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,
           
         } else if (nrow(temp_data_full_cat_temp)>1)
         {
-          #temp_data_full_cat_temp_ids <- paste("X",temp_data_full_cat_temp[,identifier],sep="")
-          #temp_data_full_cat_temp_trim <- temp_data_full_cat_temp[,c("yr","group",identifier,temp_data_full_cat_temp_ids)]
+          #temp_data_full_cat_temp_ids <- paste("X",temp_data_full_cat_temp[,id_var],sep="")
+          #temp_data_full_cat_temp_trim <- temp_data_full_cat_temp[,c("yr","group",id_var,temp_data_full_cat_temp_ids)]
           
           temp_data_full_cat_temp_avg <- data.frame(yr=temp_data_full_cat_temp_trim[,"yr"],
                                                     group=temp_data_full_cat_temp_trim[,"group"],
-                                                    identifier=temp_data_full_cat_temp_trim[,identifier],
+                                                    id_temp=temp_data_full_cat_temp_trim[,id_var],
                                                     avg_similarity=rowMeans(temp_data_full_cat_temp_trim[,4:ncol(temp_data_full_cat_temp_trim)], na.rm = TRUE),
                                                     stringsAsFactors=FALSE)
-          colnames(temp_data_full_cat_temp_avg)[match("identifier",names(temp_data_full_cat_temp_avg))] <- identifier
+          colnames(temp_data_full_cat_temp_avg)[match("id_temp",names(temp_data_full_cat_temp_avg))] <- id_var
           
           temp_avg <- rbind(temp_avg,temp_data_full_cat_temp_avg)
           
@@ -492,7 +492,7 @@ calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,
     
     colnames(temp_avg)[4] <- paste("similarity",text_percentages[k],text_type,sep="_")
     
-    temp_stacked <- merge(temp_stacked, subset(temp_avg,select=-c(group)), by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
+    temp_stacked <- merge(temp_stacked, subset(temp_avg,select=-c(group)), by.x=c(id_var,"yr"), by.y=c(id_var,"yr"), 
                           all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
     
     #rm(temp_years,temp_avg)
@@ -500,7 +500,7 @@ calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,
   }
   
   temp_stacked <- temp_stacked[!(rowSums(is.na(temp_stacked[,4:ncol(temp_stacked)]))==(ncol(temp_stacked)-3)),]
-  temp_stacked <- temp_stacked[order(temp_stacked[,identifier],temp_stacked[,"yr"]),] 
+  temp_stacked <- temp_stacked[order(temp_stacked[,id_var],temp_stacked[,"yr"]),] 
   
   return(temp_stacked)
   
@@ -1446,7 +1446,7 @@ EurekahedgeHF_Excel_aca_full9 <- EurekahedgeHF_Excel_aca_full9[rowSums(is.na(Eur
 #   
 #   single_var <- single_var[!(is.na(single_var[,monthly_tna_ret_nav2_vars[i]])),]
 #   
-#   assign(paste("agg_",monthly_tna_ret_nav2_vars[i],sep=""),aggregate_crsp_variable(monthly_tna_full,single_var,monthly_tna_ret_nav2_vars[i]), envir=.GlobalEnv)
+#   assign(paste("agg_",monthly_tna_ret_nav2_vars[i],sep=""),aggregate_crsp_variable(monthly_tna_full,single_var,monthly_tna_ret_nav2_vars[i],"wficn"), envir=.GlobalEnv)
 #   
 #   progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(monthly_tna_ret_nav2_vars), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
 #   
@@ -1481,7 +1481,7 @@ EurekahedgeHF_Excel_aca_full9 <- EurekahedgeHF_Excel_aca_full9[rowSums(is.na(Eur
 #   
 #   single_var <- single_var[!(is.na(single_var[,fund_fees_month_vars[i]])),]
 #   
-#   assign(paste("agg_",fund_fees_month_vars[i],sep=""),aggregate_crsp_variable(monthly_tna_full,single_var,fund_fees_month_vars[i]), envir=.GlobalEnv)
+#   assign(paste("agg_",fund_fees_month_vars[i],sep=""),aggregate_crsp_variable(monthly_tna_full,single_var,fund_fees_month_vars[i],"wficn"), envir=.GlobalEnv)
 #   
 #   progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(fund_fees_month_vars), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
 #   
@@ -1641,7 +1641,7 @@ EurekahedgeHF_Excel_aca_full9 <- EurekahedgeHF_Excel_aca_full9[rowSums(is.na(Eur
 #   
 #   single_var <- single_var[!(is.na(single_var[,fund_names_month_vars[i]])),]
 #   
-#   assign(paste("agg_",fund_names_month_vars[i],sep=""),aggregate_crsp_variable(monthly_tna_full,single_var,fund_names_month_vars[i]), envir=.GlobalEnv)
+#   assign(paste("agg_",fund_names_month_vars[i],sep=""),aggregate_crsp_variable(monthly_tna_full,single_var,fund_names_month_vars[i],"wficn"), envir=.GlobalEnv)
 #   
 #   progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(fund_names_month_vars), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
 #   
@@ -2084,7 +2084,7 @@ for (i in 1:length(text_group_vars))
   {
     #j <- 1
     
-    temp_sim_stacked <- calculate_similarity_by_group(temp_stacked_full,group_column,text_group_vars[i],text_variables[j])
+    temp_sim_stacked <- calculate_similarity_by_group(temp_stacked_full,group_column,text_group_vars[i],text_variables[j],identifier)
     
     if (text_variables[j]=="ios")
     {
@@ -2158,7 +2158,7 @@ rm2(group_column,sample_data_all_temp,temp_stacked_full,text_group_vars)
 #   {
 #     #j <- 1
 #     
-#     temp_sim_stacked <- calculate_similarity_by_group(temp_stacked_full,group_column,text_group_vars[i],text_variables[j])
+#     temp_sim_stacked <- calculate_similarity_by_group(temp_stacked_full,group_column,text_group_vars[i],text_variables[j],identifier)
 #     
 #     if (text_variables[j]=="ios")
 #     {
@@ -2238,7 +2238,7 @@ rm2(group_column,sample_data_all_temp,temp_stacked_full,text_group_vars)
 #   {
 #     #j <- 1
 #     
-#     temp_sim_stacked <- calculate_similarity_by_group(temp_stacked_full,group_column,text_group_vars[i],text_variables[j])
+#     temp_sim_stacked <- calculate_similarity_by_group(temp_stacked_full,group_column,text_group_vars[i],text_variables[j],identifier)
 #     
 #     if (text_variables[j]=="ios")
 #     {

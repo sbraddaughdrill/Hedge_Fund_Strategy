@@ -28,7 +28,7 @@ options(max.print=500)                               #Default maxprint option
 
 
 # Set location (1=HOME,2=WORK,3=CORALSEA FROM HOME,4=CORALSEA FROM WORK,5=CORALSEA FROM LAPTOP) 
-Location <- 3
+Location <- 1
 
 if (Location == 1) {
   #setwd("C:/Research_temp2/")
@@ -397,6 +397,7 @@ cat("SECTION: SQLITE DATABASES", "\n")
 #similarity_db <- paste(output_directory,"Similarity_Analysis.s3db",sep="")
 descriptive_stats_db <- paste(output_directory,"Descriptive_stats.s3db",sep="")
 
+
 ###############################################################################
 cat("IMPORT DATA", "\n")
 ###############################################################################
@@ -410,13 +411,13 @@ EurekahedgeHF_Excel_aca_full11 <- runsql("SELECT * FROM EurekahedgeHF_Excel_aca_
 text_stats_ios <- runsql("SELECT * FROM text_stats_ios",descriptive_stats_db)
 
 
-
 ###############################################################################
 cat("MAKE ALL COLUMNS LOWER CASE", "\n")
 ###############################################################################
 
 colnames(EurekahedgeHF_Excel_aca_full11) <- tolower(colnames(EurekahedgeHF_Excel_aca_full11))
 colnames(text_stats_ios) <- tolower(colnames(text_stats_ios))
+
 
 ###############################################################################
 cat("FIX DATA", "\n")
