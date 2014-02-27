@@ -1,9 +1,9 @@
 # TODO: Add comment
 # 
 # Author:  Brad
-# File:    Data_Combination.R
+# File:    Hedge_Fund_Strategy_Data_Combintion.R
 # Version: 1.0
-# Date:    03.17.2013
+# Date:    01.07.2014
 # Purpose: Combine all data sources
 #
 ###############################################################################
@@ -1654,7 +1654,7 @@ EurekahedgeHF_Excel_aca_full9 <- EurekahedgeHF_Excel_aca_full9[rowSums(is.na(Eur
 # cat("FIND AGE FOR EVERY WFICN", "\n")
 # ###############################################################################
 
-fund_age <- data.table(EurekahedgeHF_Excel_aca_full9)[,list(chgdt=min(Inception.Date)),by=identifier]
+fund_age <- data.table(EurekahedgeHF_Excel_aca_full9)[,list(chgdt=min(Inception_Date)),by=identifier]
 fund_age <- data.frame(fund_age,stringsAsFactors=FALSE)
 
 fund_age_trim <- data.table(fund_age[])[,list(chgdt=min(chgdt)),by=identifier]
@@ -2079,21 +2079,6 @@ for (j in 1:length(text_variables))
 for (i in 1:length(text_group_vars))
 {
   #i <- 1
-  #i <- 2
-  #i <- 3
-  #i <- 4
-  #i <- 5
-  #i <- 6 
-  #i <- 7
-  #i <- 8 
-  #i <- 9
-  #i <- 10
-  #i <- 11
-  #i <- 12
-  #i <- 13
-  #i <- 14 
-  #i <- 15
-  
   
   for (j in 1:length(text_variables))
   {
@@ -2103,7 +2088,7 @@ for (i in 1:length(text_group_vars))
     
     if (text_variables[j]=="ios")
     {
-      year_sim_ios_main.investment.strategy_stacked <- rbind(year_sim_ios_main.investment.strategy_stacked,temp_sim_stacked)
+      year_sim_ios_main_investment_strategy_stacked <- rbind(year_sim_ios_main_investment_strategy_stacked,temp_sim_stacked)
       
     } else
     {
@@ -2120,11 +2105,11 @@ for (i in 1:length(text_group_vars))
   
 }
 
-colnames(year_sim_ios_main.investment.strategy_stacked) <- paste(group_column,colnames(year_sim_ios_main.investment.strategy_stacked),sep="_")
-colnames(year_sim_ios_main.investment.strategy_stacked)[1:3] <- c(identifier,"yr",group_column)
+colnames(year_sim_ios_main_investment_strategy_stacked) <- paste(group_column,colnames(year_sim_ios_main_investment_strategy_stacked),sep="_")
+colnames(year_sim_ios_main_investment_strategy_stacked)[1:3] <- c(identifier,"yr",group_column)
 
-year_sim_ios_main.investment.strategy_stacked <- year_sim_ios_main.investment.strategy_stacked[order(year_sim_ios_main.investment.strategy_stacked[,identifier], 
-                                                                                                     year_sim_ios_main.investment.strategy_stacked[,"yr"]),]
+year_sim_ios_main_investment_strategy_stacked <- year_sim_ios_main_investment_strategy_stacked[order(year_sim_ios_main_investment_strategy_stacked[,identifier], 
+                                                                                                     year_sim_ios_main_investment_strategy_stacked[,"yr"]),]
 
 
 rm2(group_column,sample_data_all_temp,temp_stacked_full,text_group_vars)
@@ -2177,7 +2162,7 @@ rm2(group_column,sample_data_all_temp,temp_stacked_full,text_group_vars)
 #     
 #     if (text_variables[j]=="ios")
 #     {
-#       year_sim_iois_equity_style_box_long_stacked <- rbind(year_sim_iois_equity_style_box_long_stacked,temp_sim_stacked)
+#       year_sim_ios_equity_style_box_long_stacked <- rbind(year_sim_ios_equity_style_box_long_stacked,temp_sim_stacked)
 #       
 #     } else if (text_variables[j]=="pr")
 #     {
@@ -2198,11 +2183,11 @@ rm2(group_column,sample_data_all_temp,temp_stacked_full,text_group_vars)
 #   
 # }
 # 
-# colnames(year_sim_iois_equity_style_box_long_stacked) <- paste(group_column,colnames(year_sim_iois_equity_style_box_long_stacked),sep="_")
-# colnames(year_sim_iois_equity_style_box_long_stacked)[1:3] <- c(identifier,"yr",group_column)
+# colnames(year_sim_ios_equity_style_box_long_stacked) <- paste(group_column,colnames(year_sim_ios_equity_style_box_long_stacked),sep="_")
+# colnames(year_sim_ios_equity_style_box_long_stacked)[1:3] <- c(identifier,"yr",group_column)
 # 
-# year_sim_iois_equity_style_box_long_stacked <- year_sim_iois_equity_style_box_long_stacked[order(year_sim_iois_equity_style_box_long_stacked[,identifier], 
-#                                                                                                  year_sim_iois_equity_style_box_long_stacked[,"yr"]),]
+# year_sim_ios_equity_style_box_long_stacked <- year_sim_ios_equity_style_box_long_stacked[order(year_sim_ios_equity_style_box_long_stacked[,identifier], 
+#                                                                                                  year_sim_ios_equity_style_box_long_stacked[,"yr"]),]
 # 
 # 
 # rm2(group_column,sample_data_all_temp,temp_stacked_full,text_group_vars)
@@ -2257,7 +2242,7 @@ rm2(group_column,sample_data_all_temp,temp_stacked_full,text_group_vars)
 #     
 #     if (text_variables[j]=="ios")
 #     {
-#       year_sim_iois_branding_name_stacked <- rbind(year_sim_iois_branding_name_stacked,temp_sim_stacked)
+#       year_sim_ios_branding_name_stacked <- rbind(year_sim_ios_branding_name_stacked,temp_sim_stacked)
 #       
 #     } else if (text_variables[j]=="pr")
 #     {
@@ -2278,11 +2263,11 @@ rm2(group_column,sample_data_all_temp,temp_stacked_full,text_group_vars)
 #   
 # }
 # 
-# colnames(year_sim_iois_branding_name_stacked) <- paste(group_column,colnames(year_sim_iois_branding_name_stacked),sep="_")
-# colnames(year_sim_iois_branding_name_stacked)[1:3] <- c(identifier,"yr",group_column)
+# colnames(year_sim_ios_branding_name_stacked) <- paste(group_column,colnames(year_sim_ios_branding_name_stacked),sep="_")
+# colnames(year_sim_ios_branding_name_stacked)[1:3] <- c(identifier,"yr",group_column)
 # 
-# year_sim_iois_branding_name_stacked <- year_sim_iois_branding_name_stacked[order(year_sim_iois_branding_name_stacked[,identifier], 
-#                                                                                  year_sim_iois_branding_name_stacked[,"yr"]),]
+# year_sim_ios_branding_name_stacked <- year_sim_ios_branding_name_stacked[order(year_sim_ios_branding_name_stacked[,identifier], 
+#                                                                                  year_sim_ios_branding_name_stacked[,"yr"]),]
 # 
 # rm2(group_column,sample_data_all_temp,temp_stacked_full,text_group_vars)
 # 
@@ -2291,88 +2276,60 @@ rm2(group_column,sample_data_all_temp,temp_stacked_full,text_group_vars)
 # cat("BACKUP SIMIALRITY DATA", "\n")
 # ###############################################################################
 
-#Rename data.frames
-#year_sim_ios_main_investment_strategy_stacked <- year_sim_ios_main.investment.strategy_stacked
-
-
-
 descriptive_stats_tables <- ListTables(descriptive_stats_db)
 descriptive_stats_fields <- ListFields(descriptive_stats_db)
 
-
-
 ExportTable(descriptive_stats_db,"year_sim_ios_all_stacked",year_sim_ios_all_stacked)
 ExportTable(descriptive_stats_db,"year_sim_ios_main_investment_strategy_stacked",year_sim_ios_main_investment_strategy_stacked)
-#ExportTable(descriptive_stats_db,"year_sim_iois_equity_style_box_long_stacked",year_sim_iois_equity_style_box_long_stacked)
-#ExportTable(descriptive_stats_db,"year_sim_iois_branding_name_stacked",year_sim_iois_branding_name_stacked)
+#ExportTable(descriptive_stats_db,"year_sim_ios_equity_style_box_long_stacked",year_sim_ios_equity_style_box_long_stacked)
+#ExportTable(descriptive_stats_db,"year_sim_ios_branding_name_stacked",year_sim_ios_branding_name_stacked)
 
-#year_sim_iois_all_stacked                   <- runsql("SELECT * FROM year_sim_iois_all_stacked",descriptive_stats_db)
-#year_sim_iois_broad_cat_group_stacked       <- runsql("SELECT * FROM year_sim_iois_broad_cat_group_stacked",descriptive_stats_db)
-#year_sim_iois_equity_style_box_long_stacked <- runsql("SELECT * FROM year_sim_iois_equity_style_box_long_stacked",descriptive_stats_db)
-#year_sim_iois_branding_name_stacked         <- runsql("SELECT * FROM year_sim_iois_branding_name_stacked",descriptive_stats_db)
+#year_sim_ios_all_stacked                   <- runsql("SELECT * FROM year_sim_ios_all_stacked",descriptive_stats_db)
+#year_sim_ios_broad_cat_group_stacked       <- runsql("SELECT * FROM year_sim_ios_broad_cat_group_stacked",descriptive_stats_db)
+#year_sim_ios_equity_style_box_long_stacked <- runsql("SELECT * FROM year_sim_ios_equity_style_box_long_stacked",descriptive_stats_db)
+#year_sim_ios_branding_name_stacked         <- runsql("SELECT * FROM year_sim_ios_branding_name_stacked",descriptive_stats_db)
 
 
 # ###############################################################################
-# cat("MERGE IOIS TEXT DATA", "\n")
+# cat("MERGE IOS TEXT DATA", "\n")
 # ###############################################################################
-# 
-# read_stats_iois <- merge(monthly_data_all4[,c(identifier,"yr","month")], read_stats_iois_f, 
-#                          by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# read_stats_iois <- read_stats_iois[order(read_stats_iois[,identifier],read_stats_iois[,"yr"],read_stats_iois[,"month"]),]
-# 
-# sim_stats_iois <- merge(monthly_data_all4[,c(identifier,"yr","month")], year_sim_iois_all_stacked,
-#                         by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# sim_stats_iois <- merge(sim_stats_iois, year_sim_iois_broad_cat_group_stacked, 
-#                         by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# sim_stats_iois <- merge(sim_stats_iois, year_sim_iois_equity_style_box_long_stacked, 
-#                         by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# sim_stats_iois <- merge(sim_stats_iois, year_sim_iois_branding_name_stacked, 
-#                         by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# sim_stats_iois <- sim_stats_iois[order(sim_stats_iois[,identifier],sim_stats_iois[,"yr"],sim_stats_iois[,"month"]),]
-# 
-# text_stats_iois <- merge(read_stats_iois, sim_stats_iois, by.x=c(identifier,"yr","month"), 
-#                          by.y=c(identifier,"yr","month"), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# 
-# #rm2(read_stats_iois_f)
-# #rm2(year_sim_iois_all_stacked,year_sim_iois_broad_cat_group_stacked)
-# #rm2(year_sim_iois_equity_style_box_long_stacked,year_sim_iois_branding_name_stacked)
-# rm2(read_stats_iois,sim_stats_iois)
-# 
-# 
-# ###############################################################################
-# cat("MERGE PR TEXT DATA", "\n")
-# ###############################################################################
-# 
-# read_stats_pr <- merge(monthly_data_all4[,c(identifier,"yr","month")], read_stats_pr_f, 
-#                        by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# read_stats_pr <- read_stats_pr[order(read_stats_pr[,identifier],read_stats_pr[,"yr"],read_stats_pr[,"month"]),]
-# 
-# sim_stats_pr <- merge(monthly_data_all4[,c(identifier,"yr","month")], year_sim_pr_all_stacked,
-#                       by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# sim_stats_pr <- merge(sim_stats_pr, year_sim_pr_broad_cat_group_stacked, 
-#                       by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# sim_stats_pr <- merge(sim_stats_pr, year_sim_pr_equity_style_box_long_stacked, 
-#                       by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# sim_stats_pr <- merge(sim_stats_pr, year_sim_pr_branding_name_stacked, 
-#                       by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# sim_stats_pr <- sim_stats_pr[order(sim_stats_pr[,identifier],sim_stats_pr[,"yr"],sim_stats_pr[,"month"]),]
-# 
-# text_stats_pr <- merge(read_stats_pr, sim_stats_pr, by.x=c(identifier,"yr","month"), 
-#                        by.y=c(identifier,"yr","month"), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# 
-# #rm2(read_stats_pr_f)
-# #rm2(year_sim_pr_all_stacked,year_sim_pr_broad_cat_group_stacked)
-# #rm2(year_sim_pr_equity_style_box_long_stacked,year_sim_pr_branding_name_stacked)
-# rm2(read_stats_pr,sim_stats_pr)
-# 
-# 
+
+read_stats_ios <- merge(EurekahedgeHF_Excel_aca_full11[,c(identifier,"yr","month")], read_stats_ios_f, 
+                        #by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
+                        by.x=c(identifier), by.y=c(identifier), 
+                        all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+read_stats_ios <- read_stats_ios[order(read_stats_ios[,identifier],read_stats_ios[,"yr"],read_stats_ios[,"month"]),]
+
+sim_stats_ios <- merge(EurekahedgeHF_Excel_aca_full11[,c(identifier,"yr","month")], year_sim_ios_all_stacked,
+                        by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
+                       all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+sim_stats_ios <- merge(sim_stats_ios, year_sim_ios_main_investment_strategy_stacked, 
+                        by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
+                       all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+#sim_stats_ios <- merge(sim_stats_ios, year_sim_ios_equity_style_box_long_stacked, 
+#                        by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
+#                        all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+#sim_stats_ios <- merge(sim_stats_ios, year_sim_ios_branding_name_stacked, 
+#                        by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
+#                         all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+sim_stats_ios <- sim_stats_ios[order(sim_stats_ios[,identifier],sim_stats_ios[,"yr"],sim_stats_ios[,"month"]),]
+
+text_stats_ios <- merge(read_stats_ios, sim_stats_ios, by.x=c(identifier,"yr","month"), 
+                         by.y=c(identifier,"yr","month"), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+
+
+#rm2(year_sim_ios_all_stacked,year_sim_ios_broad_cat_group_stacked)
+rm2(read_stats_ios,sim_stats_ios)
+
+
+
 # ###############################################################################
 # cat("BACKUP DATA", "\n")
 # ###############################################################################
-# 
-# descriptive_stats_tables <- ListTables(descriptive_stats_db)
-# descriptive_stats_fields <- ListFields(descriptive_stats_db)
-# 
-# ExportTable(descriptive_stats_db,"monthly_data_all4",monthly_data_all4)
-# ExportTable(descriptive_stats_db,"text_stats_iois",text_stats_iois)
-# ExportTable(descriptive_stats_db,"text_stats_pr",text_stats_pr)
+
+ descriptive_stats_tables <- ListTables(descriptive_stats_db)
+ descriptive_stats_fields <- ListFields(descriptive_stats_db)
+ 
+ ExportTable(descriptive_stats_db,"EurekahedgeHF_Excel_aca_full11",EurekahedgeHF_Excel_aca_full11)
+ ExportTable(descriptive_stats_db,"text_stats_ios",text_stats_ios)
+
