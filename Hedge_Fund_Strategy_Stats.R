@@ -402,7 +402,7 @@ descriptive_stats_db <- paste(output_directory,"Descriptive_stats.s3db",sep="")
 cat("IMPORT DATA", "\n")
 ###############################################################################
 
-identifier <- "Fund_ID"
+identifier <- "fund_id"
 
 descriptive_stats_tables <- ListTables(descriptive_stats_db)
 descriptive_stats_fields <- ListFields(descriptive_stats_db)
@@ -423,16 +423,17 @@ colnames(text_stats_ios) <- tolower(colnames(text_stats_ios))
 cat("FIX DATA", "\n")
 ###############################################################################
 
-fund_type_no_na <- EurekahedgeHF_Excel_aca_full11[!(is.na(EurekahedgeHF_Excel_aca_full11[,"broad_cat_group"])),]
-fund_type_remove <- fund_type_no_na[((fund_type_no_na[,"broad_cat_group"]=="Alternative") |
-                                       (fund_type_no_na[,"broad_cat_group"]=="Tax Preferred")),]
+#fund_type_no_na <- EurekahedgeHF_Excel_aca_full11[!(is.na(EurekahedgeHF_Excel_aca_full11[,"main_investment_strategy"])),]
+#fund_type_remove <- fund_type_no_na[((fund_type_no_na[,"broad_cat_group"]=="Alternative") |
+#                                       (fund_type_no_na[,"broad_cat_group"]=="Tax Preferred")),]
+fund_type_remove <- EurekahedgeHF_Excel_aca_full11[is.na(EurekahedgeHF_Excel_aca_full11[,"main_investment_strategy"]),]
 fund_type_remove2 <- unique(fund_type_remove[,identifier])
 
-monthly_data_all4 <- monthly_data_all4[!(monthly_data_all4[,identifier] %in% fund_type_remove2),]
+EurekahedgeHF_Excel_aca_full11 <- EurekahedgeHF_Excel_aca_full11[!(EurekahedgeHF_Excel_aca_full11[,identifier] %in% fund_type_remove2),]
 text_stats_ios   <- text_stats_ios[!(text_stats_ios[,identifier] %in% fund_type_remove2),]
 
-monthly_data_all4 <- monthly_data_all4[(monthly_data_all4[,"yr"]>=1999 & monthly_data_all4[,"yr"]<=2009),]
-text_stats_ios   <- text_stats_ios[(text_stats_ios[,"yr"]>=1999 & text_stats_ios[,"yr"]<=2009),]
+EurekahedgeHF_Excel_aca_full11 <- EurekahedgeHF_Excel_aca_full11[(EurekahedgeHF_Excel_aca_full11[,"yr"]>=1992 & EurekahedgeHF_Excel_aca_full11[,"yr"]<=2012),]
+text_stats_ios   <- text_stats_ios[(text_stats_ios[,"yr"]>=1992 & text_stats_ios[,"yr"]<=2012),]
 
 monthly_data_all4_na_cols <- c("yr","pct_flow","net_flow","mktadjret_agg",
                                "mktadjret_agglag1","mktadjret_agglag2","mktadjret_agglag3","mktadjret_agglag4",
