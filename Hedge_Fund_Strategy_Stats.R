@@ -28,14 +28,15 @@ options(max.print=500)                               #Default maxprint option
 
 
 # Set location (1=HOME,2=WORK,3=CORALSEA FROM HOME,4=CORALSEA FROM WORK,5=CORALSEA FROM LAPTOP) 
-Location <- 1
+Location <- 3
+
 
 if (Location == 1) {
   #setwd("C:/Research_temp2/")
-  input_directory <- normalizePath("C:/Users/Brad/Dropbox/Research/Fund_Strategies/Data/",winslash="\\", mustWork=TRUE)
-  output_directory <- normalizePath("C:/Research_temp2/",winslash="\\", mustWork=TRUE)
-  function_directory <- normalizePath("C:/Users/Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
-  treetag_directory <- normalizePath("C:/TreeTagger",winslash="\\", mustWork=TRUE)    
+  input_directory <- normalizePath("C:/Users/S.Brad/Dropbox/Research/Fund_Strategies/Data/",winslash="\\", mustWork=TRUE)
+  output_directory <- normalizePath("F:/Research_temp2/",winslash="\\", mustWork=TRUE)
+  function_directory <- normalizePath("C:/Users/S.Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
+  treetag_directory <- normalizePath("F:/TreeTagger",winslash="\\", mustWork=TRUE)    
   
 } else if (Location == 2) {
   #setwd("C:/Research_temp2/")
@@ -46,11 +47,11 @@ if (Location == 1) {
   
 } else if (Location == 3) {
   #setwd("//tsclient/C/Research_temp2/")
-  input_directory <- normalizePath("//tsclient/C/Users/Brad/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
+  input_directory <- normalizePath("//tsclient/C/Users/S.Brad/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
   #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
   output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
-  function_directory <- normalizePath("//tsclient/C/Users/Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
-  treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE)    
+  function_directory <- normalizePath("//tsclient/C/Users/S.Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
+  treetag_directory <- normalizePath("//tsclient/F/TreeTagger",winslash="\\", mustWork=TRUE)    
   
 } else if (Location == 4) {
   #setwd("//tsclient/C/Research_temp2/")
@@ -309,11 +310,11 @@ quantile_cast <- function(x,data,dep_var,group_var,quantile_count){
 }
 
 diff_in_mean <- function(x,var_col,yr_col,quantile_first_col,quantile_last_col){
-  #x <- quintiles_pct_flow
+  #x <- quantiles_pct_flow
   #var_col <- "cut_var"
   #yr_col <- "yr"
   #quantile_first_col <- "X1"
-  #quantile_last_col <- "X5"
+  #quantile_last_col <- paste("X",quantile_nums[j],sep="")
   
   averages_quantile_cast <- ddply(x, c(yr_col,var_col), function(z){
     stats <- suppressWarnings(as.data.frame(describe(z[,-match(c("yr",var_col),names(z))], 
@@ -326,20 +327,44 @@ diff_in_mean <- function(x,var_col,yr_col,quantile_first_col,quantile_last_col){
   averages_quantile_cast2 <- ddply(averages_quantile_cast, c("yr"), function(z){
     return(suppressMessages(dcast(z[c(yr_col,"quantile",var_col,"mean")], cut_var~quantile)))
   })
-  
+  #unique(x[,var_col])
   averages_quantile_cast_ttest <- ddply(x, c(yr_col,var_col), function(z){
-    #z <- x[x[,"variable"]=="pct_flow",]
+    #z <- x[x[,var_col]=="fog_ios",]
+    #z <- x[x[,yr_col]==1992,]
+    #z <- x[x[,yr_col]==1992 & x[,var_col]=="main_investment_strategy_similarity_500pct_ios",]
     
-    ftest_results <- var.test(z[,quantile_first_col], z[,quantile_last_col])
-    ttest_results <- t.test(z[,quantile_first_col], z[,quantile_last_col])
-    test_data <- data.frame(t_minus_b=(ttest_results$estimate[2]-ttest_results$estimate[1]),
-                            t_stat=ttest_results$statistic,
-                            t_p_val=ttest_results$p.value,
-                            f_stat=ftest_results$statistic,
-                            f_p_val=ftest_results$p.value)
+    #cat("YR:",head(z[,yr_col],1) ,"VAR:",head(z[,var_col],1),"\n")
+    
+    na_check <- as.data.frame(apply(is.na(z), 2, all))
+    
+    if (na_check[row.names(na_check)==quantile_first_col,1] || na_check[row.names(na_check)==quantile_last_col,1])
+    {
+      #cat("TRUE","\n")
+      
+      test_data <- data.frame(t_minus_b=NA,
+                              t_stat=NA,
+                              t_p_val=NA,
+                              f_stat=NA,
+                              f_p_val=NA)
+      
+    } else
+    {
+      #cat("FALSE","\n")
+      
+      ftest_results <- var.test(z[,quantile_first_col], z[,quantile_last_col])
+      ftest_results2 <- do.call(rbind, ftest_results) 
+      ttest_results <- t.test(z[,quantile_first_col], z[,quantile_last_col])
+      ttest_results2 <- do.call(rbind, ttest_results) 
+      
+      test_data <- data.frame(t_minus_b=(as.numeric(ttest_results2[row.names(ttest_results2)=="estimate",2])-as.numeric(ttest_results2[row.names(ttest_results2)=="estimate",1])),
+                              t_stat=as.numeric(ttest_results2[row.names(ttest_results2)=="statistic",1]),
+                              t_p_val=as.numeric(ttest_results2[row.names(ttest_results2)=="p.value",1]),
+                              f_stat=as.numeric(ftest_results2[row.names(ftest_results2)=="statistic",1]),
+                              f_p_val=as.numeric(ftest_results2[row.names(ftest_results2)=="p.value",1]))
+    }
+  
     return(test_data)
   })
-  
   combined_table <- merge(averages_quantile_cast2, averages_quantile_cast_ttest, 
                           by.x=c(yr_col,var_col), by.y=c(yr_col,var_col), 
                           all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables = NA)
@@ -407,7 +432,7 @@ identifier <- "fund_id"
 descriptive_stats_tables <- ListTables(descriptive_stats_db)
 descriptive_stats_fields <- ListFields(descriptive_stats_db)
 
-EurekahedgeHF_Excel_aca_full11 <- runsql("SELECT * FROM EurekahedgeHF_Excel_aca_full11",descriptive_stats_db)
+EurekahedgeHF_Excel_aca_full <- runsql("SELECT * FROM EurekahedgeHF_Excel_aca_full13",descriptive_stats_db)
 text_stats_ios <- runsql("SELECT * FROM text_stats_ios",descriptive_stats_db)
 
 
@@ -415,7 +440,7 @@ text_stats_ios <- runsql("SELECT * FROM text_stats_ios",descriptive_stats_db)
 cat("MAKE ALL COLUMNS LOWER CASE", "\n")
 ###############################################################################
 
-colnames(EurekahedgeHF_Excel_aca_full11) <- tolower(colnames(EurekahedgeHF_Excel_aca_full11))
+colnames(EurekahedgeHF_Excel_aca_full) <- tolower(colnames(EurekahedgeHF_Excel_aca_full))
 colnames(text_stats_ios) <- tolower(colnames(text_stats_ios))
 
 
@@ -423,33 +448,28 @@ colnames(text_stats_ios) <- tolower(colnames(text_stats_ios))
 cat("FIX DATA", "\n")
 ###############################################################################
 
-#fund_type_no_na <- EurekahedgeHF_Excel_aca_full11[!(is.na(EurekahedgeHF_Excel_aca_full11[,"main_investment_strategy"])),]
+#fund_type_no_na <- EurekahedgeHF_Excel_aca_full[!(is.na(EurekahedgeHF_Excel_aca_full[,"main_investment_strategy"])),]
 #fund_type_remove <- fund_type_no_na[((fund_type_no_na[,"broad_cat_group"]=="Alternative") |
 #                                       (fund_type_no_na[,"broad_cat_group"]=="Tax Preferred")),]
-fund_type_remove <- EurekahedgeHF_Excel_aca_full11[is.na(EurekahedgeHF_Excel_aca_full11[,"main_investment_strategy"]),]
+fund_type_remove <- EurekahedgeHF_Excel_aca_full[is.na(EurekahedgeHF_Excel_aca_full[,"main_investment_strategy"]),]
 fund_type_remove2 <- unique(fund_type_remove[,identifier])
 
-EurekahedgeHF_Excel_aca_full11 <- EurekahedgeHF_Excel_aca_full11[!(EurekahedgeHF_Excel_aca_full11[,identifier] %in% fund_type_remove2),]
+EurekahedgeHF_Excel_aca_full <- EurekahedgeHF_Excel_aca_full[!(EurekahedgeHF_Excel_aca_full[,identifier] %in% fund_type_remove2),]
 text_stats_ios   <- text_stats_ios[!(text_stats_ios[,identifier] %in% fund_type_remove2),]
 
-EurekahedgeHF_Excel_aca_full11 <- EurekahedgeHF_Excel_aca_full11[(EurekahedgeHF_Excel_aca_full11[,"yr"]>=1992 & EurekahedgeHF_Excel_aca_full11[,"yr"]<=2012),]
+monthly_data_all4 <- EurekahedgeHF_Excel_aca_full[(EurekahedgeHF_Excel_aca_full[,"yr"]>=1992 & EurekahedgeHF_Excel_aca_full[,"yr"]<=2012),]
 text_stats_ios   <- text_stats_ios[(text_stats_ios[,"yr"]>=1992 & text_stats_ios[,"yr"]<=2012),]
 
-monthly_data_all4_na_cols <- c("yr","pct_flow","net_flow","mktadjret_agg",
-                               "mktadjret_agglag1","mktadjret_agglag2","mktadjret_agglag3","mktadjret_agglag4",
-                               "mktadjret_agg_sq","mnav_agg","mtna_agg","log_mtna_agg","age_y","sddret_agg",
-                               "sddret_agg","turn_ratio_agg","exp_ratio_agg","mgmt_fee_agg",
-                               "equity_style_box_long_lg_dv","equity_style_box_long_lv_dv","equity_style_box_long_lb_dv",
-                               "equity_style_box_long_mg_dv","equity_style_box_long_mv_dv","equity_style_box_long_mb_dv",
-                               "equity_style_box_long_sg_dv","equity_style_box_long_sv_dv","equity_style_box_long_sb_dv",
-                               "broad_cat_group_eq_dv","broad_cat_group_al_dv","broad_cat_group_fi_dv")
+monthly_data_all4_na_cols <- c("yr","pflow","nflow","aum",
+                               "mktadjret","mktadjret_lag1","mktadjret_lag2","mktadjret_lag3","mktadjret_lag4","mktadjret_sq")
+#"mnav_agg","mtna_agg","log_mtna_agg","age_y","sddret_agg","sddret_agg","turn_ratio_agg","exp_ratio_agg","mgmt_fee_agg")
 for (i in 1:length(monthly_data_all4_na_cols))
 {
   #i <- 1
   monthly_data_all4 <- monthly_data_all4[!(is.na(monthly_data_all4[,monthly_data_all4_na_cols[i]])),]
   
 }
-monthly_data_all4 <- subset(monthly_data_all4,select=-c(broad_cat_group,equity_style_box_long))
+#monthly_data_all4 <- subset(monthly_data_all4,select=-c(broad_cat_group,equity_style_box_long))
 
 text_stats_ios_sim_cols <- names(text_stats_ios)[grep("_similarity", names(text_stats_ios))] 
 for (i in 1:length(text_stats_ios_sim_cols))
@@ -465,7 +485,7 @@ text_stats_ios <- text_stats_ios[((!is.na(text_stats_ios[,"ari_ios"])) &
                                       (!is.na(text_stats_ios[,"fog_ios"])) &   
                                       (!is.na(text_stats_ios[,"smog_ios"]))),]
 
-rm2(fund_type_no_na,fund_type_remove,fund_type_remove2)
+rm2(fund_type_remove,fund_type_remove2)
 rm2(monthly_data_all4_na_cols,text_stats_ios_sim_cols)
 
 #fund_fee_no_na <- monthly_data_all4_trim[!(is.na(monthly_data_all4_trim[,"mgmt_fee_agg"])),]
@@ -477,18 +497,18 @@ rm2(monthly_data_all4_na_cols,text_stats_ios_sim_cols)
 cat("MERGE FUND AND TEXT DATA", "\n")
 ###############################################################################
 
-data_all0 <- merge(text_stats_ios, text_stats_pr, 
-                   by.x=c(identifier,"yr","month","branding_name","equity_style_box_long","broad_cat_group"),
-                   by.y=c(identifier,"yr","month","branding_name","equity_style_box_long","broad_cat_group"),
-                   all.x=FALSE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
+#data_all0 <- merge(text_stats_ios, text_stats_pr, 
+#                   by.x=c(identifier,"yr","month","branding_name","equity_style_box_long","broad_cat_group"),
+#                   by.y=c(identifier,"yr","month","branding_name","equity_style_box_long","broad_cat_group"),
+#                   all.x=FALSE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
 
-data_all <- merge(monthly_data_all4, data_all0, by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
+data_all <- merge(monthly_data_all4, text_stats_ios, by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
                   all.x=FALSE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
 
 data_all <- data_all[order(data_all[,identifier],data_all[,"yr"],data_all[,"month"]),]
 data_all <- data.frame(data_all,yr_month=paste(data_all$yr,data_all$month,sep="_"),stringsAsFactors=FALSE)
 
-rm2(data_all0)
+#rm2(data_all0)
 
 ###############################################################################
 cat("CREATE ADDITIONAL AVERAGE READABILITY MEASURES", "\n")
@@ -497,8 +517,6 @@ cat("CREATE ADDITIONAL AVERAGE READABILITY MEASURES", "\n")
 data_all  <- data.frame(data_all,
                         avg_grade_level_acf_ios=rowMeans(data_all[,c("ari_ios","coleman_liau_ios","flesch_kincaid_ios")],na.rm=TRUE),
                         avg_grade_level_ac_ios=rowMeans(data_all[,c("ari_ios","coleman_liau_ios")],na.rm=TRUE),
-                        avg_grade_level_acf_pr=rowMeans(data_all[,c("ari_pr","coleman_liau_pr","flesch_kincaid_pr")],na.rm=TRUE),
-                        avg_grade_level_ac_pr=rowMeans(data_all[,c("ari_pr","coleman_liau_pr")],na.rm=TRUE),
                         stringsAsFactors=FALSE)
 
 
@@ -508,34 +526,17 @@ cat("DESCRIPTIVE STATISTICS - FUND ATTRIBUTES (PANEL A)", "\n")
 
 fund_count <- as.numeric(length(unique(data_all[,identifier],comparables=FALSE)))
 
-descrip_stats_fund <- subset(data_all,select=-c(wficn,month,
-                                                mnav_agglag1,mnav_agglag2,mnav_agglag3,mnav_agglag4,
-                                                mtna_agglag1,mtna_agglag2,mtna_agglag3,mtna_agglag4,
-                                                mret_agglag1,mret_agglag2,mret_agglag3,mret_agglag4,
-                                                mktadjret_agglag1,mktadjret_agglag2,mktadjret_agglag3,mktadjret_agglag4,
-                                                sddret_agglag1,sddret_agglag2,sddret_agglag3,sddret_agglag4,
-                                                actual_12b1_agglag1,actual_12b1_agglag2,actual_12b1_agglag3,actual_12b1_agglag4,
-                                                max_12b1_agglag1,max_12b1_agglag2,max_12b1_agglag3,max_12b1_agglag4,
-                                                exp_ratio_agglag1,exp_ratio_agglag2,exp_ratio_agglag3,exp_ratio_agglag4,
-                                                mgmt_fee_agglag1,mgmt_fee_agglag2,mgmt_fee_agglag3,mgmt_fee_agglag4,
-                                                turn_ratio_agglag1,turn_ratio_agglag2,turn_ratio_agglag3,turn_ratio_agglag4,
+descrip_stats_fund <- subset(data_all,select=-c(fund_id,month,
+                                                mktadjret_lag1,mktadjret_lag2,mktadjret_lag3,mktadjret_lag4,
                                                 nflowlag1,nflowlag2,nflowlag3,nflowlag4,
                                                 pflowlag1,pflowlag2,pflowlag3,pflowlag4,
-                                                crsp_obj_cd,age_m,chgdt,
-                                                lipper_class,lipper_obj_cd,lipper_obj_name,lipper_asset_cd,lipper_tax_cd,
-                                                mktadjret_agglag1_sq,mktadjret_agglag2_sq,mktadjret_agglag3_sq,mktadjret_agglag4_sq,
-                                                log_mtna_agglag1,log_mtna_agglag2,log_mtna_agglag3,log_mtna_agglag4,
-                                                avg_mkt_explag1,avg_mkt_explag2,avg_mkt_explag3,avg_mkt_explag4,
-                                                lipper_asset_cd_eq_dv,lipper_asset_cd_tx_dv,lipper_asset_cd_mb_dv,lipper_tax_cd_t_dv,lipper_tax_cd_te_dv,
-                                                sdnet_flow,sdpct_flow,sdnet_flowlag1,sdpct_flowlag1,
-                                                broad_cat_group_alt_dv,broad_cat_group_tp_dv))
+                                                age_m,chgdt,
+                                                mktadjret_lag1_sq,mktadjret_lag2_sq,mktadjret_lag3_sq,mktadjret_lag4_sq,
+                                                sdnet_flowlag1,sdpct_flowlag1))
 
-descrip_stats_fund2 <- descrip_stats_fund[c("yr","pct_flow","mktadjret_agg","mktadjret_agg_sq","fundretmktneg","mnav_agg","mtna_agg","age_y",
-                                            "sddret_agg","turn_ratio_agg","actual_12b1_agg","exp_ratio_agg","avg_mkt_exp","mgmt_fee_agg",
-                                            "equity_style_box_long_lg_dv","equity_style_box_long_lv_dv","equity_style_box_long_lb_dv",
-                                            "equity_style_box_long_mg_dv","equity_style_box_long_mv_dv","equity_style_box_long_mb_dv",
-                                            "equity_style_box_long_sg_dv","equity_style_box_long_sv_dv","equity_style_box_long_sb_dv",
-                                            "broad_cat_group_eq_dv","broad_cat_group_al_dv","broad_cat_group_fi_dv")]
+descrip_stats_fund2 <- descrip_stats_fund[c("yr","pflow","sdpct_flow","mktadjret","mktadjret_sq","age_y",
+                                            "aum","management_fee","performance_fee","other_fee",
+                                            "flagship_bin","closed_bin","limited_bin","dead_bin")]
 #descriptive_stats_PA <- as.data.frame(describe(descrip_stats_fund2[,-match("yr",names(descrip_stats_fund2))], 
 #                                               na.rm=TRUE,skew=TRUE,range=TRUE),stringsAsFactors=FALSE)
 #descriptive_stats_PA[,"var"] <- row.names(descriptive_stats_PA)
@@ -559,8 +560,8 @@ rm2(descrip_stats_fund)
 cat("DESCRIPTIVE STATISTICS - IOS (PANEL B)", "\n")
 ###############################################################################
 
-descrip_stats_ios <- subset(data_all,select=-c(wficn,month,punct_ios,conjunctions_ios,prepositions_ios,normalized_space_ios, 
-                                                pronouns_ios,ttr_ios,broad_cat_group,equity_style_box_long,branding_name))
+descrip_stats_ios <- subset(data_all,select=-c(fund_id,month,punct_ios,conjunctions_ios,prepositions_ios,normalized_space_ios, 
+                                                pronouns_ios,ttr_ios))
 
 #descrip_stats_ios_sim_cols <- names(descrip_stats_ios)[grep("_050pct_ios", names(descrip_stats_ios))] 
 descrip_stats_ios_sim_cols <- names(descrip_stats_ios)[grep("pct_ios", names(descrip_stats_ios))] 
@@ -586,7 +587,7 @@ cat("DESCRIPTIVE STATISTICS - FUND ATTRIBUTES BY YEAR (PANEL A)", "\n")
 ###############################################################################
 
 fund_count_yr <- ddply(data_all, "yr", function(x) {data.frame(var="number_of_funds", 
-                                                               count=as.numeric(length(unique(x$wficn,comparables=FALSE))),
+                                                               count=as.numeric(length(unique(x$fund_id,comparables=FALSE))),
                                                                stringsAsFactors=FALSE)})
 
 #descriptive_stats_yr_temp_PA <- describeBy(descrip_stats_fund2[,-match("yr",names(descrip_stats_fund2))], 
@@ -658,11 +659,11 @@ corr_text_vars_ios <- c("ari_ios","coleman_liau_ios","flesch_kincaid_ios","fog_i
 #correlation <- as.matrix(cor(cbind(monthly_data_all4[,"pct_flow"],text_stats_ios[,corr_text_vars_ios]),
 #                             use="na.or.complete", method=c("pearson", "kendall", "spearman")))
 
-correlation_stars1_PA <- corstar(text_stats_ios[,corr_text_vars_ios],round=3)
-write.csv(correlation_stars1_PA,file=paste(output_directory,"correlation_stars1_PA.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
+#correlation_stars1_PA <- corstar(text_stats_ios[,corr_text_vars_ios],round=3)
+#write.csv(correlation_stars1_PA,file=paste(output_directory,"correlation_stars1_PA.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
 
-#correlation_stars2_PA <- corstarsl(text_stats_ios[,corr_text_vars_ios],round=3)
-#write.csv(correlation_stars2_PA,file=paste(output_directory,"correlation_stars2_PA.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
+correlation_stars2_PA <- corstarsl(text_stats_ios[,corr_text_vars_ios],round=3)
+write.csv(correlation_stars2_PA,file=paste(output_directory,"correlation_stars2_PA.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
 
 
 ###############################################################################
@@ -671,18 +672,12 @@ cat("COMPUTE DV FOR ABOVE AND BELOW SIMILARITY/READABILITY QUANTILE - IOS", "\n"
 
 quintile_vars_ios <- c("ari_ios","coleman_liau_ios","flesch_kincaid_ios","fog_ios","smog_ios",
                         "avg_grade_level_ios","avg_grade_level_ac_ios","avg_grade_level_acf_ios",
-                        "all_similarity_050pct_ios","broad_cat_group_similarity_050pct_ios",
-                        "equity_style_box_long_similarity_050pct_ios","branding_name_similarity_050pct_ios",
-                        "all_similarity_100pct_ios","broad_cat_group_similarity_100pct_ios",
-                        "equity_style_box_long_similarity_100pct_ios","branding_name_similarity_100pct_ios",
-                        "all_similarity_250pct_ios","broad_cat_group_similarity_250pct_ios",
-                        "equity_style_box_long_similarity_250pct_ios","branding_name_similarity_250pct_ios",
-                        "all_similarity_500pct_ios","broad_cat_group_similarity_500pct_ios",
-                        "equity_style_box_long_similarity_500pct_ios","branding_name_similarity_500pct_ios",
-                        "all_similarity_750pct_ios","broad_cat_group_similarity_750pct_ios",
-                        "equity_style_box_long_similarity_750pct_ios","branding_name_similarity_750pct_ios",
-                        "all_similarity_900pct_ios","broad_cat_group_similarity_900pct_ios",
-                        "equity_style_box_long_similarity_900pct_ios","branding_name_similarity_900pct_ios")
+                        "all_similarity_050pct_ios","main_investment_strategy_similarity_050pct_ios",
+                        "all_similarity_100pct_ios","main_investment_strategy_similarity_100pct_ios",
+                        "all_similarity_250pct_ios","main_investment_strategy_similarity_250pct_ios",
+                        "all_similarity_500pct_ios","main_investment_strategy_similarity_500pct_ios",
+                        "all_similarity_750pct_ios","main_investment_strategy_similarity_750pct_ios",
+                        "all_similarity_900pct_ios","main_investment_strategy_similarity_900pct_ios")
 
 quintile_vars_data_ios <- descriptive_stats_yr_stats_ios0[tolower(descriptive_stats_yr_stats_ios0[,"var"]) %in% quintile_vars_ios,
                                                             c("yr","var","quartile1","quartile3")] 
@@ -706,9 +701,10 @@ rm2(quintile_vars_ios,quintile_vars_data_ios,quintile_vars_dv_temp_ios)
 cat("MERGE QUANTILE DVs", "\n")
 ###############################################################################
 
-quintile_vars_dv <- merge(quintile_vars_dv_temp2_ios, quintile_vars_dv_temp2_pr, by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"),
-                          all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
-
+#quintile_vars_dv <- merge(quintile_vars_dv_temp2_ios, quintile_vars_dv_temp2_pr, 
+#                          by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"),
+#                          all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
+quintile_vars_dv <- quintile_vars_dv_temp2_ios
 quintile_vars_dv <- quintile_vars_dv[order(quintile_vars_dv[,identifier],
                                            quintile_vars_dv[,"yr"],
                                            quintile_vars_dv[,"month"]),]
@@ -725,28 +721,19 @@ data_all <- data_all[order(data_all[,identifier],
 cat("UNIVARIATE ANALYSIS", "\n")
 ###############################################################################
 
-data_all_univariate <- data_all[,c("yr","pct_flow",
+data_all_univariate <- data_all[,c("yr","pflow",
                                    "avg_grade_level_ios","avg_grade_level_acf_ios","avg_grade_level_ac_ios",
                                    "ari_ios","coleman_liau_ios","flesch_kincaid_ios","fog_ios","smog_ios",
-                                   "all_similarity_050pct_ios","broad_cat_group_similarity_050pct_ios",
-                                   "equity_style_box_long_similarity_050pct_ios","branding_name_similarity_050pct_ios",
-                                   "all_similarity_100pct_ios","broad_cat_group_similarity_100pct_ios",
-                                   "equity_style_box_long_similarity_100pct_ios","branding_name_similarity_100pct_ios",
-                                   "all_similarity_250pct_ios","broad_cat_group_similarity_250pct_ios",
-                                   "equity_style_box_long_similarity_250pct_ios","branding_name_similarity_250pct_ios",
-                                   "all_similarity_500pct_ios","broad_cat_group_similarity_500pct_ios",
-                                   "equity_style_box_long_similarity_500pct_ios","branding_name_similarity_500pct_ios",
-                                   "all_similarity_750pct_ios","broad_cat_group_similarity_750pct_ios",
-                                   "equity_style_box_long_similarity_750pct_ios","branding_name_similarity_750pct_ios",
-                                   "all_similarity_900pct_ios","broad_cat_group_similarity_900pct_ios",
-                                   "equity_style_box_long_similarity_900pct_ios","branding_name_similarity_900pct_ios",
-                                   "mktadjret_agglag1","sddret_agglag1","age_y","log_mtna_agg","mnav_agg",
-                                   "turn_ratio_agg","actual_12b1_agg","exp_ratio_agg","avg_mkt_exp")]
+                                   "all_similarity_050pct_ios","main_investment_strategy_similarity_050pct_ios",
+                                   "all_similarity_100pct_ios","main_investment_strategy_similarity_100pct_ios",
+                                   "all_similarity_250pct_ios","main_investment_strategy_similarity_250pct_ios",
+                                   "all_similarity_500pct_ios","main_investment_strategy_similarity_500pct_ios",
+                                   "all_similarity_750pct_ios","main_investment_strategy_similarity_750pct_ios",
+                                   "all_similarity_900pct_ios","main_investment_strategy_similarity_900pct_ios",
+                                   "mktadjret_lag1","age_y")]
 
 univariate_vars <- colnames(data_all_univariate)[!(colnames(data_all_univariate)=="yr" | 
-                                                     colnames(data_all_univariate)=="pct_flow" |
-                                                     colnames(data_all_univariate)=="actual_12b1_agg" | 
-                                                     colnames(data_all_univariate)=="avg_mkt_exp")]
+                                                     colnames(data_all_univariate)=="pflow")]
 
 
 ###############################################################################
@@ -770,12 +757,12 @@ for (i in 1:length(quantile_type))
     if (quantile_type[i]=="year")
     {
       quantiles_pct_flow_temp <- lapply(univariate_vars,quantile_yr_cast,data=data_all_univariate,
-                                        dep_var="pct_flow",group_var="yr",quantile_count=quantile_nums[j])
+                                        dep_var="pflow",group_var="yr",quantile_count=quantile_nums[j])
       
     } else if (quantile_type[i]=="agg")
     {
       quantiles_pct_flow_temp <- lapply(univariate_vars,quantile_cast,data=data_all_univariate,
-                                        dep_var="pct_flow",group_var="yr",quantile_count=quantile_nums[j])
+                                        dep_var="pflow",group_var="yr",quantile_count=quantile_nums[j])
     } else
     {
       cat("ERROR!!", "\n")
@@ -862,8 +849,8 @@ cat("PANEL REGRESSION", "\n")
 data_all.pd <- pdata.frame(data_all, index=c(identifier, "yr_month"), drop.index=TRUE, row.names=TRUE)
 
 
-#dep_var <- c("pct_flow","net_flow")
-dep_var <- c("pct_flow")
+#dep_var <- c("pflow","nflow")
+dep_var <- c("pflow")
 
 index_vars <- c(identifier, "yr_month")
 
@@ -959,7 +946,7 @@ for (i in 1:length(dep_var))
   
   out_file_name <- paste("reg_compare_plm",dep_var[i],deparse(substitute(data_all)),note,sep="_")
   
-  if (dep_var[i]=="pct_flow")
+  if (dep_var[i]=="pflow")
   {
     #vars_ext  <- "pflowlag1 + pflowlag2 + pflowlag3"
     vars_ext  <- ""
@@ -1074,7 +1061,7 @@ for (i in 1:length(dep_var))
   
   out_file_name <- paste("reg_compare_plm",dep_var[i],deparse(substitute(data_99_00)),note,sep="_")
   
-  if (dep_var[i]=="pct_flow")
+  if (dep_var[i]=="pflow")
   {
     #vars_ext  <- "pflowlag1 + pflowlag2 + pflowlag3"
     vars_ext  <- ""
@@ -1169,7 +1156,7 @@ for (i in 1:length(dep_var))
   
   out_file_name <- paste("reg_compare_plm",dep_var[i],deparse(substitute(data_01_07)),note,sep="_")
   
-  if (dep_var[i]=="pct_flow")
+  if (dep_var[i]=="pflow")
   {
     #vars_ext  <- "pflowlag1 + pflowlag2 + pflowlag3"
     vars_ext  <- ""
@@ -1263,7 +1250,7 @@ for (i in 1:length(dep_var))
   
   out_file_name <- paste("reg_compare_plm",dep_var[i],deparse(substitute(data_08_09)),note,sep="_")
   
-  if (dep_var[i]=="pct_flow")
+  if (dep_var[i]=="pflow")
   {
     #vars_ext  <- "pflowlag1 + pflowlag2 + pflowlag3"
     vars_ext  <- ""
@@ -1601,7 +1588,7 @@ cat("PRINCIPAL COMPONENT REGRESSION", "\n")
 ###############################################################################
 
 data_pc.pd <- pdata.frame(dat_all_pc, index=c(identifier, "yr_month"), drop.index=TRUE, row.names=TRUE)
-dep_var_pc <- c("pct_flow")
+dep_var_pc <- c("pflow")
 
 index_vars_pc <- c(identifier, "yr_month")
 controls_pc  <- "mktadjret_agglag1 + mktadjret_agglag2 + mktadjret_agglag3 + sddret_agglag1 + age_y + log_mtna_agg"
@@ -1618,7 +1605,7 @@ for (i in 1:length(dep_var_pc))
   
   out_file_name <- paste("reg_compare_plm",dep_var_pc[i],deparse(substitute(dat_all_pc)),note,sep="_")
   
-  if (dep_var_pc[i]=="pct_flow")
+  if (dep_var_pc[i]=="pflow")
   {
     #vars_ext  <- "pflowlag1 + pflowlag2 + pflowlag3"
     vars_ext  <- ""

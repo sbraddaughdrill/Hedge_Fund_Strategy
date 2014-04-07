@@ -37,10 +37,10 @@ Location <- 3
 
 if (Location == 1) {
   #setwd("C:/Research_temp2/")
-  input_directory <- normalizePath("C:/Users/Brad/Dropbox/Research/Fund_Strategies/Data/",winslash="\\", mustWork=TRUE)
-  output_directory <- normalizePath("C:/Research_temp2/",winslash="\\", mustWork=TRUE)
-  function_directory <- normalizePath("C:/Users/Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
-  treetag_directory <- normalizePath("C:/TreeTagger",winslash="\\", mustWork=TRUE)    
+  input_directory <- normalizePath("C:/Users/S.Brad/Dropbox/Research/Fund_Strategies/Data/",winslash="\\", mustWork=TRUE)
+  output_directory <- normalizePath("F:/Research_temp2/",winslash="\\", mustWork=TRUE)
+  function_directory <- normalizePath("C:/Users/S.Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
+  treetag_directory <- normalizePath("F:/TreeTagger",winslash="\\", mustWork=TRUE)    
   
 } else if (Location == 2) {
   #setwd("C:/Research_temp2/")
@@ -51,11 +51,11 @@ if (Location == 1) {
   
 } else if (Location == 3) {
   #setwd("//tsclient/C/Research_temp2/")
-  input_directory <- normalizePath("//tsclient/C/Users/Brad/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
+  input_directory <- normalizePath("//tsclient/C/Users/S.Brad/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
   #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
   output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
-  function_directory <- normalizePath("//tsclient/C/Users/Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
-  treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE)    
+  function_directory <- normalizePath("//tsclient/C/Users/S.Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
+  treetag_directory <- normalizePath("//tsclient/F/TreeTagger",winslash="\\", mustWork=TRUE)    
   
 } else if (Location == 4) {
   #setwd("//tsclient/C/Research_temp2/")
@@ -90,10 +90,10 @@ source(file=paste(function_directory,"functions_statistics.R",sep=""),echo=FALSE
 source(file=paste(function_directory,"functions_utilities.R",sep=""),echo=FALSE)
 
 
-#unknowns_strings <- c("",".",NA,"na","n/a","n\a","NA","N/A","N\\A","null","NULL",NULL,"nan","NaN",
-#                      NaN,NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",NA_character_,
+#unknowns_strings <- c("",".",NA,"na","n/a","n\a","NA","N/A","N\\A","<NA>","null","NULL",NULL,"nan","NaN",NaN,
+#                      NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",NA_character_,
 #                      "NA_character_",NA_real_,"NA_real_")
-unknowns_strings <- c(" ","\n","",".","n/a","na","NA",NA,"null","NULL",NULL,"nan","NaN",NaN,
+unknowns_strings <- c(" ","\n","",".","n/a","na","NA",NA,"<NA>","null","NULL",NULL,"nan","NaN",NaN,Inf,
                       NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
                       NA_character_,"NA_character_",NA_real_,"NA_real_")
 
@@ -354,7 +354,7 @@ calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,
   #j <- 1
   
   #merged_data <- temp_stacked_full
-  #group_var <- "Main.Investment.Strategy"
+  #group_var <- "main_investment_strategy"
   #group_var_value <- text_group_vars[i]
   #text_type <- text_variables[j]
   #id_var <- identifier
@@ -371,7 +371,9 @@ calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,
     
     temp_years <- get(paste("years",text_type,text_percentages[k],sep="_"))
     
-    temp_avg <- data.frame(yr=integer(),group=character(),id_temp=integer(),avg_similarity=numeric(),stringsAsFactors=FALSE) 
+    temp_avg <- data.frame(yr=integer(),
+                           group=character(),
+                           id_temp=integer(),avg_similarity=numeric(),stringsAsFactors=FALSE) 
     colnames(temp_avg)[match("id_temp",names(temp_avg))] <- id_var
     
     for (l in 1:length(temp_years))
@@ -384,6 +386,7 @@ calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,
       temp_input_df_name <- paste(temp_input_data_name_short,text_percentages[k],text_type,temp_years[l],sep="_")
       temp_sql_str <- paste("SELECT * FROM",temp_input_df_name,sep=" ")
       temp_data <- runsql(temp_sql_str,similarity_db)
+      colnames(temp_data) <- tolower(colnames(temp_data))
       
       temp_data <- trim_by_format(temp_data,"character")
       temp_data <- unknown_to_NA(temp_data,unknowns_strings)
@@ -399,7 +402,8 @@ calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,
       temp_id_cat <- temp_id_cat[!(is.na(temp_id_cat[,group_var])),]
       
       temp_data_obj <- merge(temp_id_cat, temp_data[,c("yr",id_var)], 
-                             by.x=c(id_var), by.y=c(id_var), all.x=FALSE, all.y=TRUE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+                             by.x=c(id_var), by.y=c(id_var), 
+                             all.x=FALSE, all.y=TRUE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
       #temp_data_obj <- merge(temp_id_cat, temp_data[,c("yr",id_var)], 
       #                       by.x=c(id_var), by.y=c(id_var), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
       
@@ -418,18 +422,18 @@ calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,
       
       if (nrow(temp_data_full_no_na)>0)
       {
-        temp_data_full_no_na_ids <- paste("X",temp_data_full_no_na[,id_var],sep="")
+        temp_data_full_no_na_ids <- paste("x",temp_data_full_no_na[,id_var],sep="")
         temp_data_full_no_na_trim <- temp_data_full_no_na[,c("yr","group",id_var,temp_data_full_no_na_ids)]
         temp_data_full_no_na_trim[,id_var] <- as.integer(temp_data_full_no_na_trim[,id_var])
         
         temp_data_full_cat_temp <- temp_data_full_no_na_trim[toupper(temp_data_full_no_na_trim[,"group"])==group_var_value,]
         
-        temp_data_full_cat_temp_ids <- paste("X",temp_data_full_cat_temp[,id_var],sep="")
+        temp_data_full_cat_temp_ids <- paste("x",temp_data_full_cat_temp[,id_var],sep="")
         temp_data_full_cat_temp_trim <- temp_data_full_cat_temp[,c("yr","group",id_var,temp_data_full_cat_temp_ids)]
         
         if (nrow(temp_data_full_cat_temp)==1)
         {
-          #temp_data_full_cat_temp_ids <- paste("X",temp_data_full_cat_temp[,id_var],sep="")
+          #temp_data_full_cat_temp_ids <- paste("x",temp_data_full_cat_temp[,id_var],sep="")
           #temp_data_full_cat_temp_trim <- temp_data_full_cat_temp[,c("yr","group",id_var,temp_data_full_cat_temp_ids)]
           
           temp_data_full_cat_temp_avg <- data.frame(yr=temp_data_full_cat_temp_trim[,"yr"],
@@ -446,7 +450,7 @@ calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,
           
         } else if (nrow(temp_data_full_cat_temp)>1)
         {
-          #temp_data_full_cat_temp_ids <- paste("X",temp_data_full_cat_temp[,id_var],sep="")
+          #temp_data_full_cat_temp_ids <- paste("x",temp_data_full_cat_temp[,id_var],sep="")
           #temp_data_full_cat_temp_trim <- temp_data_full_cat_temp[,c("yr","group",id_var,temp_data_full_cat_temp_ids)]
           
           temp_data_full_cat_temp_avg <- data.frame(yr=temp_data_full_cat_temp_trim[,"yr"],
@@ -492,7 +496,8 @@ calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,
     
     colnames(temp_avg)[4] <- paste("similarity",text_percentages[k],text_type,sep="_")
     
-    temp_stacked <- merge(temp_stacked, subset(temp_avg,select=-c(group)), by.x=c(id_var,"yr"), by.y=c(id_var,"yr"), 
+    temp_stacked <- merge(temp_stacked, subset(temp_avg,select=-c(group)), 
+                          by.x=c(id_var,"yr"), by.y=c(id_var,"yr"), 
                           all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
     
     #rm(temp_years,temp_avg)
@@ -515,8 +520,6 @@ cat("SECTION: LIBRARIES", "\n")
 update.packages(ask=FALSE, checkBuilt=TRUE)
 
 #Load External Packages
-#external_packages <- c("arules","bigalgebra","biganalytics","bigmemory","bigtabulate","clv","ff",
-#                       "foreach","pracma","rJava","snow","Snowball","snowfall","synchronicity","XML")
 external_packages <- c("compare","cwhmisc","data.table","DataCombine","fastmatch","foreign","formatR","gdata",
                        "gtools","Hmisc","installr","knitr","koRpus","lmtest","lubridate","markdown","memisc","mitools",
                        "pander","pbapply","plm","plyr","psych","quantreg","R.oo","R2wd","reporttools","rms","RSQLite",
@@ -540,53 +543,29 @@ descriptive_stats_db <- paste(output_directory,"Descriptive_stats.s3db",sep="")
 cat("IMPORT READABILITY TEXT DATA", "\n")
 ###############################################################################
 
-identifier <- "Fund_ID"
+identifier <- "fund_id"
 
 #Import .CSV files
 
 read_stats_ios_f <- as.data.frame(fread(paste(output_directory,"read_stats_ios_f.csv",sep=""),na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
 
-#for(i in which(sapply(read_stats_ios_f,class)=="character"))
-#{
-#  read_stats_ios_f[[i]] = trim(read_stats_ios_f[[i]])
-#}
-
-#read_stats_ios_f_char_cols <- colnames(read_stats_ios_f)[laply(read_stats_ios_f,class,.progress = "text",.drop = FALSE)=="character"]
-#read_stats_ios_f <- trim_dt(read_stats_ios_f,read_stats_ios_f_char_cols)
-#read_stats_ios_f <- as.data.frame(read_stats_ios_f,stringsAsFactors=FALSE)
 read_stats_ios_f <- trim_by_format(read_stats_ios_f,"character")
 
-#for (i in 1:ncol(read_stats_ios_f))
-#{
-#  read_stats_ios_f[,i] <- unknownToNA(read_stats_ios_f[,i], unknown=c("",".","NA_character_","NA_Real_","NA",NA),force=TRUE)
-#  read_stats_ios_f[,i] <- ifelse(is.na(read_stats_ios_f[,i]),NA, read_stats_ios_f[,i])
-#}
 read_stats_ios_f <- data.table(read_stats_ios_f)[, (colnames(read_stats_ios_f)) := llply(.SD, vector_clean_na,unknowns=unknowns_strings,.progress = "text"), .SDcols = colnames(read_stats_ios_f)]
 read_stats_ios_f <- as.data.frame(read_stats_ios_f,stringsAsFactors=FALSE)
 
 sample_data_all <- as.data.frame(read.csv(file=paste(output_directory,"sample_data_all.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
 
-#for(i in which(sapply(sample_data_all,class)=="character"))
-#{
-#  sample_data_all[[i]] = trim(sample_data_all[[i]])
-#}
-#sample_data_all_char_cols <- colnames(sample_data_all)[laply(sample_data_all,class,.progress = "text",.drop = FALSE)=="character"]
-#sample_data_all <- trim_dt(sample_data_all,sample_data_all_char_cols)
-#sample_data_all <- as.data.frame(sample_data_all,stringsAsFactors=FALSE)
-
 sample_data_all <- trim_by_format(sample_data_all,"character")
 
-
-#for (i in 1:ncol(sample_data_all))
-#{
-#  sample_data_all[,i] <- unknownToNA(sample_data_all[,i], unknown=c("",".","NA_character_","NA_Real_","NA",NA),force=TRUE)
-#  sample_data_all[,i] <- ifelse(is.na(sample_data_all[,i]),NA, sample_data_all[,i])
-#} 
 sample_data_all <- data.table(sample_data_all)[, (colnames(sample_data_all)) := llply(.SD, vector_clean_na,unknowns=unknowns_strings,.progress = "text"), .SDcols = colnames(sample_data_all)]
 sample_data_all <- as.data.frame(sample_data_all,stringsAsFactors=FALSE)
 
 read_stats_ios_f <- subset(read_stats_ios_f,select=-c(foreign_ios))
 sample_data_all <- subset(sample_data_all,select=-c(Strategy))
+
+colnames(read_stats_ios_f) <- tolower(colnames(read_stats_ios_f))
+colnames(sample_data_all) <- tolower(colnames(sample_data_all))
 
 
 ###############################################################################
@@ -623,26 +602,17 @@ for (i in 1:length(text_variables))
     
     temp_input_data_name_full <- paste(temp_input_data_name_short,text_percentages[j],text_variables[i],"avg",sep="_")
     
-    year_sim <- as.data.frame(fread(paste(output_directory,temp_input_data_name_full,".csv",sep=""),na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
+    year_sim <- as.data.frame(fread(paste(output_directory,temp_input_data_name_full,".csv",sep=""),na.strings="NA",stringsAsFactors=FALSE),
+                              stringsAsFactors=FALSE)
     
-    #assign(paste("year_sim",text_variables[j],"all_stacked",sep="_"), sample_data_all_temp, envir=.GlobalEnv)
-    
-    #for(k in which(sapply(year_sim,class)=="character"))
-    #{
-    #  year_sim[[k]] = trim(year_sim[[k]])
-    #}
+    colnames(year_sim) <- tolower(colnames(year_sim))
     
     year_sim_char_cols <- colnames(year_sim)[laply(year_sim,class,.progress = "text",.drop = FALSE)=="character"]
     year_sim <- trim_dt(year_sim,year_sim_char_cols)
     year_sim <- as.data.frame(year_sim,stringsAsFactors=FALSE)
     
-    #for (k in 1:ncol(year_sim))
-    #{
-    #  year_sim[,k] <- unknownToNA(year_sim[,k], unknown=c("",".","NA_character_","NA_Real_","NA",NA),force=TRUE)
-    #  year_sim[,k] <- ifelse(is.na(year_sim[,k]),NA, year_sim[,k])
-    #}
-    
-    year_sim <- data.table(year_sim)[, (colnames(year_sim)) := llply(.SD, vector_clean_na,unknowns=unknowns_strings,.progress = "text"), .SDcols = colnames(year_sim)]
+    year_sim <- data.table(year_sim)[, (colnames(year_sim)) := llply(.SD, vector_clean_na,unknowns=unknowns_strings,.progress = "text"), 
+                                     .SDcols = colnames(year_sim)]
     year_sim <- as.data.frame(year_sim,stringsAsFactors=FALSE)
     
     year_sim_years <- colnames(year_sim)
@@ -690,75 +660,9 @@ year_sim_ios_all_stacked <- year_sim_ios_all_stacked[order(year_sim_ios_all_stac
 colnames(year_sim_ios_all_stacked) <- paste("all",colnames(year_sim_ios_all_stacked),sep="_")
 colnames(year_sim_ios_all_stacked)[1:2] <- c(identifier,"yr")
 
-# 
-# 
-# ###############################################################################
-# cat("IMPORT MFLINKS DATA", "\n")
-# ###############################################################################
-# 
-# mflinks_tables <- ListTables(mflinks_db)
-# mflinks_fields <- ListFields(mflinks_db)
-# 
-# mflink1_fields <- mflinks_fields[mflinks_fields[,1]=="mflink1",]
-# mflink1 <- runsql("SELECT * FROM mflink1",mflinks_db)
-# 
-# for(i in which(sapply(mflink1,class)=="character"))
-# {
-#   mflink1[[i]] = trim(mflink1[[i]])
-# }
-# 
-# for (i in 1:ncol(mflink1))
-# {
-#   mflink1[,i] <- unknownToNA(mflink1[,i], unknown=c("",".","NA_character_","NA_Real_","NA",NA),force=TRUE)
-#   mflink1[,i] <- ifelse(is.na(mflink1[,i]),NA, mflink1[,i])
-# } 
-# 
-# mflink1 <- mflink1[!(is.na(mflink1[,"crsp_fundno"])),]
-# 
-# 
-# 
-# 
-# ###############################################################################
-# cat("IMPORT MDMF DATA", "\n")
-# ###############################################################################
-# 
-# mdmf_tables <- ListTables(msd_db)
-# mdmf_fields <- ListFields(msd_db)
-# 
-# mdmf_fields <- mdmf_fields[mdmf_fields[,1]=="Mdmf_data_raw",]
-# Mdmf_data_raw <- runsql("SELECT * FROM Mdmf_data_raw",msd_db)
-# 
-# for(i in which(sapply(Mdmf_data_raw,class)=="character"))
-# {
-#   Mdmf_data_raw[[i]] = trim(Mdmf_data_raw[[i]])
-# }
-# 
-# for (i in 1:ncol(Mdmf_data_raw))
-# {
-#   Mdmf_data_raw[,i] <- unknownToNA(Mdmf_data_raw[,i], unknown=c("",".","NA_character_","NA_Real_","NA",NA),force=TRUE)
-#   Mdmf_data_raw[,i] <- ifelse(is.na(Mdmf_data_raw[,i]),NA, Mdmf_data_raw[,i])
-# } 
-# 
-# Mdmf_data_trim <- subset(Mdmf_data_raw,select=c(CUSIP, Broad_Cat_Group, Global_Cat, MS_Cat, MS_Inst_Cat, 
-#                                                 MS_Rating_Overall, US_Broad_Asset_Class, Equity_Style_Box_Long, MS_Anal_Rating, 
-#                                                 Firm_Name, Branding_Name, Prospectus_Objective))
-# Mdmf_data_trim <- Mdmf_data_trim[order(Mdmf_data_trim[,"CUSIP"]),]
-# # 
-# 
-# 
-# 
-# 
-# ###############################################################################
-# cat("GET CRSP_FUNDNOS FOR EVERY WFICN IN SMAPLE_DATA_ALL", "\n")
-# ###############################################################################
-# 
-# sample_data_all <- merge(sample_data_all, mflink1, by.x=c(identifier), by.y=c(identifier), 
-#                          all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# 
-# sample_data_all <- sample_data_all[c(identifier,"crsp_fundno","yr")]
-# sample_data_all <- sample_data_all[order(sample_data_all[,identifier], sample_data_all[,"crsp_fundno"], sample_data_all[,"yr"]),]
-# 
-# 
+colnames(year_sim_ios_all_stacked) <- tolower(colnames(year_sim_ios_all_stacked))
+
+
 ###############################################################################
 cat("IMPORT CRSP DATA", "\n")
 ###############################################################################
@@ -772,60 +676,47 @@ crsp_fields <- ListFields(crsp_db)
 
 Crspa_msi <- runsql("SELECT * FROM Crspa_msi",crsp_db)
 
-# for(i in which(sapply(Crspa_msi,class)=="character"))
-# {
-#   Crspa_msi[[i]] <- trim(Crspa_msi[[i]])
-# }
-
-#test<- colnames(Crspa_msi)[which(sapply(Crspa_msi,class)=="character")]
-#test<- colnames(Crspa_msi)[laply(Crspa_msi,class,.progress = "text",.drop = FALSE)=="character"]
-#test<- Crspa_msi[,laply(Crspa_msi,class,.progress = "text",.drop = FALSE)=="character"]
-#Crspa_msi_char_cols <- colnames(Crspa_msi[,laply(Crspa_msi,class,.progress = "text",.drop = FALSE)=="character"])
-#Crspa_msi_char_cols <- colnames(Crspa_msi[,laply(Crspa_msi,class,.progress = "text",.drop = FALSE)=="character"])
-
-#Crspa_msi_char_cols <- colnames(Crspa_msi)[laply(Crspa_msi,class,.progress = "text",.drop = FALSE)=="character"]
-#Crspa_msi <- trim_dt(Crspa_msi,Crspa_msi_char_cols)
-#Crspa_msi <- as.data.frame(Crspa_msi,stringsAsFactors=FALSE)
-
 Crspa_msi <- trim_by_format(Crspa_msi,"character")
-
-#for (i in 1:ncol(Crspa_msi))
-# {
-#   Crspa_msi[,i] <- unknownToNA(Crspa_msi[,i], unknown=c("",".","NA_character_","NA_Real_","NA",NA),force=TRUE)
-#   Crspa_msi[,i] <- ifelse(is.na(Crspa_msi[,i]),NA, Crspa_msi[,i])
-# } 
-
-#Crspa_msi <- sapply(Crspa_msi, vector_clean_na, unknowns=unknowns_strings)
-#Crspa_msi <- as.data.frame(Crspa_msi, stringsAsFactors=FALSE)
 
 Crspa_msi <- data.table(Crspa_msi)[, (colnames(Crspa_msi)) := llply(.SD, vector_clean_na,unknowns=unknowns_strings,.progress = "text"), .SDcols = colnames(Crspa_msi)]
 Crspa_msi <- as.data.frame(Crspa_msi,stringsAsFactors=FALSE)
 
-#crsp_tables_to_import <- c("fund_hdr", "fund_hdr_hist", "Fund_names", "fund_summary", "fund_summary2","monthly_tna_ret_nav")
-#crsp_tables_no_year_import <- c("Daily_returns","fund_hdr","fund_hdr_hist","Fund_names","monthly_tna_ret_nav")
-#for (i in 1:length(crsp_tables_no_year_import))
-#{
-
-#  assign(tolower(crsp_tables_no_year_import[i]),import_crsp_file_no_year(crsp_tables_no_year_import[i],"crsp_fundno_unique"), envir=.GlobalEnv)
-
-#  progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(crsp_tables_no_year_import), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
-
-#} 
-
-#crsp_tables_year_import <- c("fund_fees_month","fund_style_month")
-#for (i in 1:length(crsp_tables_year_import))
-#{
-
-#  assign(tolower(crsp_tables_year_import[i]),import_crsp_file_year(crsp_tables_year_import[i],"crsp_fundno_unique","1998","2012"), envir=.GlobalEnv)
-
-#  progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(crsp_tables_year_import), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
-
-#} 
-
 #DeleteTable(crsp_db,"crsp_fundno_unique")
+
+colnames(Crspa_msi) <- tolower(colnames(Crspa_msi))
 
 crsp_tables <- ListTables(crsp_db)
 crsp_fields <- ListFields(crsp_db)
+
+
+###############################################################################
+cat("CODE MISSING VARIABLES AS NA", "\n")
+###############################################################################
+
+Crspa_msi[,"vwretd"] <- ifelse(Crspa_msi[,"vwretd"]==-99, NA, Crspa_msi[,"vwretd"])
+
+Crspa_msi[,"vwretx"] <- ifelse(Crspa_msi[,"vwretx"]==-99, NA, Crspa_msi[,"vwretx"])
+
+
+###############################################################################
+cat("CREATE YEAR AND MONTH VARIABLE FOR Crspa_msi", "\n")
+###############################################################################
+
+crspa_msi_full <- transform(Crspa_msi,yr=year(as.IDate(caldt)),month=month(as.IDate(caldt)))
+
+crspa_msi_trim <- subset(crspa_msi_full,select=c(yr,month,vwretd,vwretx))
+
+
+###############################################################################
+cat("COMPUTE MONTHLY FUND RETURN VOLATILITY", "\n")
+###############################################################################
+
+# daily_returns_full <- transform(daily_returns,yr=year(as.IDate(caldt)),month=month(as.IDate(caldt)))
+
+# daily_returns_trim <- subset(daily_returns_full,select=-c(caldt))
+
+# fund_mret_volatility <- ddply(daily_returns_trim, c("crsp_fundno","yr","month"), summarize, sddret = sd(dret, na.rm = TRUE))
+
 
 ###############################################################################
 cat("IMPORT EUREKA HEDGE DATA", "\n")
@@ -834,6 +725,8 @@ cat("IMPORT EUREKA HEDGE DATA", "\n")
 EurekahedgeHF_Excel_aca_full <- read.csv(file=paste(output_directory,"EurekahedgeHF_Excel_aca_merge",".csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
 
 EurekahedgeHF_Excel_aca_full <- EurekahedgeHF_Excel_aca_full[rowSums(is.na(EurekahedgeHF_Excel_aca_full[,1:ncol(EurekahedgeHF_Excel_aca_full)]))<ncol(EurekahedgeHF_Excel_aca_full),]
+
+colnames(EurekahedgeHF_Excel_aca_full) <- tolower(colnames(EurekahedgeHF_Excel_aca_full))
 
 
 ###############################################################################
@@ -848,54 +741,17 @@ colnames(EurekahedgeHF_Excel_aca_full) <- gsub("__","_",colnames(EurekahedgeHF_E
 cat("INITIAL CLEANING OF EUREKA HEDGE DATA", "\n")
 ###############################################################################
 
-#colnames(EurekahedgeHF_Excel_aca_full)[match("Fund.ID",names(EurekahedgeHF_Excel_aca_full))] <- identifier
-#colnames(EurekahedgeHF_Excel_aca_full)[match("Fund.Name",names(EurekahedgeHF_Excel_aca_full))] <- "Fund_Name"
-EurekahedgeHF_Excel_aca_full  <- EurekahedgeHF_Excel_aca_full[order(EurekahedgeHF_Excel_aca_full[,identifier],EurekahedgeHF_Excel_aca_full[,"Fund_Name"],EurekahedgeHF_Excel_aca_full[,"yr"]),]
+EurekahedgeHF_Excel_aca_full  <- EurekahedgeHF_Excel_aca_full[order(EurekahedgeHF_Excel_aca_full[,identifier],
+                                                                    EurekahedgeHF_Excel_aca_full[,"fund_name"],
+                                                                    EurekahedgeHF_Excel_aca_full[,"yr"]),]
 
-#for(i in which(sapply(EurekahedgeHF_Excel_aca_full,class)=="character"))
-#{
-#  EurekahedgeHF_Excel_aca_full[[i]] = trim(EurekahedgeHF_Excel_aca_full[[i]])
-#}
-#EurekahedgeHF_Excel_aca_full <- data.table(EurekahedgeHF_Excel_aca_full)[, (EurekahedgeHF_Excel_aca_full_char_cols) := trim(.SD), .SDcols = EurekahedgeHF_Excel_aca_full_char_cols]
-
-#EurekahedgeHF_Excel_aca_full_char_cols <- colnames(EurekahedgeHF_Excel_aca_full)[laply(EurekahedgeHF_Excel_aca_full,class,.progress = "text",.drop = FALSE)=="character"]
-#EurekahedgeHF_Excel_aca_full <- trim_dt(EurekahedgeHF_Excel_aca_full,EurekahedgeHF_Excel_aca_full_char_cols)
-#EurekahedgeHF_Excel_aca_full <- as.data.frame(EurekahedgeHF_Excel_aca_full,stringsAsFactors=FALSE)
 EurekahedgeHF_Excel_aca_full <- trim_by_format(EurekahedgeHF_Excel_aca_full,"character")
-
-#for (i in 1:ncol(EurekahedgeHF_Excel_aca_full))
-#{
-#  EurekahedgeHF_Excel_aca_full[,i] <- unknownToNA(EurekahedgeHF_Excel_aca_full[,i], unknown=c("",".","n/a","na","NA",NA,"null","NULL",NULL,"nan","NaN",NaN,
-#                                                                                                    NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
-#                                                                                                    NA_character_,"NA_character_",NA_real_,"NA_real_"),force=TRUE)
-#  EurekahedgeHF_Excel_aca_full[,i] <- ifelse(is.na(EurekahedgeHF_Excel_aca_full[,i]),NA, EurekahedgeHF_Excel_aca_full[,i])
-#} 
-
-#EurekahedgeHF_Excel_aca_full <- sapply(EurekahedgeHF_Excel_aca_full, function(x,unknowns){
-#  x <- unknownToNA(x, unknown=unknowns,force=TRUE)
-#  x <- ifelse(is.na(x),NA, x)
-#},unknowns=unknowns_strings)
-#EurekahedgeHF_Excel_aca_full <- as.data.frame(EurekahedgeHF_Excel_aca_full, stringsAsFactors=FALSE)
-
-#EurekahedgeHF_Excel_aca_full <- llply(EurekahedgeHF_Excel_aca_full, function(x,unknowns){
-#  x <- unknownToNA(x, unknown=unknowns,force=TRUE)
-#  x <- ifelse(is.na(x),NA, x)
-#},unknowns=unknowns_strings,.progress = "text")
-#EurekahedgeHF_Excel_aca_full <- as.data.frame(EurekahedgeHF_Excel_aca_full, stringsAsFactors=FALSE)
 
 EurekahedgeHF_Excel_aca_full <- data.table(EurekahedgeHF_Excel_aca_full)[, (colnames(EurekahedgeHF_Excel_aca_full)) := llply(.SD, vector_clean_na,unknowns=unknowns_strings,.progress = "text"), .SDcols = colnames(EurekahedgeHF_Excel_aca_full)]
 EurekahedgeHF_Excel_aca_full <- as.data.frame(EurekahedgeHF_Excel_aca_full,stringsAsFactors=FALSE)
 
+EurekahedgeHF_Excel_aca_full_char_to_date_cols <- c("date_added","dead_date","inception_date","date")
 
-#test <- EurekahedgeHF_Excel_aca_full[,c("Date.Added","Dead.Date","Inception.Date")] 
-#test1 <- unique(EurekahedgeHF_Excel_aca_full[,c("Date.Added","Dead.Date","Inception.Date")])
-#test1[,"Date.Added"] <- as.Date(test1[,"Date.Added"],format="%Y-%m-%d")
-
-EurekahedgeHF_Excel_aca_full_char_to_date_cols <- c("Date_Added","Dead_Date","Inception_Date","date")
-#for (i in 1:length(EurekahedgeHF_Excel_aca_full_char_to_date_cols))
-#{
-#  EurekahedgeHF_Excel_aca_full[,EurekahedgeHF_Excel_aca_full_char_to_date_cols[i]] <- as.Date(EurekahedgeHF_Excel_aca_full[,EurekahedgeHF_Excel_aca_full_char_to_date_cols[i]],format="%Y-%m-%d")
-#} 
 EurekahedgeHF_Excel_aca_full <- char_to_date_dt(EurekahedgeHF_Excel_aca_full,EurekahedgeHF_Excel_aca_full_char_to_date_cols,"%Y-%m-%d")
 EurekahedgeHF_Excel_aca_full <- as.data.frame(EurekahedgeHF_Excel_aca_full,stringsAsFactors=FALSE)
 
@@ -903,242 +759,10 @@ EurekahedgeHF_Excel_aca_full <- EurekahedgeHF_Excel_aca_full[rowSums(is.na(Eurek
 
 
 ###############################################################################
-cat("CONVERT PERCENTAGES TO DECIMAL", "\n")
-###############################################################################
-
-EurekahedgeHF_Excel_aca_full2 <- EurekahedgeHF_Excel_aca_full
-
-decimal_cols <- c("Annualised_Return","Best_Monthly_Return","Worst_Monthly_Return","Yearly_Ret","Rise_in_NAV_Since_Inception",
-                  "Last_3_Months","One_Year_Rolling_Return","Two_Year_Rolling_Return","Five_Year_Rolling_Return",
-                  "Annualised_Standard_Deviation","Downside_Deviation","Upside_Deviation","Maximum_Drawdown",
-                  "Percentage_of_Positive_Months")
-
-#test <- EurekahedgeHF_Excel_aca_full2[,decimal_cols]
-
-for (i in 1:length(decimal_cols))
-{
-  #i <- 1
-  
-  EurekahedgeHF_Excel_aca_full2[,decimal_cols[i]] <- (EurekahedgeHF_Excel_aca_full2[,decimal_cols[i]]/100)
-  
-  progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(decimal_cols), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
-  
-} 
-
-EurekahedgeHF_Excel_aca_full2 <- EurekahedgeHF_Excel_aca_full2[rowSums(is.na(EurekahedgeHF_Excel_aca_full2[,1:ncol(EurekahedgeHF_Excel_aca_full2)]))<ncol(EurekahedgeHF_Excel_aca_full2),]
-
-
-###############################################################################
-cat("CODE MISSING VARIABLES AS NA", "\n")
-###############################################################################
-
-Crspa_msi[,"VWRETD"] <- ifelse((Crspa_msi$VWRETD==-99), NA, Crspa_msi$VWRETD)
-
-Crspa_msi[,"VWRETX"] <- ifelse((Crspa_msi$VWRETX==-99), NA, Crspa_msi$VWRETX)
-
-
-# ###############################################################################
-# cat("CREATE YEAR AND MONTH VARIABLE FOR Crspa_msi", "\n")
-# ###############################################################################
-
-crspa_msi_full <- transform(Crspa_msi,yr=year(as.IDate(CALDT)),month=month(as.IDate(CALDT)))
-
-crspa_msi_trim <- subset(crspa_msi_full,select=c(yr,month,VWRETD,VWRETX))
-
-
-# ###############################################################################
-# cat("COMPUTE MONTHLY FUND RETURN VOLATILITY", "\n")
-# ###############################################################################
-# 
-# daily_returns_full <- transform(daily_returns,yr=year(as.IDate(caldt)),month=month(as.IDate(caldt)))
-# 
-# daily_returns_trim <- subset(daily_returns_full,select=-c(caldt))
-# 
-# fund_mret_volatility <- ddply(daily_returns_trim, c("crsp_fundno","yr","month"), summarize, sddret = sd(dret, na.rm = TRUE))
-# 
-# 
-
-
-###############################################################################
-cat("MERGE MONTHLY_TNA_RET_NAV2 AND INDEX RETURNS/FUND VOLATILITY", "\n")
-###############################################################################
-
-EurekahedgeHF_Excel_aca_full3 <- merge(EurekahedgeHF_Excel_aca_full2, crspa_msi_trim, 
-                                       by.x=c("yr","month"), by.y=c("yr","month"), 
-                                       all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-
-#EurekahedgeHF_Excel_aca_full3 <- transform(EurekahedgeHF_Excel_aca_full3, mktadjret=Monthly_Ret-VWRETX)
-EurekahedgeHF_Excel_aca_full3 <- transform(EurekahedgeHF_Excel_aca_full3, mktadjret=Monthly_Ret-VWRETD)
-
-EurekahedgeHF_Excel_aca_full3 <- EurekahedgeHF_Excel_aca_full3[rowSums(is.na(EurekahedgeHF_Excel_aca_full3[,1:ncol(EurekahedgeHF_Excel_aca_full3)]))<ncol(EurekahedgeHF_Excel_aca_full3),]
-
-EurekahedgeHF_Excel_aca_full3 <- EurekahedgeHF_Excel_aca_full3[order(EurekahedgeHF_Excel_aca_full3[,identifier], 
-                                                                     EurekahedgeHF_Excel_aca_full3[,"yr"], 
-                                                                     EurekahedgeHF_Excel_aca_full3[,"month"]),] 
-row.names(EurekahedgeHF_Excel_aca_full3) <- seq(nrow(EurekahedgeHF_Excel_aca_full3))
-
-
-###############################################################################
-cat("CREATE LAG OF TNA AND RETURNS", "\n")
-###############################################################################
-
-
-#duplicates1 <- sqldf("SELECT *, count(Fund_ID) as count FROM EurekahedgeHF_Excel_aca_full6 group by Fund_ID,date")
-#duplicates2 <- sqldf("SELECT * FROM duplicates1 where count<>1")
-#data_u <- unique(data_in[,c(group,time)])
-
-#returns_short <- returns[(returns[,identifier]==5002 | returns[,identifier]==5003) ,]
-
-lag_vars <- c("AUM","Monthly_Ret","mktadjret")
-lag_count <- 4
-
-#[,c(identifier,"yr","month","date",lag_vars)]
-
-EurekahedgeHF_Excel_aca_full4 <- data.frame(EurekahedgeHF_Excel_aca_full3,
-                                            matrix(NA, ncol=length(lag_vars)*lag_count, nrow=nrow(EurekahedgeHF_Excel_aca_full3)),
-                                            stringsAsFactors=FALSE)
-colnames(EurekahedgeHF_Excel_aca_full4) <- c(colnames(EurekahedgeHF_Excel_aca_full3),
-                                             paste(lag_vars[1],"_lag",seq(1,lag_count),sep=""),
-                                             paste(lag_vars[2],"_lag",seq(1,lag_count),sep=""),
-                                             paste(lag_vars[3],"_lag",seq(1,lag_count),sep=""))
-
-
-for (i in 1:length(lag_vars))
-{
-  #i <- 1
-  #i <- 2
-  
-  EurekahedgeHF_Excel_aca_full4[,paste(lag_vars[i],"_lag",seq(1,lag_count),sep="")] <- create_lags2(EurekahedgeHF_Excel_aca_full4,lag_vars[i],identifier,lag_count)
-  
-  progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(lag_vars), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
-  
-} 
-
-EurekahedgeHF_Excel_aca_full4 <- EurekahedgeHF_Excel_aca_full4[,sort(colnames(EurekahedgeHF_Excel_aca_full4))]
-
-starting_cols <- c(identifier,"Fund_Name","Date_Added","Flagship","Closed","Limited","Dead","Dead_Date","Dead_Reason",
-                   "Eurekahedge_ID","ISIN","SEDOL","Valoren","CUSIP","Bloomberg","Reuters","date","yr","month",
-                   "AUM",paste("AUM","_lag",seq(1,lag_count),sep=""),
-                   "Monthly_Ret",paste("Monthly_Ret","_lag",seq(1,lag_count),sep=""),                  
-                   "mktadjret",paste("mktadjret","_lag",seq(1,lag_count),sep=""),                  
-                   "Monthly_Ret2","Yearly_Ret")
-
-all_cols <- colnames(EurekahedgeHF_Excel_aca_full4)
-
-other_cols <- all_cols[-which(all_cols %in% starting_cols)]
-
-EurekahedgeHF_Excel_aca_full4 <- EurekahedgeHF_Excel_aca_full4[,c(starting_cols,other_cols)]
-
-EurekahedgeHF_Excel_aca_full4 <- EurekahedgeHF_Excel_aca_full4[rowSums(is.na(EurekahedgeHF_Excel_aca_full4[,1:ncol(EurekahedgeHF_Excel_aca_full4)]))<ncol(EurekahedgeHF_Excel_aca_full4),]
-
-EurekahedgeHF_Excel_aca_full4 <- EurekahedgeHF_Excel_aca_full4[order(EurekahedgeHF_Excel_aca_full4[,identifier], 
-                                                                     EurekahedgeHF_Excel_aca_full4[,"yr"], 
-                                                                     EurekahedgeHF_Excel_aca_full4[,"month"]),] 
-row.names(EurekahedgeHF_Excel_aca_full4) <- seq(nrow(EurekahedgeHF_Excel_aca_full4))
-
-
-###############################################################################
-cat("CREATE FLOW AND LAG FLOW", "\n")
-###############################################################################
-
-lag_flow_vars <- c("nflow","pflow")
-lag_flow_count <- 4
-
-EurekahedgeHF_Excel_aca_full5 <- data.frame(EurekahedgeHF_Excel_aca_full4,
-                                            nflow=NA,
-                                            pflow=NA,
-                                            matrix(NA, ncol=length(lag_flow_vars)*lag_flow_count, nrow=nrow(EurekahedgeHF_Excel_aca_full4)),
-                                            stringsAsFactors=FALSE)
-colnames(EurekahedgeHF_Excel_aca_full5) <- c(colnames(EurekahedgeHF_Excel_aca_full4),
-                                             lag_flow_vars[1],
-                                             lag_flow_vars[2],
-                                             paste(lag_flow_vars[1],"lag",seq(1,lag_flow_count),sep=""),
-                                             paste(lag_flow_vars[2],"lag",seq(1,lag_flow_count),sep=""))
-
-EurekahedgeHF_Excel_aca_full5[,"nflow"] <- as.data.frame(data.table(EurekahedgeHF_Excel_aca_full5)[,list(nflow=AUM-(AUM_lag1*(1+Monthly_Ret))),by=identifier], stringsAsFactors=FALSE)["nflow"]
-EurekahedgeHF_Excel_aca_full5[,"pflow"] <- as.data.frame(data.table(EurekahedgeHF_Excel_aca_full5)[,list(pflow=((AUM-(AUM_lag1*(1+Monthly_Ret)))/AUM_lag1)),by=identifier], stringsAsFactors=FALSE)["pflow"]
-
-for (i in 1:length(lag_flow_vars))
-{
-  #i <- 1
-  #i <- 2
-  
-  EurekahedgeHF_Excel_aca_full5[,paste(lag_flow_vars[i],"lag",seq(1,lag_flow_count),sep="")] <- create_lags2(EurekahedgeHF_Excel_aca_full5,lag_flow_vars[i],identifier,lag_flow_count)
-  
-  progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(lag_flow_vars), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
-  
-} 
-
-
-# nflow_lags <- as.data.frame(data.table(nflow)[,list(nflow,
-#                                                           nflowlag1=shift(nflow,-1),
-#                                                           nflowlag2=shift(nflow,-2),
-#                                                           nflowlag3=shift(nflow,-3),
-#                                                           nflowlag4=shift(nflow,-4)),by=identifier], stringsAsFactors=FALSE) 
-# 
-# pflow_lags <- as.data.frame(data.table(pflow)[,list(pflow,
-#                                                           pflowlag1=shift(pflow,-1),
-#                                                           pflowlag2=shift(pflow,-2),
-#                                                           pflowlag3=shift(pflow,-3),
-#                                                           pflowlag4=shift(pflow,-4)),by=identifier], stringsAsFactors=FALSE) 
-# 
-# EurekahedgeHF_Excel_aca_full5 <- data.frame(EurekahedgeHF_Excel_aca_full4,
-#                                     nflow_lags[,c("nflow","nflowlag1","nflowlag2","nflowlag3","nflowlag4")], 
-#                                     pflow_lags[,c("pflow","pflowlag1","pflowlag2","pflowlag3","pflowlag4")],stringsAsFactors=FALSE)
-
-
-
-EurekahedgeHF_Excel_aca_full5 <- EurekahedgeHF_Excel_aca_full5[,sort(colnames(EurekahedgeHF_Excel_aca_full5))]
-
-starting_cols <- c(identifier,"Fund_Name","Date_Added","Flagship","Closed","Limited","Dead","Dead_Date","Dead_Reason",
-                   "Eurekahedge_ID","ISIN","SEDOL","Valoren","CUSIP","Bloomberg","Reuters","date","yr","month",
-                   "AUM",paste("AUM","_lag",seq(1,lag_count),sep=""),
-                   "Monthly_Ret",paste("Monthly_Ret","_lag",seq(1,lag_count),sep=""),                  
-                   "mktadjret",paste("mktadjret","_lag",seq(1,lag_count),sep=""),                  
-                   "Monthly_Ret2","Yearly_Ret",
-                   "nflow",paste("nflow","lag",seq(1,lag_flow_count),sep=""),  
-                   "pflow",paste("pflow","lag",seq(1,lag_flow_count),sep=""))
-
-all_cols <- colnames(EurekahedgeHF_Excel_aca_full5)
-
-other_cols <- all_cols[-which(all_cols %in% starting_cols)]
-
-EurekahedgeHF_Excel_aca_full5 <- EurekahedgeHF_Excel_aca_full5[,c(starting_cols,other_cols)]
-
-EurekahedgeHF_Excel_aca_full5 <- EurekahedgeHF_Excel_aca_full5[rowSums(is.na(EurekahedgeHF_Excel_aca_full5[,1:ncol(EurekahedgeHF_Excel_aca_full5)]))<ncol(EurekahedgeHF_Excel_aca_full5),]
-
-EurekahedgeHF_Excel_aca_full5 <- EurekahedgeHF_Excel_aca_full5[order(EurekahedgeHF_Excel_aca_full5[,identifier], 
-                                                                     EurekahedgeHF_Excel_aca_full5[,"yr"],
-                                                                     EurekahedgeHF_Excel_aca_full5[,"month"]),]
-
-row.names(EurekahedgeHF_Excel_aca_full5) <- seq(nrow(EurekahedgeHF_Excel_aca_full5))
-
-#rm2(EurekahedgeHF_Excel_aca_full4)
-
-
-# ###############################################################################
-# cat("COMPUTE ANNUAL FUND FLOW VOLATILITY", "\n")
-# ###############################################################################
-
-annual_flow_trim <- EurekahedgeHF_Excel_aca_full5[,c(identifier,"yr","nflow","pflow")]
-
-fund_aflow_volatility <- ddply(annual_flow_trim, c(identifier,"yr"), summarize, 
-                               sdnet_flow=sd(nflow, na.rm = TRUE),sdpct_flow=sd(pflow, na.rm = TRUE))
-
-fund_aflow_volatility_full <- data.frame(fund_aflow_volatility,
-                                         sdnet_flowlag1=shift(fund_aflow_volatility$sdnet_flow,-1),
-                                         sdpct_flowlag1=shift(fund_aflow_volatility$sdpct_flow,-1),stringsAsFactors=FALSE)
-
-EurekahedgeHF_Excel_aca_full6 <- merge(EurekahedgeHF_Excel_aca_full5, fund_aflow_volatility_full, 
-                                       by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
-                                       all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-
-rm2(annual_flow_trim,fund_aflow_volatility)
-
-
-###############################################################################
 cat("STRIP COMMENTS FROM VARIABLES", "\n")
 ###############################################################################
+
+EurekahedgeHF_Excel_aca_full3 <- EurekahedgeHF_Excel_aca_full
 
 #Strip out comments in parenetheses
 strip_comments <- function(x, cols) {
@@ -1152,25 +776,28 @@ strip_comments <- function(x, cols) {
   return(DT)
 }
 
-EurekahedgeHF_Excel_aca_full_strip_comments_cols <- c("Dividend_Policy","Fund_Closed","High_Water_Mark","Hurdle_Rate","Listed_on_Exchange")
+EurekahedgeHF_Excel_aca_full_strip_comments_cols <- c("dividend_policy","fund_closed","high_water_mark","hurdle_rate","listed_on_exchange",
+                                                      "management_fee","other_fee","performance_fee")
 
 #Rename original columns
-EurekahedgeHF_Excel_aca_full6 <- rename.vars(EurekahedgeHF_Excel_aca_full6, EurekahedgeHF_Excel_aca_full_strip_comments_cols, paste(EurekahedgeHF_Excel_aca_full_strip_comments_cols,"_org",sep=""))
+EurekahedgeHF_Excel_aca_full3 <- rename.vars(EurekahedgeHF_Excel_aca_full3, 
+                                             EurekahedgeHF_Excel_aca_full_strip_comments_cols, 
+                                             paste(EurekahedgeHF_Excel_aca_full_strip_comments_cols,"_org",sep=""))
 
-strip_cols <- c(EurekahedgeHF_Excel_aca_full_strip_comments_cols, paste(EurekahedgeHF_Excel_aca_full_strip_comments_cols,"_comments",sep=""))
+strip_cols <- c(EurekahedgeHF_Excel_aca_full_strip_comments_cols, 
+                paste(EurekahedgeHF_Excel_aca_full_strip_comments_cols,"_comments",sep=""))
 
-EurekahedgeHF_Excel_aca_full7 <-  data.frame(EurekahedgeHF_Excel_aca_full6, 
-                                             matrix(NA, ncol=length(strip_cols), nrow=nrow(EurekahedgeHF_Excel_aca_full6), dimnames=list(c(), strip_cols)), 
+EurekahedgeHF_Excel_aca_full4 <-  data.frame(EurekahedgeHF_Excel_aca_full3, 
+                                             matrix(NA, ncol=length(strip_cols), nrow=nrow(EurekahedgeHF_Excel_aca_full3), dimnames=list(c(), strip_cols)), 
                                              stringsAsFactors=FALSE)
 
-EurekahedgeHF_Excel_aca_full7 <- EurekahedgeHF_Excel_aca_full7[,sort(colnames(EurekahedgeHF_Excel_aca_full7), decreasing = FALSE)]
+EurekahedgeHF_Excel_aca_full4 <- EurekahedgeHF_Excel_aca_full4[,sort(colnames(EurekahedgeHF_Excel_aca_full4), decreasing = FALSE)]
 
-EurekahedgeHF_Excel_aca_full7 <- strip_comments(EurekahedgeHF_Excel_aca_full7,EurekahedgeHF_Excel_aca_full_strip_comments_cols)
-EurekahedgeHF_Excel_aca_full7 <- as.data.frame(EurekahedgeHF_Excel_aca_full7,stringsAsFactors=FALSE)
+EurekahedgeHF_Excel_aca_full4 <- strip_comments(EurekahedgeHF_Excel_aca_full4,EurekahedgeHF_Excel_aca_full_strip_comments_cols)
+EurekahedgeHF_Excel_aca_full4 <- as.data.frame(EurekahedgeHF_Excel_aca_full4,stringsAsFactors=FALSE)
 
-
-#Create Y/N
-create_yn <- function(x, cols) {
+#Get text before comments
+create_noncomments <- function(x, cols) {
   DT <- data.table(x)
   for (j in cols) {
     set(DT, i=NULL, j=j, value=gsub("[(].*$", "", DT[[paste(j,"_org",sep = "")]], "\\(([^()]+)\\)", perl=TRUE))
@@ -1180,19 +807,19 @@ create_yn <- function(x, cols) {
   }
   return(DT)
 }
-EurekahedgeHF_Excel_aca_full_yn_cols <- c("Dividend_Policy","Fund_Closed","High_Water_Mark","Hurdle_Rate","Listed_on_Exchange")
-EurekahedgeHF_Excel_aca_full7 <- create_yn(EurekahedgeHF_Excel_aca_full7,EurekahedgeHF_Excel_aca_full_yn_cols)
-EurekahedgeHF_Excel_aca_full7 <- as.data.frame(EurekahedgeHF_Excel_aca_full7,stringsAsFactors=FALSE)
+EurekahedgeHF_Excel_aca_full_yn_cols <- c("dividend_policy","fund_closed","high_water_mark","hurdle_rate","listed_on_exchange",
+                                          "management_fee","other_fee","performance_fee")
+EurekahedgeHF_Excel_aca_full4 <- create_noncomments(EurekahedgeHF_Excel_aca_full4,EurekahedgeHF_Excel_aca_full_yn_cols)
+EurekahedgeHF_Excel_aca_full4 <- as.data.frame(EurekahedgeHF_Excel_aca_full4,stringsAsFactors=FALSE)
 
 #Check for uknowns
-EurekahedgeHF_Excel_aca_full_check_unknown_cols <- c("Dividend_Policy","Exchange_Name","Fund_Closed","High_Water_Mark","Hurdle_Rate","Listed_on_Exchange")
-EurekahedgeHF_Excel_aca_full7 <- data.table(EurekahedgeHF_Excel_aca_full7)[, (EurekahedgeHF_Excel_aca_full_check_unknown_cols) := llply(.SD, vector_clean_na,unknowns=unknowns_strings,.progress = "text"), 
+EurekahedgeHF_Excel_aca_full_check_unknown_cols <- c("dividend_policy","exchange_name","fund_closed","high_water_mark","hurdle_rate","listed_on_exchange",
+                                                     "management_fee","other_fee","performance_fee")
+EurekahedgeHF_Excel_aca_full4 <- data.table(EurekahedgeHF_Excel_aca_full4)[, (EurekahedgeHF_Excel_aca_full_check_unknown_cols) := llply(.SD, vector_clean_na,unknowns=unknowns_strings,.progress = "text"), 
                                                                            .SDcols = EurekahedgeHF_Excel_aca_full_check_unknown_cols]
-EurekahedgeHF_Excel_aca_full7 <- as.data.frame(EurekahedgeHF_Excel_aca_full7, stringsAsFactors=FALSE)
-
+EurekahedgeHF_Excel_aca_full4 <- as.data.frame(EurekahedgeHF_Excel_aca_full4, stringsAsFactors=FALSE)
 
 #Change not specificied to NA
-
 NA_Phrases <- c("NA","N/A","N\\A","NOT APPLICABLE","NOT DEFINED","NOT DISCLOSED","NOT DISLCOSED","UNDISCLOSED",
                 "TO BE ADVISED","TO BE ADVISE","TBA","SEE PROSPECTUS FOR FULL DETAILS","DISCUSS WITH MANAGER","UPON REQUEST")
 not_specified_to_na <- function(x, cols, phrases) {
@@ -1207,9 +834,10 @@ not_specified_to_na <- function(x, cols, phrases) {
   }
   return(DT)
 }
-EurekahedgeHF_Excel_aca_full_not_specified_cols <- c("Dividend_Policy","Domicile","Exchange_Name","Fund_Closed","High_Water_Mark","Hurdle_Rate","Listed_on_Exchange")
-EurekahedgeHF_Excel_aca_full7 <- not_specified_to_na(EurekahedgeHF_Excel_aca_full7,EurekahedgeHF_Excel_aca_full_not_specified_cols,NA_Phrases)
-EurekahedgeHF_Excel_aca_full7 <- as.data.frame(EurekahedgeHF_Excel_aca_full7,stringsAsFactors=FALSE)
+EurekahedgeHF_Excel_aca_full_not_specified_cols <- c("dividend_policy","domicile","exchange_name","fund_closed","high_water_mark","hurdle_rate","listed_on_exchange",
+                                                     "management_fee","other_fee","performance_fee","fund_size_us_m")
+EurekahedgeHF_Excel_aca_full4 <- not_specified_to_na(EurekahedgeHF_Excel_aca_full4,EurekahedgeHF_Excel_aca_full_not_specified_cols,NA_Phrases)
+EurekahedgeHF_Excel_aca_full4 <- as.data.frame(EurekahedgeHF_Excel_aca_full4,stringsAsFactors=FALSE)
 
 
 #Change no phrases to NO
@@ -1226,9 +854,10 @@ no_to_no <- function(x, cols, phrases) {
   }
   return(DT)
 }  
-EurekahedgeHF_Excel_aca_full_no_phrases_cols <- c("Dividend_Policy","Fund_Closed","High_Water_Mark","Hurdle_Rate","Listed_on_Exchange")
-EurekahedgeHF_Excel_aca_full7 <- no_to_no(EurekahedgeHF_Excel_aca_full7,EurekahedgeHF_Excel_aca_full_no_phrases_cols,NO_Phrases)
-EurekahedgeHF_Excel_aca_full7 <- as.data.frame(EurekahedgeHF_Excel_aca_full7,stringsAsFactors=FALSE)
+EurekahedgeHF_Excel_aca_full_no_phrases_cols <- c("dividend_policy","fund_closed","high_water_mark","hurdle_rate","listed_on_exchange",
+                                                  "management_fee","other_fee","performance_fee")
+EurekahedgeHF_Excel_aca_full4 <- no_to_no(EurekahedgeHF_Excel_aca_full4,EurekahedgeHF_Excel_aca_full_no_phrases_cols,NO_Phrases)
+EurekahedgeHF_Excel_aca_full4 <- as.data.frame(EurekahedgeHF_Excel_aca_full4,stringsAsFactors=FALSE)
 
 
 #Change yes phrases to YES
@@ -1245,39 +874,53 @@ yes_to_yes <- function(x, cols, phrases) {
   }
   return(DT)
 }  
-EurekahedgeHF_Excel_aca_full_yes_phrases_cols <- c("Dividend_Policy","Fund_Closed","High_Water_Mark","Hurdle_Rate","Listed_on_Exchange")
-EurekahedgeHF_Excel_aca_full7 <- yes_to_yes(EurekahedgeHF_Excel_aca_full7,EurekahedgeHF_Excel_aca_full_yes_phrases_cols,YES_Phrases)
-EurekahedgeHF_Excel_aca_full7 <- as.data.frame(EurekahedgeHF_Excel_aca_full7,stringsAsFactors=FALSE)
+EurekahedgeHF_Excel_aca_full_yes_phrases_cols <- c("dividend_policy","fund_closed","high_water_mark","hurdle_rate","listed_on_exchange",
+                                                   "management_fee","other_fee","performance_fee")
+EurekahedgeHF_Excel_aca_full4 <- yes_to_yes(EurekahedgeHF_Excel_aca_full4,EurekahedgeHF_Excel_aca_full_yes_phrases_cols,YES_Phrases)
+EurekahedgeHF_Excel_aca_full4 <- as.data.frame(EurekahedgeHF_Excel_aca_full4,stringsAsFactors=FALSE)
+
+#Convert fee columns to numeric
+EurekahedgeHF_Excel_aca_full4_num_cols <- c("management_fee","other_fee","performance_fee")
+for (i in 1:length(EurekahedgeHF_Excel_aca_full4_num_cols)) {
+  #i <- 1
+  EurekahedgeHF_Excel_aca_full4[,EurekahedgeHF_Excel_aca_full4_num_cols[i]] <- 
+    as.numeric(EurekahedgeHF_Excel_aca_full4[,EurekahedgeHF_Excel_aca_full4_num_cols[i]])
+}
+#temp <- unique(EurekahedgeHF_Excel_aca_full4[,c("fund_closed","fund_closed_comments","fund_closed_org")])
+#temp <- unique(EurekahedgeHF_Excel_aca_full4[,c("dividend_policy","dividend_policy_comments","dividend_policy_org")])
+#temp <- unique(EurekahedgeHF_Excel_aca_full4[,c("performance_fee","performance_fee_comments","performance_fee_org")])
 
 #Finalize the data
-EurekahedgeHF_Excel_aca_full7 <- EurekahedgeHF_Excel_aca_full7[rowSums(is.na(EurekahedgeHF_Excel_aca_full7[,1:ncol(EurekahedgeHF_Excel_aca_full7)]))<ncol(EurekahedgeHF_Excel_aca_full7),]
+EurekahedgeHF_Excel_aca_full4 <- EurekahedgeHF_Excel_aca_full4[rowSums(is.na(EurekahedgeHF_Excel_aca_full4[,1:ncol(EurekahedgeHF_Excel_aca_full4)]))<ncol(EurekahedgeHF_Excel_aca_full4),]
 
 
-EurekahedgeHF_Excel_aca_full7 <- EurekahedgeHF_Excel_aca_full7[order(EurekahedgeHF_Excel_aca_full7[,identifier], 
-                                                                     EurekahedgeHF_Excel_aca_full7[,"yr"],
-                                                                     EurekahedgeHF_Excel_aca_full7[,"month"]),]
+EurekahedgeHF_Excel_aca_full4 <- EurekahedgeHF_Excel_aca_full4[order(EurekahedgeHF_Excel_aca_full4[,identifier], 
+                                                                     EurekahedgeHF_Excel_aca_full4[,"yr"],
+                                                                     EurekahedgeHF_Excel_aca_full4[,"month"]),]
 
-row.names(EurekahedgeHF_Excel_aca_full7) <- seq(nrow(EurekahedgeHF_Excel_aca_full7))
+row.names(EurekahedgeHF_Excel_aca_full4) <- seq(nrow(EurekahedgeHF_Excel_aca_full4))
+
+rm2(EurekahedgeHF_Excel_aca_full3)
 
 
 ###############################################################################
 cat("CHANGE Y/N TO BINARY", "\n")
 ###############################################################################
 
-#EurekahedgeHF_Excel_aca_full_yn_to_bin_cols <- c("Flagship","Closed","Limited","Dead","Invest_In_Private_Placements","Managed_Accounts_Offered","UCITS",
-#                                                 "Dividend_Policy","Exchange_Name","Fund_Closed","High_Water_Mark","Hurdle_Rate","Listed_on_Exchange")
-EurekahedgeHF_Excel_aca_full_yn_to_bin_cols <- c("Flagship","Closed","Limited","Dead","Invest_In_Private_Placements","Managed_Accounts_Offered","UCITS",
-                                                 "Dividend_Policy","Fund_Closed","High_Water_Mark","Hurdle_Rate","Listed_on_Exchange")
+#EurekahedgeHF_Excel_aca_full_yn_to_bin_cols <- c("flagship","closed","limited","dead","invest_in_private_placements","managed_accounts_offered","ucits",
+#                                                 "dividend_policy","exchange_name","fund_closed","high_water_mark","hurdle_rate","listed_on_exchange")
+EurekahedgeHF_Excel_aca_full_yn_to_bin_cols <-  c("flagship","closed","limited","dead","invest_in_private_placements","managed_accounts_offered","ucits",
+                                                  "dividend_policy","fund_closed","high_water_mark","hurdle_rate","listed_on_exchange")
 
 bin_cols <- paste(EurekahedgeHF_Excel_aca_full_yn_to_bin_cols,"_bin",sep="")
 
-EurekahedgeHF_Excel_aca_full8 <-  data.frame(EurekahedgeHF_Excel_aca_full7, matrix(NA, ncol=length(bin_cols), nrow=nrow(EurekahedgeHF_Excel_aca_full7), dimnames=list(c(), bin_cols)), stringsAsFactors=FALSE)
+EurekahedgeHF_Excel_aca_full5 <-  data.frame(EurekahedgeHF_Excel_aca_full4, matrix(NA, ncol=length(bin_cols), nrow=nrow(EurekahedgeHF_Excel_aca_full4), dimnames=list(c(), bin_cols)), stringsAsFactors=FALSE)
 
-EurekahedgeHF_Excel_aca_full8[,bin_cols] <-  EurekahedgeHF_Excel_aca_full8[,EurekahedgeHF_Excel_aca_full_yn_to_bin_cols]
+EurekahedgeHF_Excel_aca_full5[,bin_cols] <-  EurekahedgeHF_Excel_aca_full5[,EurekahedgeHF_Excel_aca_full_yn_to_bin_cols]
 
 yn_to_binary <- function(x, cols) {
   
-  #x <- EurekahedgeHF_Excel_aca_full8
+  #x <- EurekahedgeHF_Excel_aca_full5
   #cols <- bin_cols
   
   DT <- data.table(x)
@@ -1295,37 +938,39 @@ yn_to_binary <- function(x, cols) {
   return(DT)
 }  
 
-EurekahedgeHF_Excel_aca_full8 <- yn_to_binary(EurekahedgeHF_Excel_aca_full8,bin_cols)
-EurekahedgeHF_Excel_aca_full8 <- as.data.frame(EurekahedgeHF_Excel_aca_full8,stringsAsFactors=FALSE)
+EurekahedgeHF_Excel_aca_full5 <- yn_to_binary(EurekahedgeHF_Excel_aca_full5,bin_cols)
+EurekahedgeHF_Excel_aca_full5 <- as.data.frame(EurekahedgeHF_Excel_aca_full5,stringsAsFactors=FALSE)
 
-EurekahedgeHF_Excel_aca_full8 <- data.table(EurekahedgeHF_Excel_aca_full8)[, (bin_cols) := llply(.SD, vector_clean_na,unknowns=unknowns_strings,.progress = "text"), .SDcols = bin_cols]
-EurekahedgeHF_Excel_aca_full8 <- as.data.frame(EurekahedgeHF_Excel_aca_full8,stringsAsFactors=FALSE)
+EurekahedgeHF_Excel_aca_full5 <- data.table(EurekahedgeHF_Excel_aca_full5)[, (bin_cols) := llply(.SD, vector_clean_na,unknowns=unknowns_strings,.progress = "text"), .SDcols = bin_cols]
+EurekahedgeHF_Excel_aca_full5 <- as.data.frame(EurekahedgeHF_Excel_aca_full5,stringsAsFactors=FALSE)
 
-EurekahedgeHF_Excel_aca_full8 <- EurekahedgeHF_Excel_aca_full8[rowSums(is.na(EurekahedgeHF_Excel_aca_full8[,1:ncol(EurekahedgeHF_Excel_aca_full8)]))<ncol(EurekahedgeHF_Excel_aca_full8),]
+EurekahedgeHF_Excel_aca_full5 <- EurekahedgeHF_Excel_aca_full5[rowSums(is.na(EurekahedgeHF_Excel_aca_full5[,1:ncol(EurekahedgeHF_Excel_aca_full5)]))<ncol(EurekahedgeHF_Excel_aca_full5),]
 
 
-EurekahedgeHF_Excel_aca_full8 <- EurekahedgeHF_Excel_aca_full8[order(EurekahedgeHF_Excel_aca_full8[,identifier], 
-                                                                     EurekahedgeHF_Excel_aca_full8[,"yr"],
-                                                                     EurekahedgeHF_Excel_aca_full8[,"month"]),]
+EurekahedgeHF_Excel_aca_full5 <- EurekahedgeHF_Excel_aca_full5[order(EurekahedgeHF_Excel_aca_full5[,identifier], 
+                                                                     EurekahedgeHF_Excel_aca_full5[,"yr"],
+                                                                     EurekahedgeHF_Excel_aca_full5[,"month"]),]
 
-row.names(EurekahedgeHF_Excel_aca_full8) <- seq(nrow(EurekahedgeHF_Excel_aca_full8))
+row.names(EurekahedgeHF_Excel_aca_full5) <- seq(nrow(EurekahedgeHF_Excel_aca_full5))
+
+rm2(EurekahedgeHF_Excel_aca_full4)
 
 
 ###############################################################################
-cat("SPLIT BROKERS", "\n")
+cat("SPLIT (EXPAND) COLUMNS", "\n")
 ###############################################################################
 
-split_cols <- c("Custodian","Principal_Prime_Broker_Broker","Secondary_Prime_Broker_Broker",
-                "Synthetic_Prime_Broker","Legal_Advisor_offshore","Legal_Advisor_onshore")
+split_cols <- c("custodian","principal_prime_broker_broker","secondary_prime_broker_broker",
+                "synthetic_prime_broker","legal_advisor_offshore","legal_advisor_onshore")
 
-#test <- EurekahedgeHF_Excel_aca_full8[,split_cols]
+#test <- EurekahedgeHF_Excel_aca_full5[,split_cols]
 #test2 <- unique(test[,colnames(test)])
 
 for (i in 1:length(split_cols))
 {
   #i <- 2
   
-  temp1 <- str_split(EurekahedgeHF_Excel_aca_full8[,split_cols[i]], ",")
+  temp1 <- str_split(EurekahedgeHF_Excel_aca_full5[,split_cols[i]], ",")
   
   temp1_len <- unlist(lapply(temp1, function(x) length(x)))
   temp1_len_max <- as.integer(tail(sort(temp1_len, decreasing = FALSE),1))
@@ -1364,39 +1009,52 @@ for (i in 1:length(split_cols))
 } 
 
 
-EurekahedgeHF_Excel_aca_full9 <- cbind(EurekahedgeHF_Excel_aca_full8,output)
+EurekahedgeHF_Excel_aca_full6 <- cbind(EurekahedgeHF_Excel_aca_full5,output)
 
-rm2(temp1,temp2,temp3,temp4,output)
+rm2(temp1,temp2,temp3,temp4,output,EurekahedgeHF_Excel_aca_full5)
 
 
 ###############################################################################
-cat("REORDER COLUMNS", "\n")
+cat("CONVERT PERCENTAGES TO DECIMAL", "\n")
 ###############################################################################
 
-EurekahedgeHF_Excel_aca_full9 <- EurekahedgeHF_Excel_aca_full9[,sort(colnames(EurekahedgeHF_Excel_aca_full9))]
+EurekahedgeHF_Excel_aca_full6b <- EurekahedgeHF_Excel_aca_full6
 
-starting_cols <- c(identifier,"Fund_Name","Date_Added","Flagship","Closed","Limited","Dead","Dead_Date","Dead_Reason",
-                   "Eurekahedge_ID","ISIN","SEDOL","Valoren","CUSIP","Bloomberg","Reuters","date","yr","month",
-                   "AUM",paste("AUM","_lag",seq(1,lag_count),sep=""),
-                   "Monthly_Ret",paste("Monthly_Ret","_lag",seq(1,lag_count),sep=""),                  
-                   "mktadjret",paste("mktadjret","_lag",seq(1,lag_count),sep=""),                  
-                   "Monthly_Ret2","Yearly_Ret",
-                   "nflow",paste("nflow","lag",seq(1,lag_flow_count),sep=""),  
-                   "pflow",paste("pflow","lag",seq(1,lag_flow_count),sep=""))
-
-all_cols <- colnames(EurekahedgeHF_Excel_aca_full9)
-
-other_cols <- all_cols[-which(all_cols %in% starting_cols)]
-
-EurekahedgeHF_Excel_aca_full9 <- EurekahedgeHF_Excel_aca_full9[,c(starting_cols,other_cols)]
-
-EurekahedgeHF_Excel_aca_full9 <- EurekahedgeHF_Excel_aca_full9[rowSums(is.na(EurekahedgeHF_Excel_aca_full9[,1:ncol(EurekahedgeHF_Excel_aca_full9)]))<ncol(EurekahedgeHF_Excel_aca_full9),]
+decimal_cols <- c("yearly_ret","monthly_ret","monthly_ret2","annualised_return","best_monthly_return","worst_monthly_return",
+                  "rise_in_nav_since_inception","last_3_months","one_year_rolling_return","two_year_rolling_return","five_year_rolling_return",
+                  "annualised_standard_deviation","downside_deviation","upside_deviation","maximum_drawdown",
+                  "percentage_of_positive_months","var_90pct","var_95pct","var_99pct",
+                  "management_fee","performance_fee","other_fee")
 
 
+for (i in 1:length(decimal_cols))
+{
+  #i <- 1
+  
+  EurekahedgeHF_Excel_aca_full6b[,decimal_cols[i]] <- (EurekahedgeHF_Excel_aca_full6b[,decimal_cols[i]]/100)
+  
+  progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(decimal_cols), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
+  
+} 
 
-# ###############################################################################
-# cat("GET TNA FOR EACH CRSP_FUNDNO", "\n")
-# ###############################################################################
+EurekahedgeHF_Excel_aca_full6b <- EurekahedgeHF_Excel_aca_full6b[rowSums(is.na(EurekahedgeHF_Excel_aca_full6b[,1:ncol(EurekahedgeHF_Excel_aca_full6b)]))<ncol(EurekahedgeHF_Excel_aca_full6b),]
+
+rm2(EurekahedgeHF_Excel_aca_full)
+
+
+###############################################################################
+cat("CONVERT AUM TO MILLIONS", "\n")
+###############################################################################
+
+EurekahedgeHF_Excel_aca_full6c <- EurekahedgeHF_Excel_aca_full6b
+EurekahedgeHF_Excel_aca_full6c[,"aum"] <- (as.numeric(EurekahedgeHF_Excel_aca_full6c[,"aum"])*1000000)
+
+rm2(EurekahedgeHF_Excel_aca_full6b)
+
+
+###############################################################################
+cat("GET TNA FOR EACH CRSP_FUNDNO", "\n")
+###############################################################################
 # 
 # monthly_tna_full <- merge(mflink1, monthly_tna_ret_nav2, by.x=c("crsp_fundno"), by.y=c("crsp_fundno"), 
 #                           all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
@@ -1409,293 +1067,377 @@ EurekahedgeHF_Excel_aca_full9 <- EurekahedgeHF_Excel_aca_full9[rowSums(is.na(Eur
 #                                            monthly_tna_full[,"crsp_fundno"], 
 #                                            monthly_tna_full[,"yr"],
 #                                            monthly_tna_full[,"month"]),]
-# 
-# monthly_tna_full <- monthly_tna_full[!(is.na(monthly_tna_full[,"mtna"])),]
-# monthly_tna_full <- monthly_tna_full[monthly_tna_full[,"mtna"]>0.1,]
-# 
-# #TRIM TNA
-# TNA_q <- 0.005
-# TNA_extrema <- quantile(monthly_tna_full[,"mtna"], c(TNA_q, 1-TNA_q)) 
-# #monthly_tna_full[,"mtna"] <- winsorize_top(monthly_tna_full[,"mtna"],q=0.005)
-# monthly_tna_full <- monthly_tna_full[monthly_tna_full[,"mtna"]<TNA_extrema[2],]
-# 
-# #rm2(TNA_q,monthly_tna_full)
-# 
-# ###############################################################################
-# cat("AGGREGATE VALUES OF MONTHLY_TNA_RET_NAV VARIABLES FOR EACH WFICN", "\n")
-# ###############################################################################
-# 
-# monthly_tna_ret_nav2_vars <- c("mret","mnav","sddret","mktadjret")
-# for (i in 1:length(monthly_tna_ret_nav2_vars))
-# {
-#   #i <- 1
-#   #i <- 2
-#   monthly_tna_ret_nav2[,monthly_tna_ret_nav2_vars[i]] <- winsorize_both(monthly_tna_ret_nav2[,monthly_tna_ret_nav2_vars[i]],q=0.005)
-#   
-# } 
-# 
-# for (i in 1:length(monthly_tna_ret_nav2_vars))
-# {
-#   #i <- 1
-#   #i <- 2
-#   
-#   
-#   single_var  <- monthly_tna_ret_nav2[,match(c("crsp_fundno","yr","month",monthly_tna_ret_nav2_vars[i]),names(monthly_tna_ret_nav2))]
-#   
-#   single_var <- single_var[order(single_var[,"crsp_fundno"],single_var[,"yr"],single_var[,"month"]),]
-#   
-#   single_var <- single_var[!(is.na(single_var[,monthly_tna_ret_nav2_vars[i]])),]
-#   
-#   assign(paste("agg_",monthly_tna_ret_nav2_vars[i],sep=""),aggregate_crsp_variable(monthly_tna_full,single_var,monthly_tna_ret_nav2_vars[i],"wficn"), envir=.GlobalEnv)
-#   
-#   progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(monthly_tna_ret_nav2_vars), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
-#   
-#   rm2(single_var)
-#   
-# } 
-# 
-# 
-# ###############################################################################
-# cat("AGGREGATE VALUES OF FUND_FEES_MONTH VARIABLES FOR EACH WFICN", "\n")
-# ###############################################################################
-# 
-# fund_fees_month_vars <- c("actual_12b1", "max_12b1", "exp_ratio", "mgmt_fee", "turn_ratio")
-# 
-# for (i in 1:length(fund_fees_month_vars))
-# {
-#   #i <- 1
-#   #i <- 2
-#   fund_fees_month[,fund_fees_month_vars[i]] <- winsorize_both(fund_fees_month[,fund_fees_month_vars[i]],q=0.005)
-#   
-# } 
-# 
-# for (i in 1:length(fund_fees_month_vars))
-# {
-#   #i <- 1
-#   #i <- 2
-#   
-#   
-#   single_var  <- fund_fees_month[,match(c("crsp_fundno","yr","month",fund_fees_month_vars[i]),names(fund_fees_month))]
-#   
-#   single_var <- single_var[order(single_var[,"crsp_fundno"],single_var[,"yr"],single_var[,"month"]),]
-#   
-#   single_var <- single_var[!(is.na(single_var[,fund_fees_month_vars[i]])),]
-#   
-#   assign(paste("agg_",fund_fees_month_vars[i],sep=""),aggregate_crsp_variable(monthly_tna_full,single_var,fund_fees_month_vars[i],"wficn"), envir=.GlobalEnv)
-#   
-#   progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(fund_fees_month_vars), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
-#   
-#   rm2(single_var)
-#   
-# } 
-# 
-# ###############################################################################
-# cat("AGGREGATE VALUES OF TNA VARIABLES FOR EACH WFICN", "\n")
-# ###############################################################################
-# 
-# monthly_tna_trim <- subset(monthly_tna_full,select=-c(crsp_fundno))
-# 
-# monthly_tna_trim <- monthly_tna_trim[c(identifier,"yr","month","mtna")]
-# 
-# monthly_tna_trim <- monthly_tna_trim[order(monthly_tna_trim[,identifier], 
-#                                            monthly_tna_trim[,"yr"], 
-#                                            monthly_tna_trim[,"month"]),] 
-# 
-# agg_mtna <- as.data.frame(data.table(monthly_tna_trim)[, list(summtna=sum(mtna)),by="wficn,yr,month"],stringsAsFactors=FALSE)
-# colnames(agg_mtna)[4] <- "mtna_agg"
-# 
-# #rm2(monthly_tna_trim)
-# 
-# 
-# ###############################################################################
-# cat("MERGE AGGREGATE DATA", "\n")
-# ###############################################################################
-# 
-# monthly_agg <- merge(agg_mtna, agg_mret, by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
-#                      all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# 
-# monthly_agg <- merge(monthly_agg, agg_mnav, by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
-#                      all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# 
-# monthly_agg <- merge(monthly_agg, agg_mktadjret, by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
-#                      all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# 
-# monthly_agg <- merge(monthly_agg, agg_sddret, by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
-#                      all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# 
-# monthly_agg <- merge(monthly_agg, agg_actual_12b1, by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
-#                      all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# 
-# monthly_agg <- merge(monthly_agg, agg_max_12b1, by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
-#                      all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# 
-# monthly_agg <- merge(monthly_agg, agg_exp_ratio, by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
-#                      all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# 
-# monthly_agg <- merge(monthly_agg, agg_mgmt_fee, by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
-#                      all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# 
-# monthly_agg <- merge(monthly_agg, agg_turn_ratio, by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
-#                      all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# 
-# #rm2(agg_mret,agg_mnav,agg_mktadjret,agg_sddret,agg_actual_12b1,agg_max_12b1,agg_exp_ratio,agg_mgmt_fee,agg_turn_ratio)
-# 
-# 
+EurekahedgeHF_Excel_aca_full6d <- EurekahedgeHF_Excel_aca_full6c
+EurekahedgeHF_Excel_aca_full6d <- EurekahedgeHF_Excel_aca_full6d[!(is.na(EurekahedgeHF_Excel_aca_full6d[,"aum"])),]
+EurekahedgeHF_Excel_aca_full6d <- EurekahedgeHF_Excel_aca_full6d[EurekahedgeHF_Excel_aca_full6d[,"aum"]>=100000,]
+
+#TRIM AUM
+#aum_q <- 0.005
+#aum_extrema <- quantile(EurekahedgeHF_Excel_aca_full6d[,"aum"], c(aum_q, 1-aum_q)) 
+#EurekahedgeHF_Excel_aca_full6d <- EurekahedgeHF_Excel_aca_full6d[EurekahedgeHF_Excel_aca_full6d[,"aum"]<aum_extrema[2],]
+
+EurekahedgeHF_Excel_aca_full6d[,"aum"] <- winsorize_top(EurekahedgeHF_Excel_aca_full6d[,"aum"],q=0.025)
+
+rm2(EurekahedgeHF_Excel_aca_full6c)
+
+###############################################################################
+cat("MERGE MONTHLY_TNA_RET_NAV2 AND INDEX RETURNS/FUND VOLATILITY", "\n")
+###############################################################################
+
+EurekahedgeHF_Excel_aca_full7 <- merge(EurekahedgeHF_Excel_aca_full6c, crspa_msi_trim, 
+                                       by.x=c("yr","month"), by.y=c("yr","month"), 
+                                       all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+
+#EurekahedgeHF_Excel_aca_full7 <- transform(EurekahedgeHF_Excel_aca_full7, mktadjret=monthly_ret-vwretx)
+EurekahedgeHF_Excel_aca_full7 <- transform(EurekahedgeHF_Excel_aca_full7, mktadjret=monthly_ret-vwretd)
+
+EurekahedgeHF_Excel_aca_full7 <- EurekahedgeHF_Excel_aca_full7[rowSums(is.na(EurekahedgeHF_Excel_aca_full7[,1:ncol(EurekahedgeHF_Excel_aca_full7)]))<ncol(EurekahedgeHF_Excel_aca_full7),]
+
+EurekahedgeHF_Excel_aca_full7 <- EurekahedgeHF_Excel_aca_full7[order(EurekahedgeHF_Excel_aca_full7[,identifier], 
+                                                                     EurekahedgeHF_Excel_aca_full7[,"yr"], 
+                                                                     EurekahedgeHF_Excel_aca_full7[,"month"]),] 
+row.names(EurekahedgeHF_Excel_aca_full7) <- seq(nrow(EurekahedgeHF_Excel_aca_full7))
+
+rm2(EurekahedgeHF_Excel_aca_full6c,crspa_msi_trim)
+
+#temp <- EurekahedgeHF_Excel_aca_full7[,c("yr","month","fund_id","fund_name","mktadjret","monthly_ret","vwretd")]
 
 
-# ###############################################################################
-# cat("GET CRSP_FUNDNOS FOR EVERY WFICN IN FUND_NAMES", "\n")
-# ###############################################################################
-# 
-# fund_names_full <- merge(fund_names, mflink1, by.x=c("crsp_fundno"), by.y=c("crsp_fundno"), 
-#                          all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# 
-# fund_names_full <- subset(fund_names_full,select=-c(cusip8, crsp_portno,crsp_cl_grp,fund_name, nasdaq, ncusip, first_offer_dt, mgmt_name, mgmt_cd, mgr_name, 
-#                                                     mgr_dt, adv_name, index_fund_flag, et_flag, end_dt, merge_fundno,delist_cd,header))
-# 
-# fund_names_full <- fund_names_full[c(identifier,"crsp_fundno","chgdt","chgenddt","open_to_inv","retail_fund","inst_fund","m_fund","vau_fund",
-#                                      "dead_flag")]
-# 
-# fund_names_full <- fund_names_full[order(fund_names_full[,identifier], fund_names_full[,"crsp_fundno"]),]
-# 
-# #rm2(fund_names)
-# 
-# 
-# ###############################################################################
-# cat("CHANGE Y/N TO BINARY IN FUND_NAMES_FULL", "\n")
-# ###############################################################################
-# 
-# fund_names_full_dv <- data.frame(fund_names_full,retail_fund_dv=NA,open_to_inv_dv=NA,inst_fund_dv=NA, 
-#                                  m_fund_dv=NA,vau_fund_dv=NA,dead_flag_dv=NA,stringsAsFactors=FALSE)
-# 
-# fund_names_full_dv[,"open_to_inv_dv"] <- ifelse(fund_names_full_dv$open_to_inv=="Y", 1, fund_names_full_dv$open_to_inv_dv)
-# fund_names_full_dv[,"open_to_inv_dv"] <- ifelse(fund_names_full_dv$open_to_inv=="N", 0, fund_names_full_dv$open_to_inv_dv)
-# 
-# fund_names_full_dv[,"retail_fund_dv"] <- ifelse(fund_names_full_dv$retail_fund=="Y", 1, fund_names_full_dv$retail_fund_dv)
-# fund_names_full_dv[,"retail_fund_dv"] <- ifelse(fund_names_full_dv$retail_fund=="N", 0, fund_names_full_dv$retail_fund_dv)
-# 
-# fund_names_full_dv[,"inst_fund_dv"] <- ifelse(fund_names_full_dv$inst_fund=="Y", 1, fund_names_full_dv$inst_fund_dv)
-# fund_names_full_dv[,"inst_fund_dv"] <- ifelse(fund_names_full_dv$inst_fund=="N", 0, fund_names_full_dv$inst_fund_dv)
-# 
-# fund_names_full_dv[,"m_fund_dv"] <- ifelse(fund_names_full_dv$m_fund=="Y", 1, fund_names_full_dv$m_fund_dv)
-# fund_names_full_dv[,"m_fund_dv"] <- ifelse(fund_names_full_dv$m_fund=="N", 0, fund_names_full_dv$m_fund_dv)
-# 
-# fund_names_full_dv[,"vau_fund_dv"] <- ifelse(fund_names_full_dv$vau_fund=="Y", 1, fund_names_full_dv$vau_fund_dv)
-# fund_names_full_dv[,"vau_fund_dv"] <- ifelse(fund_names_full_dv$vau_fund=="N", 0, fund_names_full_dv$vau_fund_dv)
-# 
-# fund_names_full_dv[,"dead_flag_dv"] <- ifelse(fund_names_full_dv$dead_flag=="Y", 1, fund_names_full_dv$dead_flag_dv)
-# fund_names_full_dv[,"dead_flag_dv"] <- ifelse(fund_names_full_dv$dead_flag=="N", 0, fund_names_full_dv$dead_flag_dv)
-# 
-# fund_names_full_dv <- subset(fund_names_full_dv,select=-c(retail_fund,open_to_inv,inst_fund,m_fund,vau_fund,dead_flag))
-# 
-# #rm2(fund_names_full)
-# 
-# 
-# ###############################################################################
-# cat("EXPAND FUND NAMES", "\n")
-# ###############################################################################
-# 
-# fund_names_full_dv2 <- transform(fund_names_full_dv, chgdt=as.IDate(chgdt), chgenddt=as.IDate(chgenddt))
-# 
-# fund_names_full_dv2 <- fund_names_full_dv2[(fund_names_full_dv2[,"chgdt"]>0 & 
-#                                               fund_names_full_dv2[,"chgenddt"]>0),]
-# fund_names_full_dv2 <- fund_names_full_dv2[!(fund_names_full_dv2[,"chgdt"]>=fund_names_full_dv2[,"chgenddt"]),]
-# 
-# fund_names_month_temp <- data.table(fund_names_full_dv2)[,{s=seq(chgdt,chgenddt,"days");list(yr=year(unlist(s)),month=month(unlist(s)))},
-#                                                          by="crsp_fundno,chgdt,chgenddt"]
-# 
-# #rm2(fund_names_full_dv)
-# 
-# setkeyv(fund_names_month_temp,c("crsp_fundno","yr","month"))
-# fund_names_month_temp <- fund_names_month_temp[unique(fund_names_month_temp[,key(fund_names_month_temp), with = FALSE]), mult = 'first']
-# 
-# fund_names_month_temp <- as.data.frame(fund_names_month_temp,stringsAsFactors=FALSE) 
-# 
-# fund_names_month <- merge(fund_names_month_temp, fund_names_full_dv2, by.x=c("crsp_fundno","chgdt","chgenddt"), by.y=c("crsp_fundno","chgdt","chgenddt"), 
-#                           all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-# 
-# rm2(fund_names_month_temp,fund_names_full_dv2)
-# 
-# fund_names_month <- transform(fund_names_month, chgdt=as.character(chgdt), chgenddt=as.character(chgenddt))
-# 
-# fund_names_month <- fund_names_month[c(identifier,"crsp_fundno","chgdt","chgenddt","yr","month",
-#                                        "retail_fund_dv","open_to_inv_dv","inst_fund_dv","m_fund_dv","vau_fund_dv","dead_flag_dv")]
-# 
-# fund_names_month <- fund_names_month[order(fund_names_month[,identifier],fund_names_month[,"crsp_fundno"],
-#                                            fund_names_month[,"yr"],fund_names_month[,"month"]),] 
-# 
-# 
-# ###############################################################################
-# cat("AGGREGATE VALUES OF FUND_NAMES_MONTH VARIABLES FOR EACH WFICN", "\n")
-# ###############################################################################
-# 
-# fund_names_month_vars <- c("retail_fund_dv","open_to_inv_dv","inst_fund_dv","m_fund_dv","vau_fund_dv","dead_flag_dv")
-# for (i in 1:length(fund_names_month_vars))
-# {
-#   #i <- 1
-#   #i <- 2
-#   
-#   single_var  <- fund_names_month[,match(c("crsp_fundno","yr","month",fund_names_month_vars[i]),names(fund_names_month))]
-#   
-#   single_var <- single_var[order(single_var[,"crsp_fundno"],single_var[,"yr"],single_var[,"month"]),]
-#   
-#   single_var <- single_var[!(is.na(single_var[,fund_names_month_vars[i]])),]
-#   
-#   assign(paste("agg_",fund_names_month_vars[i],sep=""),aggregate_crsp_variable(monthly_tna_full,single_var,fund_names_month_vars[i],"wficn"), envir=.GlobalEnv)
-#   
-#   progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(fund_names_month_vars), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
-#   
-#   rm2(single_var)
-#   
-# } 
+###############################################################################
+cat("WINSORIZE VALUES OF RETURN", "\n")
+###############################################################################
+
+EurekahedgeHF_Excel_aca_full7b <- EurekahedgeHF_Excel_aca_full7
+
+monthly_tna_ret_nav2_vars <- c("monthly_ret","mktadjret")
+for (i in 1:length(monthly_tna_ret_nav2_vars))
+{
+  #i <- 1
+  #i <- 2
+  EurekahedgeHF_Excel_aca_full7b[,monthly_tna_ret_nav2_vars[i]] <- 
+    winsorize_both(EurekahedgeHF_Excel_aca_full7b[,monthly_tna_ret_nav2_vars[i]],q=0.01)
+  
+} 
+
+rm2(EurekahedgeHF_Excel_aca_full7)
+
+#temp <- EurekahedgeHF_Excel_aca_full7b[,c("yr","month","fund_id","fund_name","mktadjret","monthly_ret","vwretd")]
+
+###############################################################################
+cat("WINSORIZE VALUES OF FEES", "\n")
+###############################################################################
+
+EurekahedgeHF_Excel_aca_full8 <- EurekahedgeHF_Excel_aca_full7b
+
+fund_fees_month_vars <- c("fund_capacity_us_m","maximum_drawdown","minimum_investment_size","management_fee", "performance_fee","other_fee")
+
+for (i in 1:length(fund_fees_month_vars))
+{
+  #i <- 1
+  #i <- 2
+  EurekahedgeHF_Excel_aca_full8[,fund_fees_month_vars[i]] <- 
+    winsorize_both(EurekahedgeHF_Excel_aca_full8[,fund_fees_month_vars[i]],q=0.01)
+  
+} 
+
+rm2(EurekahedgeHF_Excel_aca_full7b)
+
+#colMeans(EurekahedgeHF_Excel_aca_full8[,c("mktadjret","monthly_ret","vwretd")], na.rm = TRUE)
 
 
-# ###############################################################################
-# cat("FIND AGE FOR EVERY WFICN", "\n")
-# ###############################################################################
+###############################################################################
+cat("CREATE LAG OF AUM AND RETURNS", "\n")
+###############################################################################
 
-fund_age <- data.table(EurekahedgeHF_Excel_aca_full9)[,list(chgdt=min(Inception_Date)),by=identifier]
+
+#duplicates1 <- sqldf("SELECT *, count(Fund_ID) as count FROM EurekahedgeHF_Excel_aca_full6 group by Fund_ID,date")
+#duplicates2 <- sqldf("SELECT * FROM duplicates1 where count<>1")
+#data_u <- unique(data_in[,c(group,time)])
+
+#returns_short <- returns[(returns[,identifier]==5002 | returns[,identifier]==5003) ,]
+
+lag_vars <- c("aum","monthly_ret","mktadjret")
+lag_count <- 4
+
+#[,c(identifier,"yr","month","date",lag_vars)]
+
+EurekahedgeHF_Excel_aca_full9 <- data.frame(EurekahedgeHF_Excel_aca_full8,
+                                            matrix(NA, ncol=length(lag_vars)*lag_count, nrow=nrow(EurekahedgeHF_Excel_aca_full8)),
+                                            stringsAsFactors=FALSE)
+colnames(EurekahedgeHF_Excel_aca_full9) <- c(colnames(EurekahedgeHF_Excel_aca_full8),
+                                             paste(lag_vars[1],"_lag",seq(1,lag_count),sep=""),
+                                             paste(lag_vars[2],"_lag",seq(1,lag_count),sep=""),
+                                             paste(lag_vars[3],"_lag",seq(1,lag_count),sep=""))
+
+
+for (i in 1:length(lag_vars))
+{
+  #i <- 1
+  #i <- 2
+  
+  EurekahedgeHF_Excel_aca_full9[,paste(lag_vars[i],"_lag",seq(1,lag_count),sep="")] <- 
+    create_lags2(EurekahedgeHF_Excel_aca_full9,lag_vars[i],identifier,lag_count)
+  
+  progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(lag_vars), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
+  
+} 
+
+EurekahedgeHF_Excel_aca_full9 <- EurekahedgeHF_Excel_aca_full9[,sort(colnames(EurekahedgeHF_Excel_aca_full9))]
+
+starting_cols <- c(identifier,"fund_name","date_added","flagship","closed","limited","dead","dead_date","dead_reason",
+                   "eurekahedge_id","isin","sedol","valoren","cusip","bloomberg","reuters","date","yr","month",
+                   "aum",paste("aum","_lag",seq(1,lag_count),sep=""),
+                   "monthly_ret",paste("monthly_ret","_lag",seq(1,lag_count),sep=""),                  
+                   "mktadjret",paste("mktadjret","_lag",seq(1,lag_count),sep=""),                  
+                   "monthly_ret2","yearly_ret")
+
+all_cols <- colnames(EurekahedgeHF_Excel_aca_full9)
+
+other_cols <- all_cols[-which(all_cols %in% starting_cols)]
+
+EurekahedgeHF_Excel_aca_full9 <- EurekahedgeHF_Excel_aca_full9[,c(starting_cols,other_cols)]
+
+EurekahedgeHF_Excel_aca_full9 <- EurekahedgeHF_Excel_aca_full9[rowSums(is.na(EurekahedgeHF_Excel_aca_full9[,1:ncol(EurekahedgeHF_Excel_aca_full9)]))<ncol(EurekahedgeHF_Excel_aca_full9),]
+
+EurekahedgeHF_Excel_aca_full9 <- EurekahedgeHF_Excel_aca_full9[order(EurekahedgeHF_Excel_aca_full9[,identifier], 
+                                                                     EurekahedgeHF_Excel_aca_full9[,"yr"], 
+                                                                     EurekahedgeHF_Excel_aca_full9[,"month"]),] 
+row.names(EurekahedgeHF_Excel_aca_full9) <- seq(nrow(EurekahedgeHF_Excel_aca_full9))
+
+rm2(EurekahedgeHF_Excel_aca_full8)
+
+#EurekahedgeHF_Excel_aca_full9[EurekahedgeHF_Excel_aca_full9[,c("aum")]==0,c("yr","month","fund_id","aum","aum_lag1","monthly_ret")]
+
+###############################################################################
+cat("CREATE FLOW AND LAG FLOW", "\n")
+###############################################################################
+
+lag_flow_vars <- c("nflow","pflow")
+lag_flow_count <- 4
+
+EurekahedgeHF_Excel_aca_full10 <- data.frame(EurekahedgeHF_Excel_aca_full9,
+                                             nflow=NA,
+                                             pflow=NA,
+                                             matrix(NA, ncol=length(lag_flow_vars)*lag_flow_count, nrow=nrow(EurekahedgeHF_Excel_aca_full9)),
+                                             stringsAsFactors=FALSE)
+colnames(EurekahedgeHF_Excel_aca_full10) <- c(colnames(EurekahedgeHF_Excel_aca_full9),
+                                              lag_flow_vars[1],
+                                              lag_flow_vars[2],
+                                              paste(lag_flow_vars[1],"lag",seq(1,lag_flow_count),sep=""),
+                                              paste(lag_flow_vars[2],"lag",seq(1,lag_flow_count),sep=""))
+
+EurekahedgeHF_Excel_aca_full10[,"nflow"] <- as.data.frame(data.table(EurekahedgeHF_Excel_aca_full10)[,list(nflow=aum-(aum_lag1*(1+monthly_ret))),by=identifier], stringsAsFactors=FALSE)["nflow"]
+EurekahedgeHF_Excel_aca_full10[,"pflow"] <- as.data.frame(data.table(EurekahedgeHF_Excel_aca_full10)[,list(pflow=((aum-(aum_lag1*(1+monthly_ret)))/aum_lag1)),by=identifier], stringsAsFactors=FALSE)["pflow"]
+
+for (i in 1:length(lag_flow_vars))
+{
+  #i <- 1
+  #i <- 2
+  
+  EurekahedgeHF_Excel_aca_full10[,paste(lag_flow_vars[i],"lag",seq(1,lag_flow_count),sep="")] <- 
+    create_lags2(EurekahedgeHF_Excel_aca_full10,lag_flow_vars[i],identifier,lag_flow_count)
+  
+  progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(lag_flow_vars), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
+  
+} 
+
+
+# nflow_lags <- as.data.frame(data.table(nflow)[,list(nflow,
+#                                                           nflowlag1=shift(nflow,-1),
+#                                                           nflowlag2=shift(nflow,-2),
+#                                                           nflowlag3=shift(nflow,-3),
+#                                                           nflowlag4=shift(nflow,-4)),by=identifier], stringsAsFactors=FALSE) 
+# 
+# pflow_lags <- as.data.frame(data.table(pflow)[,list(pflow,
+#                                                           pflowlag1=shift(pflow,-1),
+#                                                           pflowlag2=shift(pflow,-2),
+#                                                           pflowlag3=shift(pflow,-3),
+#                                                           pflowlag4=shift(pflow,-4)),by=identifier], stringsAsFactors=FALSE) 
+# 
+# EurekahedgeHF_Excel_aca_full10 <- data.frame(EurekahedgeHF_Excel_aca_full4,
+#                                     nflow_lags[,c("nflow","nflowlag1","nflowlag2","nflowlag3","nflowlag4")], 
+#                                     pflow_lags[,c("pflow","pflowlag1","pflowlag2","pflowlag3","pflowlag4")],stringsAsFactors=FALSE)
+
+
+
+EurekahedgeHF_Excel_aca_full10 <- EurekahedgeHF_Excel_aca_full10[,sort(colnames(EurekahedgeHF_Excel_aca_full10))]
+
+starting_cols <- c(identifier,"fund_name","date_added","flagship","closed","limited","dead","dead_date","dead_reason",
+                   "eurekahedge_id","isin","sedol","valoren","cusip","bloomberg","reuters","date","yr","month",
+                   "aum",paste("aum","_lag",seq(1,lag_count),sep=""),
+                   "monthly_ret",paste("monthly_ret","_lag",seq(1,lag_count),sep=""),                  
+                   "mktadjret",paste("mktadjret","_lag",seq(1,lag_count),sep=""),                  
+                   "monthly_ret2","yearly_ret",
+                   "nflow",paste("nflow","lag",seq(1,lag_flow_count),sep=""),  
+                   "pflow",paste("pflow","lag",seq(1,lag_flow_count),sep=""))
+
+all_cols <- colnames(EurekahedgeHF_Excel_aca_full10)
+
+other_cols <- all_cols[-which(all_cols %in% starting_cols)]
+
+EurekahedgeHF_Excel_aca_full10 <- EurekahedgeHF_Excel_aca_full10[,c(starting_cols,other_cols)]
+
+EurekahedgeHF_Excel_aca_full10 <- EurekahedgeHF_Excel_aca_full10[rowSums(is.na(EurekahedgeHF_Excel_aca_full10[,1:ncol(EurekahedgeHF_Excel_aca_full10)]))<ncol(EurekahedgeHF_Excel_aca_full10),]
+
+EurekahedgeHF_Excel_aca_full10 <- EurekahedgeHF_Excel_aca_full10[order(EurekahedgeHF_Excel_aca_full10[,identifier], 
+                                                                       EurekahedgeHF_Excel_aca_full10[,"yr"],
+                                                                       EurekahedgeHF_Excel_aca_full10[,"month"]),]
+
+row.names(EurekahedgeHF_Excel_aca_full10) <- seq(nrow(EurekahedgeHF_Excel_aca_full10))
+
+EurekahedgeHF_Excel_aca_full10 <- unknown_to_NA(EurekahedgeHF_Excel_aca_full10,unknowns_strings)
+
+rm2(EurekahedgeHF_Excel_aca_full9)
+
+#colMeans(EurekahedgeHF_Excel_aca_full10[,c("nflow","pflow")], na.rm = TRUE)
+#EurekahedgeHF_Excel_aca_full10[is.infinite(EurekahedgeHF_Excel_aca_full10[,c("pflow")]),c("yr","month","fund_id","aum","aum_lag1","monthly_ret","nflow","pflow")]
+
+
+###############################################################################
+cat("COMPUTE ANNUAL FUND FLOW VOLATILITY", "\n")
+###############################################################################
+
+annual_flow_trim <- EurekahedgeHF_Excel_aca_full10[,c(identifier,"yr","nflow","pflow")]
+
+fund_aflow_volatility <- ddply(annual_flow_trim, c(identifier,"yr"), summarize, 
+                               sdnet_flow=sd(nflow, na.rm = TRUE),sdpct_flow=sd(pflow, na.rm = TRUE))
+
+fund_aflow_volatility_full <- data.frame(fund_aflow_volatility,
+                                         sdnet_flowlag1=shift(fund_aflow_volatility$sdnet_flow,-1),
+                                         sdpct_flowlag1=shift(fund_aflow_volatility$sdpct_flow,-1),stringsAsFactors=FALSE)
+
+EurekahedgeHF_Excel_aca_full11 <- merge(EurekahedgeHF_Excel_aca_full10, fund_aflow_volatility_full, 
+                                        by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
+                                        all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+
+rm2(annual_flow_trim,fund_aflow_volatility,EurekahedgeHF_Excel_aca_full10)
+
+
+###############################################################################
+cat("REORDER COLUMNS", "\n")
+###############################################################################
+
+EurekahedgeHF_Excel_aca_full11 <- EurekahedgeHF_Excel_aca_full11[,sort(colnames(EurekahedgeHF_Excel_aca_full11))]
+
+starting_cols <- c(identifier,"fund_name","date_added","flagship","closed","limited","dead","dead_date","dead_reason",
+                   "eurekahedge_id","isin","sedol","valoren","cusip","bloomberg","reuters","date","yr","month",
+                   "aum",paste("aum","_lag",seq(1,lag_count),sep=""),
+                   "monthly_ret",paste("monthly_ret","_lag",seq(1,lag_count),sep=""),                  
+                   "mktadjret",paste("mktadjret","_lag",seq(1,lag_count),sep=""),                  
+                   "monthly_ret2","yearly_ret",
+                   "nflow",paste("nflow","lag",seq(1,lag_flow_count),sep=""),  
+                   "pflow",paste("pflow","lag",seq(1,lag_flow_count),sep=""))
+
+all_cols <- colnames(EurekahedgeHF_Excel_aca_full11)
+
+other_cols <- all_cols[-which(all_cols %in% starting_cols)]
+
+EurekahedgeHF_Excel_aca_full11 <- EurekahedgeHF_Excel_aca_full11[,c(starting_cols,other_cols)]
+
+EurekahedgeHF_Excel_aca_full11 <- EurekahedgeHF_Excel_aca_full11[rowSums(is.na(EurekahedgeHF_Excel_aca_full11[,1:ncol(EurekahedgeHF_Excel_aca_full11)]))<ncol(EurekahedgeHF_Excel_aca_full11),]
+
+
+###############################################################################
+cat("FIND AGE FOR EVERY WFICN", "\n")
+###############################################################################
+
+fund_age <- data.table(EurekahedgeHF_Excel_aca_full11)[,list(chgdt=min(inception_date)),by=identifier]
 fund_age <- data.frame(fund_age,stringsAsFactors=FALSE)
 
-fund_age_trim <- data.table(fund_age[])[,list(chgdt=min(chgdt)),by=identifier]
+fund_age_trim <- data.table(fund_age)[,list(chgdt=min(chgdt)),by=identifier]
 fund_age_trim <- as.data.frame(fund_age_trim,stringsAsFactors=FALSE)
 
-#rm2(fund_age)
+rm2(fund_age)
 
-fund_age_trim2 <- transform(fund_age_trim, chgdt=as.IDate(chgdt))
+fund_age_trim2 <- transform(fund_age_trim, chgdt=as.IDate(chgdt,origin = "1970-01-01"))
 
 fund_age_trim3 <- fund_age_trim2
 fund_age_trim3 <- fund_age_trim3[!(is.na(fund_age_trim3[,identifier])),]
 fund_age_trim3 <- fund_age_trim3[!(is.na(fund_age_trim3[,"chgdt"])),]
 row.names(fund_age_trim3) <- seq(nrow(fund_age_trim3))
 
-#rm2(fund_age_trim,fund_age_trim2)
+rm2(fund_age_trim,fund_age_trim2)
 
-#fund_age_month_temp <- data.table(fund_age_trim3)[,{s=seq(chgdt,today(),"days");list(yr=year(unlist(s)),month=month(unlist(s)))},
-#                                                   by="Fund_ID,chgdt"]
-fund_age_month_temp <- data.table(fund_age_trim3)[,{s=seq(chgdt,today(),"days");list(yr=year(unlist(s)),month=month(unlist(s)))},
-                                                  by=eval(paste(identifier,",chgdt",sep=""))]
+#fund_age_trim4 <- data.frame(fund_age_trim3,today=today(),stringsAsFactors=FALSE)
+#fund_age_trim4[,"chgdt"] <- as.character(fund_age_trim4[,"chgdt"])
+#fund_age_trim4[,"chgdt"] <- as.Date(fund_age_trim4[,"chgdt"])
+#fund_age_trim4[,"today"] <- as.Date(fund_age_trim4[,"today"])
+#fund_age_trim4[,"chgdt"] <- as.IDate(fund_age_trim4[,"chgdt"])
+#fund_age_trim4[,"today"] <- as.IDate(fund_age_trim4[,"today"])
+#fund_age_trim4[,"chgdt"] <- as.POSIXct(fund_age_trim4[,"chgdt"], format="%Y-%m-%d", origin = "1970-01-01")
+#fund_age_trim4[,"today"] <- as.POSIXct(fund_age_trim4[,"today"], format="%Y-%m-%d", origin = "1970-01-01")
 
+
+#fund_age_month_temp <- data.table(fund_age_trim4)[,{s=seq(chgdt,today(),"days");list(yr=year(unlist(s)),month=month(unlist(s)))},
+#                                                  by=eval(paste(identifier,",chgdt",sep=""))]
+# fund_age_month_temp <- data.table(fund_age_trim4)[,{s=seq(chgdt,
+#                                                           today_temp,
+#                                                           "days");
+#                                                     list(yr=year(unlist(s)),month=month(unlist(s)))},
+#                                                   by=eval(paste(identifier,",chgdt",sep=""))]
+
+#fund_age_month_temp <- data.table(fund_age_trim4)[,{s=seq(from=chgdt,to=Sys.Date(),by="days")},
+#                                 by=list(fund_id,chgdt)]
+
+fund_age_month_temp <- data.table(fund_age_trim3)[, seq(as.Date(chgdt, origin="1970-01-01"), Sys.Date(), by="days"),
+                      by=eval(paste(identifier,",chgdt",sep=""))]
+
+#fund_age_month_temp <- data.table(fund_age_trim4)[,{s=seq(from=chgdt,
+#                                                          to=today,
+#                                                          by="days");
+#                                                    list(yr=year(unlist(s)),month=month(unlist(s)))},
+#                                                  by=eval(paste(identifier,",chgdt",sep=""))]
+
+
+
+#test <- seq(as.POSIXct(fund_age_trim4[1,"chgdt"], format="%Y-%m-%d"),
+#            as.POSIXct(today(), format="%Y-%m-%d"),
+#            "days")
+#test <- as.data.frame(test,stringsAsFactors=FALSE)  
+  
+rm2(fund_age_trim3)
 
 fund_age_month_temp <- as.data.frame(fund_age_month_temp,stringsAsFactors=FALSE)
+colnames(fund_age_month_temp)[ncol(fund_age_month_temp)] <- "data_expand"
 
-#rm2(fund_age_trim3)
+fund_age_month_temp <- data.frame(fund_age_month_temp,
+                                   yr=year(fund_age_month_temp[,"data_expand"]),
+                                   month=month(fund_age_month_temp[,"data_expand"]),
+                                   stringsAsFactors=FALSE)
 
-fund_age_month_temp <- unique(fund_age_month_temp, incomparables=FALSE)
-row.names(fund_age_month_temp) <- seq(nrow(fund_age_month_temp))
+fund_age_month_temp2 <- fund_age_month_temp[,!(colnames(fund_age_month_temp) %in% "data_expand")]
 
-fund_age_month_temp <- transform(fund_age_month_temp, chgdt=as.character(chgdt))
+rm2(fund_age_month_temp)
 
-fund_age_month <- data.table(fund_age_month_temp)[,list(yr,month,chgdt,age_m=(seq(1,.N)-1),age_y=((seq(1,.N)-1)/12)),by=identifier]
+fund_age_month_temp2 <- unique(fund_age_month_temp2, incomparables=FALSE)
+row.names(fund_age_month_temp2) <- seq(nrow(fund_age_month_temp2))
+
+fund_age_month_temp2 <- transform(fund_age_month_temp2, chgdt=as.character(chgdt))
+
+fund_age_month <- data.table(fund_age_month_temp2)[,list(yr,month,chgdt,age_m=(seq(1,.N)-1),age_y=((seq(1,.N)-1)/12)),by=identifier]
 fund_age_month <- as.data.frame(fund_age_month,stringsAsFactors=FALSE)
 
-#rm2(fund_age_month_temp)
+rm2(fund_age_month_temp2)
 
-EurekahedgeHF_Excel_aca_full10 <- merge(EurekahedgeHF_Excel_aca_full9, fund_age_month, 
+EurekahedgeHF_Excel_aca_full12 <- merge(EurekahedgeHF_Excel_aca_full11, fund_age_month, 
                                         by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
                                         all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
 
-#rm2(fund_age_month)
+rm2(fund_age_month,EurekahedgeHF_Excel_aca_full11)
+
+
+# age_vars <- c("age_m","age_y")
+# for (i in 1:length(age_vars))
+# {
+#   #i <- 1
+#   #i <- 2
+#   EurekahedgeHF_Excel_aca_full12[,age_vars[i]] <- 
+#     winsorize_both(EurekahedgeHF_Excel_aca_full12[,age_vars[i]],q=0.01)
+#   
+# } 
+
+
+#colMeans(EurekahedgeHF_Excel_aca_full12[,c("nflow","pflow")], na.rm = TRUE)
 
 # ###############################################################################
 # cat("MERGE AGGREGATE DATA", "\n")
@@ -1821,21 +1563,21 @@ EurekahedgeHF_Excel_aca_full10 <- merge(EurekahedgeHF_Excel_aca_full9, fund_age_
 # cat("CREATE LOG ASSETS, SQUARE RETURNS, AND STLYE DUMMIES", "\n")
 # ###############################################################################
 
-EurekahedgeHF_Excel_aca_full11 <- data.frame(EurekahedgeHF_Excel_aca_full10,
+EurekahedgeHF_Excel_aca_full13 <- data.frame(EurekahedgeHF_Excel_aca_full12,
                                              log_AUM=NA,log_AUM_lag1=NA,log_AUM_lag2=NA,log_AUM_lag3=NA,log_AUM_lag4=NA,
                                              mktadjret_sq=NA,mktadjret_lag1_sq=NA,mktadjret_lag2_sq=NA,mktadjret_lag3_sq=NA,mktadjret_lag4_sq=NA)
 
-EurekahedgeHF_Excel_aca_full11[,"log_AUM"] <- suppressWarnings(log(EurekahedgeHF_Excel_aca_full11[,"AUM"]))
-EurekahedgeHF_Excel_aca_full11[,"log_AUM_lag1"] <- suppressWarnings(log(EurekahedgeHF_Excel_aca_full11[,"AUM_lag1"]))
-EurekahedgeHF_Excel_aca_full11[,"log_AUM_lag2"] <- suppressWarnings(log(EurekahedgeHF_Excel_aca_full11[,"AUM_lag2"]))
-EurekahedgeHF_Excel_aca_full11[,"log_AUM_lag3"] <- suppressWarnings(log(EurekahedgeHF_Excel_aca_full11[,"AUM_lag3"]))
-EurekahedgeHF_Excel_aca_full11[,"log_AUM_lag4"] <- suppressWarnings(log(EurekahedgeHF_Excel_aca_full11[,"AUM_lag4"]))
+EurekahedgeHF_Excel_aca_full13[,"log_AUM"] <- suppressWarnings(log(EurekahedgeHF_Excel_aca_full13[,"aum"]))
+EurekahedgeHF_Excel_aca_full13[,"log_AUM_lag1"] <- suppressWarnings(log(EurekahedgeHF_Excel_aca_full13[,"aum_lag1"]))
+EurekahedgeHF_Excel_aca_full13[,"log_AUM_lag2"] <- suppressWarnings(log(EurekahedgeHF_Excel_aca_full13[,"aum_lag2"]))
+EurekahedgeHF_Excel_aca_full13[,"log_AUM_lag3"] <- suppressWarnings(log(EurekahedgeHF_Excel_aca_full13[,"aum_lag3"]))
+EurekahedgeHF_Excel_aca_full13[,"log_AUM_lag4"] <- suppressWarnings(log(EurekahedgeHF_Excel_aca_full13[,"aum_lag4"]))
 
-EurekahedgeHF_Excel_aca_full11[,"mktadjret_sq"] <- (EurekahedgeHF_Excel_aca_full11[,"mktadjret"])^2
-EurekahedgeHF_Excel_aca_full11[,"mktadjret_lag1_sq"] <- (EurekahedgeHF_Excel_aca_full11[,"mktadjret_lag1"])^2
-EurekahedgeHF_Excel_aca_full11[,"mktadjret_lag2_sq"] <- (EurekahedgeHF_Excel_aca_full11[,"mktadjret_lag2"])^2
-EurekahedgeHF_Excel_aca_full11[,"mktadjret_lag3_sq"] <- (EurekahedgeHF_Excel_aca_full11[,"mktadjret_lag3"])^2
-EurekahedgeHF_Excel_aca_full11[,"mktadjret_lag4_sq"] <- (EurekahedgeHF_Excel_aca_full11[,"mktadjret_lag4"])^2
+EurekahedgeHF_Excel_aca_full13[,"mktadjret_sq"] <- (EurekahedgeHF_Excel_aca_full13[,"mktadjret"])^2
+EurekahedgeHF_Excel_aca_full13[,"mktadjret_lag1_sq"] <- (EurekahedgeHF_Excel_aca_full13[,"mktadjret_lag1"])^2
+EurekahedgeHF_Excel_aca_full13[,"mktadjret_lag2_sq"] <- (EurekahedgeHF_Excel_aca_full13[,"mktadjret_lag2"])^2
+EurekahedgeHF_Excel_aca_full13[,"mktadjret_lag3_sq"] <- (EurekahedgeHF_Excel_aca_full13[,"mktadjret_lag3"])^2
+EurekahedgeHF_Excel_aca_full13[,"mktadjret_lag4_sq"] <- (EurekahedgeHF_Excel_aca_full13[,"mktadjret_lag4"])^2
 
 #monthly_data_all2[,"avg_mkt_exp"] <- (monthly_data_all2[,"actual_12b1_agg"]/monthly_data_all2[,"exp_ratio_agg"])
 #monthly_data_all2[,"avg_mkt_explag1"] <- (monthly_data_all2[,"actual_12b1_agglag1"]/monthly_data_all2[,"exp_ratio_agglag1"])
@@ -1866,6 +1608,7 @@ EurekahedgeHF_Excel_aca_full11[,"mktadjret_lag4_sq"] <- (EurekahedgeHF_Excel_aca
 # monthly_data_all2[,"lipper_tax_cd_te_dv"] <- ifelse(toupper(monthly_data_all2$lipper_tax_cd)=="TAX-EXEMPT", 1, monthly_data_all2$lipper_tax_cd_te_dv)
 # monthly_data_all2[,"lipper_tax_cd_te_dv"] <- ifelse(toupper(monthly_data_all2$lipper_tax_cd)=="TAXABLE", 0, monthly_data_all2$lipper_tax_cd_te_dv)
 
+rm2(EurekahedgeHF_Excel_aca_full12)
 
 # ###############################################################################
 # cat("MERGE FUND_NAMES AND MDM_DATA_TRIM", "\n")
@@ -2017,13 +1760,13 @@ EurekahedgeHF_Excel_aca_full11[,"mktadjret_lag4_sq"] <- (EurekahedgeHF_Excel_aca
 # cat("COMPUTE AVERAGE GRADE-LEVEL", "\n")
 # ###############################################################################
 
-read_stats_ios_f  <- read_stats_ios_f[((!is.na(read_stats_ios_f[,"ARI_ios"])) & 
-                                         (!is.na(read_stats_ios_f[,"Coleman_Liau_ios"])) & 
-                                         (!is.na(read_stats_ios_f[,"Flesch_Kincaid_ios"])) & 
-                                         (!is.na(read_stats_ios_f[,"FOG_ios"])) &   
-                                         (!is.na(read_stats_ios_f[,"SMOG_ios"]))),]
+read_stats_ios_f  <- read_stats_ios_f[((!is.na(read_stats_ios_f[,"ari_ios"])) & 
+                                         (!is.na(read_stats_ios_f[,"coleman_liau_ios"])) & 
+                                         (!is.na(read_stats_ios_f[,"flesch_kincaid_ios"])) & 
+                                         (!is.na(read_stats_ios_f[,"fog_ios"])) &   
+                                         (!is.na(read_stats_ios_f[,"smog_ios"]))),]
 
-avg_grade_level_ios <- as.data.frame(rowMeans(read_stats_ios_f[,c("ARI_ios","Coleman_Liau_ios","Flesch_Kincaid_ios","FOG_ios","SMOG_ios")], na.rm=TRUE),stringsAsFactors=FALSE)
+avg_grade_level_ios <- as.data.frame(rowMeans(read_stats_ios_f[,c("ari_ios","coleman_liau_ios","flesch_kincaid_ios","fog_ios","smog_ios")], na.rm=TRUE),stringsAsFactors=FALSE)
 colnames(avg_grade_level_ios) <- "avg_grade_level_ios"
 
 read_stats_ios_f <- cbind(read_stats_ios_f,avg_grade_level_ios)
@@ -2038,14 +1781,15 @@ rm2(avg_grade_level_ios)
 #similarity_db_tables <- ListTables(similarity_db)
 #similarity_db_fields <- ListFields(similarity_db)
 
-group_column <- "Main_Investment_Strategy"
+group_column <- "main_investment_strategy"
 
 sample_data_all_temp <- sample_data_all[,c(identifier,"yr")]
 sample_data_all_temp <- unique(sample_data_all_temp,comparables=FALSE)
 sample_data_all_temp <- sample_data_all_temp[order(sample_data_all_temp[,identifier], sample_data_all_temp[,"yr"]),]
 
-temp_stacked_full <- merge(EurekahedgeHF_Excel_aca_full11[,c(identifier,group_column)], sample_data_all_temp[,c("yr",identifier)], 
-                           by.x=c(identifier), by.y=c(identifier), all.x=FALSE, all.y=TRUE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+temp_stacked_full <- merge(EurekahedgeHF_Excel_aca_full13[,c(identifier,group_column)], sample_data_all_temp[,c("yr",identifier)], 
+                           by.x=c(identifier), by.y=c(identifier), 
+                           all.x=FALSE, all.y=TRUE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
 temp_stacked_full <- temp_stacked_full[order(temp_stacked_full[,identifier], 
                                              temp_stacked_full[,"yr"]),] 
 temp_stacked_full <- unique(temp_stacked_full,comparables=FALSE)
@@ -2294,17 +2038,17 @@ ExportTable(descriptive_stats_db,"year_sim_ios_main_investment_strategy_stacked"
 # cat("MERGE IOS TEXT DATA", "\n")
 # ###############################################################################
 
-read_stats_ios <- merge(EurekahedgeHF_Excel_aca_full11[,c(identifier,"yr","month")], read_stats_ios_f, 
+read_stats_ios <- merge(EurekahedgeHF_Excel_aca_full13[,c(identifier,"yr","month")], read_stats_ios_f, 
                         #by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
                         by.x=c(identifier), by.y=c(identifier), 
                         all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
 read_stats_ios <- read_stats_ios[order(read_stats_ios[,identifier],read_stats_ios[,"yr"],read_stats_ios[,"month"]),]
 
-sim_stats_ios <- merge(EurekahedgeHF_Excel_aca_full11[,c(identifier,"yr","month")], year_sim_ios_all_stacked,
-                        by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
+sim_stats_ios <- merge(EurekahedgeHF_Excel_aca_full13[,c(identifier,"yr","month")], year_sim_ios_all_stacked,
+                       by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
                        all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
 sim_stats_ios <- merge(sim_stats_ios, year_sim_ios_main_investment_strategy_stacked, 
-                        by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
+                       by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
                        all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
 #sim_stats_ios <- merge(sim_stats_ios, year_sim_ios_equity_style_box_long_stacked, 
 #                        by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
@@ -2315,21 +2059,19 @@ sim_stats_ios <- merge(sim_stats_ios, year_sim_ios_main_investment_strategy_stac
 sim_stats_ios <- sim_stats_ios[order(sim_stats_ios[,identifier],sim_stats_ios[,"yr"],sim_stats_ios[,"month"]),]
 
 text_stats_ios <- merge(read_stats_ios, sim_stats_ios, by.x=c(identifier,"yr","month"), 
-                         by.y=c(identifier,"yr","month"), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+                        by.y=c(identifier,"yr","month"), all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
 
 
 #rm2(year_sim_ios_all_stacked,year_sim_ios_broad_cat_group_stacked)
 rm2(read_stats_ios,sim_stats_ios)
 
 
-
 # ###############################################################################
 # cat("BACKUP DATA", "\n")
 # ###############################################################################
 
- descriptive_stats_tables <- ListTables(descriptive_stats_db)
- descriptive_stats_fields <- ListFields(descriptive_stats_db)
- 
- ExportTable(descriptive_stats_db,"EurekahedgeHF_Excel_aca_full11",EurekahedgeHF_Excel_aca_full11)
- ExportTable(descriptive_stats_db,"text_stats_ios",text_stats_ios)
+descriptive_stats_tables <- ListTables(descriptive_stats_db)
+descriptive_stats_fields <- ListFields(descriptive_stats_db)
 
+ExportTable(descriptive_stats_db,"EurekahedgeHF_Excel_aca_full13",EurekahedgeHF_Excel_aca_full13)
+ExportTable(descriptive_stats_db,"text_stats_ios",text_stats_ios)
