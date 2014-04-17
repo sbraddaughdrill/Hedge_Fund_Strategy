@@ -149,6 +149,7 @@ vector_clean_na <- function(x,unknowns){
 }
 
 trim_dt <- function(x, cols) {
+  require(data.table)
   DT <- data.table(x)
   for (j in cols) {
     set(DT, i=NULL, j=j, value=gsub("^\\s+|\\s+$", "", DT[[j]], perl=TRUE))
@@ -159,6 +160,7 @@ trim_dt <- function(x, cols) {
 }
 
 char_to_date_dt <- function(x, cols,format) {
+  require(data.table)
   DT <- data.table(x)
   for (j in cols) {
     set(DT, i=NULL, j=j, value=as.Date(DT[[j]],format=format))
@@ -215,6 +217,8 @@ import_crsp_file_year <- function(table_name,fundnos,year_cutoff_low,year_cutoff
 }
 
 aggregate_crsp_variable <- function(tna_data,other_variable_data,variable,id_var){
+  
+  require(data.table)
   
   #tna_data <- monthly_tna_full
   #other_variable_data <- monthly_ret
@@ -319,6 +323,8 @@ aggregate_crsp_variable <- function(tna_data,other_variable_data,variable,id_var
 
 
 create_lags2 <- function(data_in,variable,group,lags){
+  
+  require(plyr)
   
   #data_in <- EurekahedgeHF_Excel_aca_full6[,c(identifier,"yr","month","date","AUM","Monthly_Ret","mktadjret")]
   #variable <- "AUM"
