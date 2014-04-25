@@ -139,8 +139,10 @@ create_lags2 <- function(data_in,variable,group,lags){
 }
 
 describe2 <- function(x){
-  require(data.table)
+
   #x <- descrip_stats_fund2[,-match("yr",names(descrip_stats_fund2))]
+  
+  require(data.table)
   
   var <- colnames(x)
   var <- as.data.frame(var, stringsAsFactors=FALSE)
@@ -197,17 +199,20 @@ describe2 <- function(x){
 }
 
 describeBy2 <- function(x,group){
-  require(data.table)
-  #x <- descrip_stats_ios2
+  
+
+  #x <- data_temp_no_id[,c("yr",descriptive_overall_vars_model_vars_temp)]
   #group <- "yr"
+  
+  require(data.table)
   
   var <- colnames(x[,-match(group,names(x))])
   var <- as.data.frame(var, stringsAsFactors=FALSE)
   
   get_stats_yr <- function(column,data,group_var){
     
-    #column <- "sentences_ios"
-    #data <- x
+    #column <- "pflow"
+    #data <- 
     #group_var <- group
     
     text01 <- paste0("var='",column,"',")
@@ -240,20 +245,42 @@ describeBy2 <- function(x,group){
     expr <- parse(text=str)
     
     a_dt <- data.table(data,c(group_var))
-    b <- as.data.frame(a_dt[,eval(expr),by=group_var], stringsAsFactors=FALSE)
+    b <- suppressWarnings(as.data.frame(a_dt[,eval(expr),by=group_var], stringsAsFactors=FALSE))
+
+    b <- b[order(b[,group_var]),]
+    row.names(b) <- seq(nrow(b))
     
     return(b)
     
   }
   
-  cc <- apply(var, 1,get_stats_yr, data=x,group_var=group)
+  cc <- apply(var, 1, get_stats_yr, data=x, group_var=group)
   dd <- do.call("rbind", cc)
   
-  #dd[,"mode"] <- as.numeric(dd[,"mode"])
+  dd[,"mode"] <- as.numeric(dd[,"mode"])
   
-  return(dd[order(dd[,group]),])
+  dd <- dd[order(dd[,group]),]
+  row.names(dd) <- seq(nrow(dd))
+  
+  return(dd)
   
 }
+
+
+
+temp <- min(data[data[,group_var]==1994,"pflow"],na.rm=TRUE)
+temp <- min(data[data[,group_var]==1995,"pflow"],na.rm=TRUE)
+temp <- min(data[data[,group_var]==1996,"pflow"],na.rm=TRUE)
+
+temp1 <- data_temp[data_temp[,group_var]==1994,c(identifier,"yr","yr_month","pflow")]
+temp2 <- data2[data2[,identifier]==6131,c(identifier,"yr","month","yr_month","pflow","aum","aum_lag1","monthly_ret")]
+
+
+min(temp1,na.rm=TRUE)
+
+
+
+
 
 quantile_dvs <- function(w,data,group_var,quantile_data,quantile_col_low,quantile_col_high){
   #w <- quintile_vars_ios[1]
@@ -816,6 +843,7 @@ data0 <- data0[order(data0[,identifier],
                      data0[,"yr"],
                      data0[,"month"],
                      data0[,"yr_month"]),]
+row.names(data0) <- seq(nrow(data0))
 
 rm2(fund_table,text_table,fund_type_remove,fund_type_remove2)
 rm2(monthly_data_all4_trim,text_stats_ios_trim)
@@ -870,6 +898,8 @@ factors_merge2 <- merge(factors_merge1,hedge_fund_risk_factors,
 factors_merge <- factors_merge2[order(factors_merge2[,"yr"],
                                       factors_merge2[,"month"]),] 
 
+row.names(factors_merge) <- seq(nrow(factors_merge))
+
 rm2(hedge_fund_risk_factors0,ffm_factors0,liquidity_factors0)
 rm2(hedge_fund_risk_factors,ffm_factors,liquidity_factors)
 rm2(factors_merge1,factors_merge2)
@@ -897,12 +927,13 @@ data1_factors  <- data.frame(data1_factors,
                              abret=data1_factors[,"mktadjret"] - data1_factors[,"mktrf"],
                              exret2=data1_factors[,"monthly_ret"] - data1_factors[,"rf"],
                              abret2=data1_factors[,"monthly_ret"] - data1_factors[,"rf"] - data1_factors[,"mktrf"],
-
+                             
                              stringsAsFactors=FALSE)
 
 data1_factors <- data1_factors[order(data1_factors[,identifier],
                                      data1_factors[,"yr"],
                                      data1_factors[,"month"]),]
+row.names(data1_factors) <- seq(nrow(data1_factors))
 
 rm2(data0,factors_merge)
 
@@ -980,8 +1011,8 @@ row.names(data_alphas_final) <- seq(nrow(data_alphas_final))
 #                all.x=FALSE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
 
 data2 <- merge(data1_nofactors, data_alphas_final, 
-                by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
-                all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
+               by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
+               all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
 
 # lag_vars <- c("exret")
 # lag_count <- 4
@@ -1006,12 +1037,12 @@ data2 <- merge(data1_nofactors, data_alphas_final,
 
 
 ###############################################################################
-cat("DESCRIPTIVE STATISTICS - FUND ATTRIBUTES (PANEL A)", "\n")
+cat("DESCRIPTIVE STATISTICS - VARIABLES", "\n")
 ###############################################################################
 
-fund_count <- as.numeric(length(unique(data2[,identifier],comparables=FALSE)))
+descrip_stats_data <- data2
 
-descrip_stats_fund_vars_remove <- c("fund_id","month",
+descrip_stats_fund_vars_remove <- c("month",
                                     "mktadjret_lag1","mktadjret_lag2","mktadjret_lag3","mktadjret_lag4",
                                     "nflow_lag1","nflow_lag2","nflow_lag3","nflow_lag4",
                                     "pflow_lag1","pflow_lag2","pflow_lag3","pflow_lag4",
@@ -1019,140 +1050,221 @@ descrip_stats_fund_vars_remove <- c("fund_id","month",
                                     "mktadjret_lag1_sq","mktadjret_lag2_sq","mktadjret_lag3_sq","mktadjret_lag4_sq",
                                     "sdnet_flowlag1","sdpct_flowlag1")
 
-descrip_stats_fund <- data2[,!(colnames(data2) %in% descrip_stats_fund_vars_remove)]
+descrip_stats_data <- descrip_stats_data[,!(colnames(descrip_stats_data) %in% descrip_stats_fund_vars_remove)]
 
-descrip_stats_fund_vars <- c("pflow","sdpct_flow","mktadjret","mktadjret_sq","fund_ret_mkt_neg",
-                             "int_ff_12","int_ffm_12","int_ffml_12","int_hf7_12","int_hf8_12",
-                             "int_ff_24","int_ffm_24","int_ffml_24","int_hf7_24","int_hf8_24",
-                             "int_ff_36","int_ffm_36","int_ffml_36","int_hf7_36","int_hf8_36",
-                             "int_ff_48","int_ffm_48","int_ffml_48","int_hf7_48","int_hf8_48",
-                             "int_ff_60","int_ffm_60","int_ffml_60","int_hf7_60","int_hf8_60",
-                             "age_y","aum",
-                             "total_fee","management_fee","performance_fee","other_fee",
-                             "flagship_bin","closed_bin","dead_bin")
-
-descriptive_stats_PA_full <- describe2(descrip_stats_fund[,descrip_stats_fund_vars])
-descriptive_stats_PA_full <- descriptive_stats_PA_full[descriptive_stats_PA_full[,"var"] %in% descrip_stats_fund_vars,]
-descriptive_stats_PA_full[,3:ncol(descriptive_stats_PA_full)] <- format(round(descriptive_stats_PA_full[,3:ncol(descriptive_stats_PA_full)],  digits = 6))
-descriptive_stats_PA_full <- rbind(descriptive_stats_PA_full,c("number_of_funds",fund_count,matrix("", ncol=(ncol(descriptive_stats_PA_full)-2), nrow=1)))
-write.csv(descriptive_stats_PA_full,file=paste(output_directory,"descriptive_stats_PA_full.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
-
-descriptive_stats_PA <- descriptive_stats_PA_full[c("var","n","quartile1","median","mean","quartile3","sd")]
-write.csv(descriptive_stats_PA,file=paste(output_directory,"descriptive_stats_PA.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
-
-# cap4 <- "Descriptive Statistics"
-# tableContinuous(vars=descrip_stats_fund2[,-match("yr",names(descrip_stats_fund2))], 
-# stats=c("n","min","median","mean","max","s"), prec = 3,
-# print.pval="anova", cap=cap4, lab="tab: cont1", longtable=FALSE)
-#tableContinuous(vars=descrip_stats_fund2[,-match("yr",names(descrip_stats_fund2))],prec=3, 
-# print.pval="anova", cap=cap4,lab="tab: cont1", longtable=FALSE)
-
-rm2(descrip_stats_fund_vars_remove)
-
-
-###############################################################################
-cat("DESCRIPTIVE STATISTICS - IOS (PANEL B)", "\n")
-###############################################################################
-
-descrip_stats_ios_vars_remove <- c("fund_id","month",
+descrip_stats_ios_vars_remove <- c("month",
                                    "punct_ios","conjunctions_ios","prepositions_ios","normalized_space_ios", 
                                    "pronouns_ios","ttr_ios")
 
-descrip_stats_ios <- data2[,!(colnames(data2) %in% descrip_stats_ios_vars_remove)]
+descrip_stats_data <- descrip_stats_data[,!(colnames(descrip_stats_data) %in% descrip_stats_ios_vars_remove)]
 
+descrip_stats_ios_sim_cols <- names(descrip_stats_data)[grep("pct_ios", names(descrip_stats_data))] 
 
-descrip_stats_ios_sim_cols <- names(descrip_stats_ios)[grep("pct_ios", names(descrip_stats_ios))] 
-descrip_stats_ios_vars <- c("sentences_ios","words_ios","chars_no_space_ios","num_syll_ios","sntc_per_word_ios",
-                            "avg_sentc_length_ios","avg_word_length_ios","avg_syll_word_ios","sntc_per100_ios",
-                            "syll_per100_ios","lett_per100_ios","fog_hard_words_ios",
-                            "ari_ios","coleman_liau_ios","flesch_kincaid_ios","fog_ios","smog_ios",
-                            "avg_grade_level_ios","avg_grade_level_ac_ios","avg_grade_level_acf_ios",descrip_stats_ios_sim_cols)
+descriptive_overall_vars_model1 <- list(note="PA",
+                                        vars=c("pflow","sdpct_flow","mktadjret","mktadjret_sq","fund_ret_mkt_neg",
+                                               "int_ff_12","int_ffm_12","int_ffml_12","int_hf7_12","int_hf8_12",
+                                               "int_ff_24","int_ffm_24","int_ffml_24","int_hf7_24","int_hf8_24",
+                                               "int_ff_36","int_ffm_36","int_ffml_36","int_hf7_36","int_hf8_36",
+                                               "int_ff_48","int_ffm_48","int_ffml_48","int_hf7_48","int_hf8_48",
+                                               "int_ff_60","int_ffm_60","int_ffml_60","int_hf7_60","int_hf8_60",
+                                               "age_y","aum",
+                                               "total_fee","management_fee","performance_fee","other_fee",
+                                               "flagship_bin","closed_bin","dead_bin"))
+descriptive_overall_vars_model2 <- list(note="PB",
+                                        vars=c("sentences_ios","words_ios","chars_no_space_ios","num_syll_ios","sntc_per_word_ios",
+                                               "avg_sentc_length_ios","avg_word_length_ios","avg_syll_word_ios","sntc_per100_ios",
+                                               "syll_per100_ios","lett_per100_ios","fog_hard_words_ios",
+                                               "ari_ios","coleman_liau_ios","flesch_kincaid_ios","fog_ios","smog_ios",
+                                               "avg_grade_level_ios","avg_grade_level_ac_ios","avg_grade_level_acf_ios",descrip_stats_ios_sim_cols))
 
-#descriptive_stats_PB <- as.data.frame(describe(descrip_stats_ios[,descrip_stats_ios_vars],na.rm=TRUE,skew=TRUE,range=TRUE),stringsAsFactors=FALSE)
-#descriptive_stats_PB[,"var"] <- row.names(descriptive_stats_PB)
-#descriptive_stats_PB <- descriptive_stats_PB[c("var","n","min","median","mean","max","sd")]
-descriptive_stats_PB_full <- describe2(descrip_stats_ios[,descrip_stats_ios_vars])
-descriptive_stats_PB_full <- descriptive_stats_PB_full[descriptive_stats_PB_full[,"var"] %in% descrip_stats_ios_vars,]
-descriptive_stats_PB_full[,3:ncol(descriptive_stats_PB_full)] <- format(round(descriptive_stats_PB_full[,3:ncol(descriptive_stats_PB_full)],  digits = 6))
-write.csv(descriptive_stats_PB_full,file=paste(output_directory,"descriptive_stats_PB_full.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
-
-descriptive_stats_PB <- descriptive_stats_PB_full[c("var","n","quartile1","median","mean","quartile3","sd")]
-descriptive_stats_PB <- descriptive_stats_PB[match(descrip_stats_ios_vars, descriptive_stats_PB$var),]
-write.csv(descriptive_stats_PB,file=paste(output_directory,"descriptive_stats_PB.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
-
-rm2(descrip_stats_ios_vars_remove,descrip_stats_ios_sim_cols)
+descriptive_overall_vars_model <- list(descriptive_overall_vars_model1,descriptive_overall_vars_model2)
 
 
 ###############################################################################
-cat("DESCRIPTIVE STATISTICS - FUND ATTRIBUTES BY YEAR (PANEL A)", "\n")
+cat("DESCRIPTIVE STATISTICS - FUND ATTRIBUTES (PANEL A) & IOS (PANEL B)", "\n")
 ###############################################################################
 
-fund_count_yr <- ddply(data2, "yr", function(x) {data.frame(var="number_of_funds", 
-                                                            count=as.numeric(length(unique(x$fund_id,comparables=FALSE))),
+descriptive_overall_groups <- data.frame(matrix(NA, ncol=2, nrow=4, dimnames=list(c(), c("Start_yr","End_yr"))), 
+                                         stringsAsFactors=FALSE)
+
+descriptive_overall_groups[1,] <- c(start_year,end_year)
+descriptive_overall_groups[2,] <- c(1994,1999)
+descriptive_overall_groups[3,] <- c(2000,2005)
+descriptive_overall_groups[4,] <- c(2006,2011)
+
+for (k in 1:nrow(descriptive_overall_groups))
+{
+  #k <- 1
+  #k <- 2
+  
+  cat("START YEAR:", descriptive_overall_groups[k,1], "END YEAR:", descriptive_overall_groups[k,2],"\n")
+  
+  data_temp <- descrip_stats_data[(descrip_stats_data[,"yr"]>=descriptive_overall_groups[k,1] & descrip_stats_data[,"yr"]<=descriptive_overall_groups[k,2]),]
+  
+  fund_count <- as.numeric(length(unique(data_temp[,identifier],comparables=FALSE)))
+  
+  data_temp_no_id <- data_temp[,!(colnames(data_temp) %in% identifier)]
+  
+  descriptive_overall_vars_model_note <- sapply(descriptive_overall_vars_model, "[[", "note")
+  descriptive_overall_vars_model_vars <- sapply(descriptive_overall_vars_model, "[[", "vars")
+  
+  for (l in 1:length(descriptive_overall_vars_model))
+  {
+    #l <- 1
+    
+    descriptive_overall_vars_model_note_temp <- unlist(descriptive_overall_vars_model_note[l])
+    descriptive_overall_vars_model_vars_temp <- unlist(descriptive_overall_vars_model_vars[l])
+    
+    out_file_name <- paste("descriptive_stats",descriptive_overall_groups[k,1],descriptive_overall_groups[k,2],descriptive_overall_vars_model_note_temp,"overall",sep="_")
+    
+    descriptive_stats_temp_full <- describe2(data_temp_no_id[,descriptive_overall_vars_model_vars_temp])
+    descriptive_stats_temp_full <- descriptive_stats_temp_full[descriptive_stats_temp_full[,"var"] %in% descriptive_overall_vars_model_vars_temp,]
+    descriptive_stats_temp_full[,3:ncol(descriptive_stats_temp_full)] <- format(round(descriptive_stats_temp_full[,3:ncol(descriptive_stats_temp_full)],  digits = 6))
+    descriptive_stats_temp_full <- rbind(descriptive_stats_temp_full,c("number_of_funds",fund_count,matrix("", ncol=(ncol(descriptive_stats_temp_full)-2), nrow=1)))
+    write.csv(descriptive_stats_temp_full,file=paste(output_directory,out_file_name,"_full.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
+    
+    descriptive_stats_temp <- descriptive_stats_temp_full[c("var","n","quartile1","median","mean","quartile3","sd")]
+    #descriptive_stats_temp <- descriptive_stats_temp[match(descriptive_overall_vars_model_vars_temp, descriptive_stats_temp[,c("var")]),]
+    write.csv(descriptive_stats_temp,file=paste(output_directory,out_file_name,".csv",sep=""),na="",quote=TRUE,row.names=FALSE)
+    
+    rm2(descriptive_overall_vars_model_note_temp,descriptive_overall_vars_model_vars_temp,out_file_name)
+    rm2(descriptive_stats_temp_full,descriptive_stats_temp)
+    
+  }
+  rm2(data_temp,fund_count,data_temp_no_id,descriptive_overall_vars_model_note,descriptive_overall_vars_model_vars,l)
+  
+}
+rm2(descriptive_overall_groups,k)
+
+
+###############################################################################
+cat("DESCRIPTIVE STATISTICS - FUND ATTRIBUTES (PANEL A) & IOS (PANEL B) BY YEAR ", "\n")
+###############################################################################
+
+descriptive_year_groups <- data.frame(matrix(NA, ncol=2, nrow=4, dimnames=list(c(), c("Start_yr","End_yr"))), 
+                                         stringsAsFactors=FALSE)
+
+descriptive_year_groups[1,] <- c(start_year,end_year)
+descriptive_year_groups[2,] <- c(1994,1999)
+descriptive_year_groups[3,] <- c(2000,2005)
+descriptive_year_groups[4,] <- c(2006,2011)
+
+descriptive_year_stats <- c("mean","median")
+
+for (k in 1:nrow(descriptive_year_groups))
+{
+  #k <- 1
+  #k <- 2
+  
+  cat("START YEAR:", descriptive_year_groups[k,1], "END YEAR:", descriptive_year_groups[k,2],"\n")
+  
+  data_temp <- descrip_stats_data[(descrip_stats_data[,"yr"]>=descriptive_year_groups[k,1] & descrip_stats_data[,"yr"]<=descriptive_year_groups[k,2]),]
+  
+  fund_count_yr <- ddply(descrip_stats_data, "yr", function(x) {data.frame(var="number_of_funds", 
+                                                             count=as.numeric(length(unique(x[,identifier],comparables=FALSE))),
                                                             stringsAsFactors=FALSE)})
+  
+  data_temp_no_id <- data_temp[,!(colnames(data_temp) %in% identifier)]
+  
+  descriptive_overall_vars_model_note <- sapply(descriptive_overall_vars_model, "[[", "note")
+  descriptive_overall_vars_model_vars <- sapply(descriptive_overall_vars_model, "[[", "vars")
+  
+  for (l in 1:length(descriptive_overall_vars_model))
+  {
+    #l <- 1
+    
+    descriptive_overall_vars_model_note_temp <- unlist(descriptive_overall_vars_model_note[l])
+    descriptive_overall_vars_model_vars_temp <- unlist(descriptive_overall_vars_model_vars[l])
+    
+    for (m in 1:length(descriptive_year_stats))
+    {
+      #m <- 1
+      
+      out_file_name <- paste("descriptive_stats",descriptive_year_groups[k,1],descriptive_year_groups[k,2],descriptive_overall_vars_model_note_temp,"year",descriptive_year_stats[m],sep="_")
+      
+      #descriptive_stats_yr_stats_fund <- describeBy2(descrip_stats_fund2,"yr")
+      descriptive_stats_yr_stats_fund <- describeBy2(data_temp_no_id[,c("yr",descriptive_overall_vars_model_vars_temp)],"yr")
+      
+      
+      
+      #row.names(data1_factors) <- seq(nrow(data1_factors))
+      
+      
+    }
+    rm2(m)
+    
+    
+    
+  }
+  rm2(l)
+  
+  
+}
+rm2(k)
 
-#descriptive_stats_yr_temp_PA <- describeBy(descrip_stats_fund2[,-match("yr",names(descrip_stats_fund2))], 
-# group=descrip_stats_fund2$yr, na.rm=TRUE,skew=TRUE, range=TRUE, mat=TRUE)
-#descriptive_stats_yr_temp_PA[,"var"] <- row.names(descriptive_stats_yr_temp_PA)
-#descriptive_stats_yr_temp_PA <- descriptive_stats_yr_temp_PA[order(descriptive_stats_yr_temp_PA[,"group1"]),]
-#colnames(descriptive_stats_yr_temp_PA)[match("group1",names(descriptive_stats_yr_temp_PA))] <- "yr"
-#descriptive_stats_yr_temp_PA[,"var"] <- gsub("\\s*\\d*$", "", descriptive_stats_yr_temp_PA[,"var"])
-#descriptive_stats_yr_temp_PA <- unfactorize2(descriptive_stats_yr_temp_PA)
-#descriptive_stats_yr_temp_PA[,"yr"] <- as.integer(descriptive_stats_yr_temp_PA[,"yr"])
 
-#descriptive_stats_yr_stats_fund <- describeBy2(descrip_stats_fund2,"yr")
-descriptive_stats_yr_stats_fund <- describeBy2(data2[,c("yr",descrip_stats_fund_vars)],"yr")
 
-fund_count_yr_mean <- fund_count_yr
-colnames(fund_count_yr_mean)[match("count",names(fund_count_yr_mean))] <- "mean"
-descriptive_stats_yr_mean_full_PA <- rbind(descriptive_stats_yr_stats_fund[c("yr","var","mean")],fund_count_yr_mean)
 
-descriptive_stats_yr_mean_PA <- suppressMessages(dcast(descriptive_stats_yr_mean_full_PA, var~yr))
-descriptive_stats_yr_mean_PA <- descriptive_stats_yr_mean_PA[order(order(descriptive_stats_PA[,"var"])),] 
-descriptive_stats_yr_mean_PA <- cbind(descriptive_stats_yr_mean_PA,data.frame(Full=descriptive_stats_PA[,"mean"],stringsAsFactors=FALSE))
-descriptive_stats_yr_mean_PA[nrow(descriptive_stats_yr_mean_PA),"Full"] <- fund_count
-write.csv(descriptive_stats_yr_mean_PA,file=paste(output_directory,"descriptive_stats_yr_PA_mean.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
 
-fund_count_yr_median <- fund_count_yr
-colnames(fund_count_yr_median)[match("count",names(fund_count_yr_median))] <- "median"
-descriptive_stats_yr_median_full_PA <- rbind(descriptive_stats_yr_stats_fund[c("yr","var","median")],fund_count_yr_median)
 
-descriptive_stats_yr_median_PA <- suppressMessages(dcast(descriptive_stats_yr_median_full_PA, var~yr))
-descriptive_stats_yr_median_PA <- descriptive_stats_yr_median_PA[order(order(descriptive_stats_PA[,"var"])),] 
-descriptive_stats_yr_median_PA <- cbind(descriptive_stats_yr_median_PA,data.frame(Full=descriptive_stats_PA[,"median"],stringsAsFactors=FALSE))
-descriptive_stats_yr_median_PA[nrow(descriptive_stats_yr_median_PA),"Full"] <- fund_count
-write.csv(descriptive_stats_yr_median_PA,file=paste(output_directory,"descriptive_stats_yr_PA_median.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
+# 
+# 
+# fund_count_yr_mean <- fund_count_yr
+# colnames(fund_count_yr_mean)[match("count",names(fund_count_yr_mean))] <- "mean"
+# descriptive_stats_yr_mean_full_PA <- rbind(descriptive_stats_yr_stats_fund[c("yr","var","mean")],fund_count_yr_mean)
+# 
+# descriptive_stats_yr_mean_PA <- suppressMessages(dcast(descriptive_stats_yr_mean_full_PA, var~yr))
+# descriptive_stats_yr_mean_PA <- descriptive_stats_yr_mean_PA[order(order(descriptive_stats_PA[,"var"])),] 
+# descriptive_stats_yr_mean_PA <- cbind(descriptive_stats_yr_mean_PA,data.frame(Full=descriptive_stats_PA[,"mean"],stringsAsFactors=FALSE))
+# descriptive_stats_yr_mean_PA[nrow(descriptive_stats_yr_mean_PA),"Full"] <- fund_count
+# write.csv(descriptive_stats_yr_mean_PA,file=paste(output_directory,"descriptive_stats_yr_PA_mean.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
+# 
+# fund_count_yr_median <- fund_count_yr
+# colnames(fund_count_yr_median)[match("count",names(fund_count_yr_median))] <- "median"
+# descriptive_stats_yr_median_full_PA <- rbind(descriptive_stats_yr_stats_fund[c("yr","var","median")],fund_count_yr_median)
+# 
+# descriptive_stats_yr_median_PA <- suppressMessages(dcast(descriptive_stats_yr_median_full_PA, var~yr))
+# descriptive_stats_yr_median_PA <- descriptive_stats_yr_median_PA[order(order(descriptive_stats_PA[,"var"])),] 
+# descriptive_stats_yr_median_PA <- cbind(descriptive_stats_yr_median_PA,data.frame(Full=descriptive_stats_PA[,"median"],stringsAsFactors=FALSE))
+# descriptive_stats_yr_median_PA[nrow(descriptive_stats_yr_median_PA),"Full"] <- fund_count
+# write.csv(descriptive_stats_yr_median_PA,file=paste(output_directory,"descriptive_stats_yr_PA_median.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
+# 
+# rm2(descrip_stats_fund_vars)
+# rm2(descriptive_stats_PA,descriptive_stats_PA_full)
+# rm2(descriptive_stats_yr_stats_fund)
+# rm2(descriptive_stats_yr_mean_PA,descriptive_stats_yr_mean_full_PA)
+# rm2(descriptive_stats_yr_median_PA,descriptive_stats_yr_median_full_PA)
+# rm2(fund_count,fund_count_yr,fund_count_yr_mean,fund_count_yr_median)
 
-rm2(descrip_stats_fund_vars)
-rm2(descriptive_stats_PA,descriptive_stats_PA_full)
-rm2(descriptive_stats_yr_stats_fund)
-rm2(descriptive_stats_yr_mean_PA,descriptive_stats_yr_mean_full_PA)
-rm2(descriptive_stats_yr_median_PA,descriptive_stats_yr_median_full_PA)
-rm2(fund_count,fund_count_yr,fund_count_yr_mean,fund_count_yr_median)
+
+rm2(descriptive_overall_vars_model1,descriptive_overall_vars_model2,descriptive_overall_vars_model)
+
+
 
 
 ###############################################################################
 cat("DESCRIPTIVE STATISTICS - IOS BY YEAR (PANEL B)", "\n")
 ###############################################################################
+# 
+# descriptive_stats_yr_stats_ios0 <- describeBy2(data2[,c("yr",descrip_stats_ios_vars)],"yr")
+# descriptive_stats_yr_stats_ios <- descriptive_stats_yr_stats_ios0[tolower(descriptive_stats_yr_stats_ios0[,"var"]) %in% descrip_stats_ios_vars,]
+# 
+# descriptive_stats_yr_mean_PB <- suppressMessages(dcast(descriptive_stats_yr_stats_ios[c("yr","var","mean")], var~yr))
+# descriptive_stats_yr_mean_PB <- descriptive_stats_yr_mean_PB[order(order(descriptive_stats_PB[,"var"])),] 
+# descriptive_stats_yr_mean_PB <- cbind(descriptive_stats_yr_mean_PB,data.frame(Full=descriptive_stats_PB[,"mean"],stringsAsFactors=FALSE))
+# write.csv(descriptive_stats_yr_mean_PB,file=paste(output_directory,"descriptive_stats_yr_PB_mean.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
+# 
+# descriptive_stats_yr_median_PB <- suppressMessages(dcast(descriptive_stats_yr_stats_ios[c("yr","var","median")], var~yr))
+# descriptive_stats_yr_median_PB <- descriptive_stats_yr_median_PB[order(order(descriptive_stats_PB[,"var"])),] 
+# descriptive_stats_yr_median_PB <- cbind(descriptive_stats_yr_median_PB,data.frame(Full=descriptive_stats_PB[,"median"],stringsAsFactors=FALSE))
+# write.csv(descriptive_stats_yr_median_PB,file=paste(output_directory,"descriptive_stats_yr_PB_median.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
+# 
+# rm2(descrip_stats_ios_vars)
+# rm2(descriptive_stats_PB,descriptive_stats_PB_full)
+# rm2(descriptive_stats_yr_stats_ios)
+# rm2(descriptive_stats_yr_mean_PB)
+# rm2(descriptive_stats_yr_median_PB)
 
-descriptive_stats_yr_stats_ios0 <- describeBy2(data2[,c("yr",descrip_stats_ios_vars)],"yr")
-descriptive_stats_yr_stats_ios <- descriptive_stats_yr_stats_ios0[tolower(descriptive_stats_yr_stats_ios0[,"var"]) %in% descrip_stats_ios_vars,]
-
-descriptive_stats_yr_mean_PB <- suppressMessages(dcast(descriptive_stats_yr_stats_ios[c("yr","var","mean")], var~yr))
-descriptive_stats_yr_mean_PB <- descriptive_stats_yr_mean_PB[order(order(descriptive_stats_PB[,"var"])),] 
-descriptive_stats_yr_mean_PB <- cbind(descriptive_stats_yr_mean_PB,data.frame(Full=descriptive_stats_PB[,"mean"],stringsAsFactors=FALSE))
-write.csv(descriptive_stats_yr_mean_PB,file=paste(output_directory,"descriptive_stats_yr_PB_mean.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
-
-descriptive_stats_yr_median_PB <- suppressMessages(dcast(descriptive_stats_yr_stats_ios[c("yr","var","median")], var~yr))
-descriptive_stats_yr_median_PB <- descriptive_stats_yr_median_PB[order(order(descriptive_stats_PB[,"var"])),] 
-descriptive_stats_yr_median_PB <- cbind(descriptive_stats_yr_median_PB,data.frame(Full=descriptive_stats_PB[,"median"],stringsAsFactors=FALSE))
-write.csv(descriptive_stats_yr_median_PB,file=paste(output_directory,"descriptive_stats_yr_PB_median.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
-
-rm2(descrip_stats_ios_vars)
-rm2(descriptive_stats_PB,descriptive_stats_PB_full)
-rm2(descriptive_stats_yr_stats_ios)
-rm2(descriptive_stats_yr_mean_PB)
-rm2(descriptive_stats_yr_median_PB)
 
 
 ###############################################################################
@@ -1217,6 +1329,7 @@ quintile_vars_dv_temp2_ios <- do.call(cbind, quintile_vars_dv_temp_ios)
 quintile_vars_dv_temp2_ios <- quintile_vars_dv_temp2_ios[order(quintile_vars_dv_temp2_ios[,identifier],
                                                                quintile_vars_dv_temp2_ios[,"yr"],
                                                                quintile_vars_dv_temp2_ios[,"month"]),]
+row.names(quintile_vars_dv_temp2_ios) <- seq(nrow(quintile_vars_dv_temp2_ios))
 
 quintile_vars_dv_temp2_ios <- quintile_vars_dv_temp2_ios[,unique(colnames(quintile_vars_dv_temp2_ios))]
 
@@ -1231,6 +1344,7 @@ quintile_vars_dv <- quintile_vars_dv_temp2_ios
 quintile_vars_dv <- quintile_vars_dv[order(quintile_vars_dv[,identifier],
                                            quintile_vars_dv[,"yr"],
                                            quintile_vars_dv[,"month"]),]
+row.names(quintile_vars_dv) <- seq(nrow(quintile_vars_dv))
 
 data_all <- merge(data2, quintile_vars_dv, 
                   by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"),
@@ -1240,6 +1354,7 @@ data_all <- data_all[order(data_all[,identifier],
                            data_all[,"yr"],
                            data_all[,"month"],
                            data_all[,"yr_month"]),]
+row.names(data_all) <- seq(nrow(data_all))
 
 rm2(quintile_vars_dv_temp2_ios,quintile_vars_dv,data2)
 
