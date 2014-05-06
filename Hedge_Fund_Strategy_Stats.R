@@ -138,6 +138,110 @@ create_lags2 <- function(data_in,variable,group,lags){
   
 }
 
+vector_clean_na <- function(x,unknowns){
+  x <- unknownToNA(x, unknown=unknowns,force=TRUE)
+  x <- ifelse(is.na(x),NA, x)
+  return(x)
+}
+
+strip_comments <- function(x, cols) {
+  
+  require(data.table)
+  
+  DT <- data.table(x)
+  for (j in cols) {
+    set(DT, i=NULL, j=paste(j,"_comments",sep = ""), value=gsub("\\(([^()]+)\\)", "\\1", str_extract_all(DT[[paste(j,"_org",sep = "")]], "\\(([^()]+)\\)"), perl=TRUE))
+    set(DT, i=NULL, j=paste(j,"_comments",sep = ""), value=gsub("^\\s+|\\s+$", "", DT[[paste(j,"_comments",sep = "")]], perl=TRUE))
+    set(DT, i=which(toupper(DT[[paste(j,"_comments",sep = "")]]) == "CHARACTER0"), j=paste(j,"_comments",sep = ""), value=NA_character_)
+    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
+  }
+  return(DT)
+}
+
+create_noncomments <- function(x, cols) {
+  
+  require(data.table)
+  
+  DT <- data.table(x)
+  for (j in cols) {
+    set(DT, i=NULL, j=j, value=gsub("[(].*$", "", DT[[paste(j,"_org",sep = "")]], "\\(([^()]+)\\)", perl=TRUE))
+    set(DT, i=NULL, j=j, value=gsub("^\\s+|\\s+$", "", DT[[j]], perl=TRUE))
+    set(DT, i=which(toupper(DT[[j]]) == "CHARACTER0"), j=j, value=NA_character_)
+    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
+  }
+  return(DT)
+}
+not_specified_to_na <- function(x, cols, phrases) {
+  
+  require(data.table)
+  
+  DT <- data.table(x)
+  for (j in cols) {
+    for (k in 1:length(phrases)) {
+      #k <- 1
+      set(DT, i=grep(phrases[k], DT[[j]], ignore.case = TRUE, perl=TRUE), j=j, value=NA_character_)
+    }
+    
+    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
+  }
+  return(DT)
+}
+no_to_no <- function(x, cols, phrases) {
+  
+  require(data.table)
+  
+  DT <- data.table(x)
+  for (j in cols) {
+    for (k in 1:length(phrases)) {
+      #k <- 1
+      set(DT, i=grep(phrases[k], DT[[j]], ignore.case = TRUE, perl=TRUE), j=j, value="No")
+    }
+    
+    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
+  }
+  return(DT)
+}  
+
+yes_to_yes <- function(x, cols, phrases) {
+  
+  require(data.table)
+  
+  DT <- data.table(x)
+  for (j in cols) {
+    for (k in 1:length(phrases)) {
+      #k <- 1
+      set(DT, i=grep(phrases[k], DT[[j]], ignore.case = TRUE, perl=TRUE), j=j, value="Yes")
+    }
+    
+    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
+  }
+  return(DT)
+}  
+
+yn_to_binary <- function(x, cols) {
+  
+  #x <- EurekahedgeHF_Excel_aca_full5
+  #cols <- bin_cols
+  
+  require(data.table)
+  require(taRifx)
+  
+  DT <- data.table(x)
+  for (j in cols) {
+    
+    #j <- cols[1]
+    #j <- cols[9]
+    
+    set(DT, i=grep("Yes", DT[[j]], ignore.case = TRUE, perl=TRUE), j=j, value="1")
+    set(DT, i=grep("No", DT[[j]], ignore.case = TRUE, perl=TRUE), j=j, value="0")
+    set(DT, i=NULL, j=j, value=destring(DT[[j]]))
+    #set(DT, i=NULL, j=j, value=as.numeric(DT[[j]]))
+    
+    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
+  }
+  return(DT)
+}  
+
 describe2 <- function(x){
   
   #x <- descrip_stats_fund2[,-match("yr",names(descrip_stats_fund2))]
@@ -208,6 +312,10 @@ describeBy2 <- function(x,group){
   #x <- data_temp_no_id[,c("yr",descriptive_overall_vars_model_vars_temp[,c("var")])]
   #group <- "yr"
   
+  #x <- data_temp_no_id[,c("main_investment_strategy",descriptive_overall_vars_model_vars_all[,c("var")])]
+  #group <- "main_investment_strategy"
+  
+  
   require(data.table)
   
   var <- colnames(x[,-match(group,names(x))])
@@ -242,7 +350,7 @@ describeBy2 <- function(x,group){
                 text11,text12,text13,text14,text15,text16,text17,text18,text19,text20,
                 text21,text22,text23,")")
   
-  get_stats_yr <- function(column,data,group_var,expression){
+  get_stats_by <- function(column,data,group_var,expression){
     
     #column <- "pflow"
     #column <- "int_ff_48"
@@ -263,7 +371,7 @@ describeBy2 <- function(x,group){
     
   }
   
-  cc1 <- apply(var, 1, get_stats_yr, data=x, group_var=group, expression=str)
+  cc1 <- apply(var, 1, get_stats_by, data=x, group_var=group, expression=str)
   dd1 <- do.call("rbind", cc1)
   #dd1[,"mode"] <- as.numeric(dd1[,"mode"])
   dd1 <- dd1[order(dd1[,group]),]
@@ -289,9 +397,10 @@ describeBy2 <- function(x,group){
   cc2 <- apply(var, 1, get_stats, data=x[,-match(group,names(x))],expression=str)
   dd2 <- do.call("rbind", cc2)
   #dd2[,"mode"] <- as.numeric(dd2[,"mode"])
-  dd2 <- data.frame(yr=9999, 
+  dd2 <- data.frame(temp_var="ZZZ", 
                     dd2,
                     stringsAsFactors=FALSE)
+  colnames(dd2)[match("temp_var",names(dd2))] <- group
   row.names(dd2) <- seq(nrow(dd2))
   
   dd <- rbind(dd1,dd2)
@@ -343,24 +452,253 @@ quantile_dvs <- function(w,data,group_var,quantile_data,quantile_col_low,quantil
   
 }
 
-quantile_cast_merge <- function(w,quantile_num){
+quantile_cast_by_continuous <- function(x,data,dep_var,quantile_type,quantile_count,group_var,group){
+  
+  #x <- univariate_vars_indep_continuous[1]
+  #x <- univariate_vars_indep_continuous[10]
+  #x <- univariate_vars_indep_continuous[21]
+  #x <- univariate_vars_indep_continuous[27]
+  #data <- data_all_univariate_continuous  
+  
+  #x <- univariate_vars_indep_binary[1]
+  #x <- univariate_vars_indep_binary[10]
+  #x <- univariate_vars_indep_binary[21]
+  #x <- univariate_vars_indep_binary[27]
+  #data <- data_all_univariate_binary
+  
+  #dep_var <- univariate_vars_dep[l]
+  #quantile_type <- "quantile"
+  #quantile_count <- quantile_nums_continuous[j]
+  #group_var <- "yr"
+  #group <- "year"
+  #group <- "agg"
+  
+  data_trim <- data[,c(dep_var,group_var,x)]
+  data_trim <- data_trim[!is.na(data_trim[,x]),]
+  
+  if (quantile_type == "quantile") {
+    
+    quantile_var <- "quantile"
+    
+  } else if (quantile_type == "dv") {
+    
+    quantile_var <- x
+    
+  } else {
+    
+    cat("ERROR IN QUANTILE TYPE", "\n")
+    
+  }
+  
+  if (group == "year") {
+    
+    quantiles <- ddply(.data=data_trim, .variables=group_var, quantile_cast_cuts, split_var=x, quantile_num=quantile_count)
+    
+  } else if (group == "agg") {
+    
+    #quantiles <- quantile_cast_cuts(data_trim,split_var=x,quantile_num=quantile_count)
+    quantiles <- ddply(.data=data_trim, .variables=NULL, quantile_cast_cuts, split_var=x, quantile_num=quantile_count)
+    
+  } else {
+    cat("ERROR IN GROUPS", "\n")
+    
+  }
+  
+  quantiles2 <- quantiles[,(colnames(quantiles) %in% c(univariate_vars_dep[l],group_var,x,quantile_var))]
+  quantiles2 <- quantiles2[order(quantiles2[,group_var],
+                                 quantiles2[,univariate_vars_dep[l]],
+                                 quantiles2[,x]),] 
+  row.names(quantiles2) <- seq(nrow(quantiles2))
+  
+  quantiles_melt <- melt(quantiles2,c(group_var,quantile_var),dep_var)
+  quantiles_melt <- ddply(quantiles_melt, c("yr","variable"), function(y){data.frame(temp_id=seq(1,nrow(y)),y,stringsAsFactors=FALSE)})
+  
+  quantiles_melt_cast <- ddply(quantiles_melt, c("yr"), quantile_cast_merge,quantile_num=quantile_count,quantile_var=quantile_var)
+  quantiles_melt_cast <- quantiles_melt_cast[,!(colnames(quantiles_melt_cast) %in% "temp_id")]
+  
+  z <- data.frame(cut_var=x,quantiles_melt_cast,stringsAsFactors=FALSE)
+  
+  return(z)
+  
+}
+
+# quantile_cast_by_binary <- function(x,data,dep_var,quantile_type,quantile_count,group_var,group){
+#   
+#   #x <- univariate_vars_indep_continuous[1]
+#   #x <- univariate_vars_indep_continuous[10]
+#   #x <- univariate_vars_indep_continuous[21]
+#   #x <- univariate_vars_indep_continuous[27]
+#   #data <- data_all_univariate_continuous  
+#   
+#   #x <- univariate_vars_indep_binary[1]
+#   #x <- univariate_vars_indep_binary[2]
+#   #x <- univariate_vars_indep_binary[3]
+#   #x <- univariate_vars_indep_binary[10]
+#   #x <- univariate_vars_indep_binary[21]
+#   #x <- univariate_vars_indep_binary[27]
+#   #data <- data_all_univariate_binary
+#   
+#   #dep_var <- univariate_vars_dep[l]
+#   #quantile_type <- "dv"
+#   #quantile_count <- quantile_nums_binary[j]
+#   #group_var <- "yr"
+#   #group <- "year"
+#   #group <- "agg"
+#   
+#   #cat("X:", x, "\n")
+#   
+#   data_trim <- data[,c(dep_var,group_var,x)]
+#   data_trim <- data_trim[!is.na(data_trim[,x]),]
+#   
+#   if (quantile_type == "quantile") {
+#     
+#     quantile_var <- "quantile"
+#     
+#   } else if (quantile_type == "dv") {
+#     
+#     quantile_var <- x
+#     
+#   } else {
+#     
+#     cat("ERROR IN QUANTILE TYPE", "\n")
+#     
+#   }
+#   
+#   if (group == "year") {
+#     
+#     quantiles <- ddply(.data=data_trim, .variables=group_var, quantile_cast_cuts, split_var=x, quantile_num=quantile_count)
+#     
+#   } else if (group == "agg") {
+#     
+#     #quantiles <- quantile_cast_cuts(data_trim,split_var=x,quantile_num=quantile_count)
+#     quantiles <- ddply(.data=data_trim, .variables=NULL, quantile_cast_cuts, split_var=x, quantile_num=quantile_count)
+#     
+#   } else {
+#     cat("ERROR IN GROUPS", "\n")
+#     
+#   }
+#   
+#   quantiles2 <- data_trim[,(colnames(data_trim) %in% c(univariate_vars_dep[l],group_var,x,quantile_var))]
+#   quantiles2 <- quantiles2[order(quantiles2[,group_var],
+#                                  quantiles2[,univariate_vars_dep[l]],
+#                                  quantiles2[,x]),] 
+#   row.names(quantiles2) <- seq(nrow(quantiles2))
+#   
+#   #quantiles2b <- quantiles[,(colnames(quantiles) %in% c(univariate_vars_dep[l],group_var,x,quantile_var))]
+#   #quantiles2b <- quantiles2b[order(quantiles2b[,group_var],
+#   #                                 quantiles2b[,univariate_vars_dep[l]],
+#   #                                 quantiles2b[,x]),] 
+#   #row.names(quantiles2b) <- seq(nrow(quantiles2b))
+#   
+#   #comparison <- compare(quantiles2,quantiles2b,allowAll=TRUE)
+#   #difference <- data.frame(lapply(1:ncol(quantiles2),function(i)setdiff(quantiles2[,i],comparison$tM[,i])))
+#   #colnames(difference) <- colnames(quantiles2)
+#   
+#   quantiles_melt <- melt(quantiles2,c(group_var,quantile_var),dep_var)
+#   quantiles_melt <- ddply(quantiles_melt, c("yr","variable"), function(y){data.frame(temp_id=seq(1,nrow(y)),y,stringsAsFactors=FALSE)})
+#   
+#   quantiles_melt_cast <- ddply(quantiles_melt, c("yr"), quantile_cast_merge,quantile_num=quantile_count,quantile_var=quantile_var)
+#   quantiles_melt_cast <- quantiles_melt_cast[,!(colnames(quantiles_melt_cast) %in% "temp_id")]
+#   
+#   z <- data.frame(cut_var=x,quantiles_melt_cast,stringsAsFactors=FALSE)
+#   
+#   return(z)
+#   
+# }
+
+# #TEST!!!!!
+# for (i in 1:length(univariate_vars))
+# {
+#   #i <- 1
+#   #i <- 10
+#   cat("I:",i, "\n")
+#   temp <- quantile_cast_by_continuous(univariate_vars[i],data=data_all_univariate_continuous,dep_var="pflow",group_var="yr",quantile_count=quantile_nums[j])
+#   
+# }
+# temp_yr <- unique(quantiles_melt[,"yr"])
+# for (i in 1:length(temp_yr))
+# {
+#   #i <- 1
+#   #i <- 10
+#   #i <- 11
+#   #i <- 15
+#   
+#   cat("I:",i, "\n")
+#   temp2 <- quantile_cast_merge(quantiles_melt[quantiles_melt[,"yr"]==temp_yr[i],],quantile_num=quantile_count)
+#   
+# }
+# 
+# quantile_cast <- function(x,data,dep_var,group_var,quantile_count){
+#   
+#   #x <- univariate_vars_indep_continuous[1]
+#   #x <- univariate_vars_indep_continuous[10]
+#   #x <- univariate_vars_indep_continuous[21]
+#   #x <- univariate_vars_indep_continuous[27]
+#   #data <- data_all_univariate_continuous  
+#   
+#   #x <- univariate_vars_indep_binary[1]
+#   #x <- univariate_vars_indep_binary[10]
+#   #x <- univariate_vars_indep_binary[21]
+#   #x <- univariate_vars_indep_binary[27]
+#   #data <- data_all_univariate_binary
+#   
+#   #dep_var <- univariate_vars_dep[l]
+#   #group_var <- "yr"
+#   #quantile_count <- quantile_nums[j]
+# 
+#   data_trim <- data[,c(dep_var,group_var,x)]
+#   data_trim <- data_trim[!is.na(data_trim[,x]),]
+#   
+#   #quantiles <- quantile_cast_cuts(data_trim,split_var=x,quantile_num=quantile_count)
+#   quantiles <- ddply(.data=data_trim, .variables=NULL, quantile_cast_cuts, split_var=x, quantile_num=quantile_count)
+#   
+#   quantiles2 <- quantiles[,c(univariate_vars_dep[l],group_var,x,"quantile")]
+#   
+#   quantiles_melt <- melt(quantiles2,c(group_var,"quantile"),dep_var)
+#   quantiles_melt <- ddply(.data=quantiles_melt, .variables=c("yr","variable"), function(y){data.frame(temp_id=seq(1,nrow(y)),y,stringsAsFactors=FALSE)})
+#   
+#   quantiles_melt_cast <- ddply(quantiles_melt, c("yr"), quantile_cast_merge, quantile_num=quantile_count)
+#   #quantiles_melt_cast <- subset(quantiles_melt_cast,select=-temp_id)
+#   quantiles_melt_cast <- quantiles_melt_cast[,!(colnames(quantiles_melt_cast) %in% "temp_id")]
+#   
+#   z <- data.frame(cut_var=x,quantiles_melt_cast,stringsAsFactors=FALSE)
+#   
+#   return(z)
+#   
+# }
+
+quantile_cast_cuts <- function(z,split_var,quantile_num){
+  
+  #z <- data_trim[data_trim[,"yr"]==1999,]
+  #split_var <- x
+  #quantile_num <- 5
+  
+  eps <- .Machine$double.eps 
+  df <- data.frame(z,
+                   quantile=as.integer(with(z, cut(z[,split_var], breaks=quantile(z[,split_var], probs=(0:quantile_num)/quantile_num,na.rm=TRUE)+eps*(0:quantile_num),include.lowest=TRUE))),
+                   stringsAsFactors=FALSE)
+  return(df)
+}
+
+quantile_cast_merge <- function(w,quantile_num,quantile_var){
   #w <- quantiles_melt[quantiles_melt[,"yr"]==1992,]
   #w <- quantiles_melt[quantiles_melt[,"yr"]==1995,]
   #quantile_num <- 5
+  #quantile_var <- "quantile"
   
   merge_table <- unique(w[,c("temp_id","yr","variable")])
-  quantile_u <- sort(unique(w[,"quantile"]))
+  quantile_u <- sort(unique(w[,quantile_var]))
   
   for (i in 1:length(quantile_u))
   {
     #i <- 1
     #i <- 2
     
-    v <- w[w[,"quantile"]==quantile_u[i],]
+    v <- w[w[,quantile_var]==quantile_u[i],]
     v <- v[!is.na(v[,"value"]),]
     colnames(v)[match(c("value"),names(v))] <- quantile_u[i]
     v[,"temp_id"] <- seq(1,nrow(v))
-    merge_table <- merge(merge_table,v[,-match(c("quantile"),names(v))], 
+    merge_table <- merge(merge_table,v[,-match(c(quantile_var),names(v))], 
                          by.x=c("temp_id","yr","variable"), by.y=c("temp_id","yr","variable"), 
                          all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
     
@@ -379,89 +717,6 @@ quantile_cast_merge <- function(w,quantile_num){
   return(merge_table)
 }
 
-quantile_cast_cuts <- function(z,split_var,quantile_num){
-  #z <- data_trim[data_trim[,"yr"]==1999,]
-  #split_var <- x
-  #quantile_num <- 5
-  eps <- .Machine$double.eps 
-  df <- data.frame(z,quantile=as.integer(with(z, cut(z[,split_var], breaks=quantile(z[,split_var], probs=(0:quantile_num)/quantile_num,na.rm=TRUE)+eps*(0:quantile_num),include.lowest=TRUE))),stringsAsFactors=FALSE)
-  return(df)
-}
-
-quantile_yr_cast <- function(x,data,dep_var,group_var,quantile_count){
-  
-  #x <- univariate_vars[1]
-  #x <- univariate_vars[10]
-  #x <- univariate_vars[27]
-  
-  #data <- data_all_univariate
-  #dep_var <- "pflow"
-  #group_var <- "yr"
-  #quantile_count <- quantile_nums[j]
-  
-  data_trim <- data[,c(dep_var,group_var,x)]
-  data_trim <- data_trim[!is.na(data_trim[,x]),]
-  
-  quantiles <- ddply(data_trim, group_var,quantile_cast_cuts ,split_var=x,quantile_num=quantile_count)
-  
-  quantiles_melt <- melt(quantiles,c(group_var,"quantile"),dep_var)
-  quantiles_melt <- ddply(quantiles_melt, c("yr","variable"), function(y){data.frame(temp_id=seq(1,nrow(y)),y,stringsAsFactors=FALSE)})
-  
-  quantiles_melt_cast <- ddply(quantiles_melt, c("yr"), quantile_cast_merge,quantile_num=quantile_count)
-  #quantiles_melt_cast <- subset(quantiles_melt_cast,select=-temp_id)
-  quantiles_melt_cast <- quantiles_melt_cast[,!(colnames(quantiles_melt_cast) %in% "temp_id")]
-  
-  return(data.frame(cut_var=x,quantiles_melt_cast,stringsAsFactors=FALSE))
-  
-}
-
-# #TEST!!!!!
-# for (i in 1:length(univariate_vars))
-# {
-#   #i <- 1
-#   #i <- 10
-#   cat("I:",i, "\n")
-#   temp <- quantile_yr_cast(univariate_vars[i],data=data_all_univariate,dep_var="pflow",group_var="yr",quantile_count=quantile_nums[j])
-#   
-# }
-# temp_yr <- unique(quantiles_melt[,"yr"])
-# for (i in 1:length(temp_yr))
-# {
-#   #i <- 1
-#   #i <- 10
-#   #i <- 11
-#   #i <- 15
-#   
-#   cat("I:",i, "\n")
-#   temp2 <- quantile_cast_merge(quantiles_melt[quantiles_melt[,"yr"]==temp_yr[i],],quantile_num=quantile_count)
-#   
-# }
-
-quantile_cast <- function(x,data,dep_var,group_var,quantile_count){
-  
-  #x <- univariate_vars[21]
-  #x <- univariate_vars[27]
-  
-  #data <- data_all_univariate
-  #dep_var <- "pct_flow"
-  #group_var <- "yr"
-  #quantile_count <- 5
-  
-  data_trim <- data[,c(dep_var,group_var,x)]
-  data_trim <- data_trim[!is.na(data_trim[,x]),]
-  
-  quantiles <- quantile_cast_cuts(data_trim,split_var=x,quantile_num=quantile_count)
-  
-  quantiles_melt <- melt(quantiles,c(group_var,"quantile"),dep_var)
-  quantiles_melt <- ddply(quantiles_melt, c("yr","variable"), function(y){data.frame(temp_id=seq(1,nrow(y)),y,stringsAsFactors=FALSE)})
-  
-  quantiles_melt_cast <- ddply(quantiles_melt, c("yr"), quantile_cast_merge,quantile_num=quantile_count)
-  #quantiles_melt_cast <- subset(quantiles_melt_cast,select=-temp_id)
-  quantiles_melt_cast <- quantiles_melt_cast[,!(colnames(quantiles_melt_cast) %in% "temp_id")]
-  
-  return(data.frame(cut_var=x,quantiles_melt_cast,stringsAsFactors=FALSE))
-  
-}
 
 diff_in_mean <- function(x,var_col,yr_col,quantile_first_col,quantile_last_col){
   #x <- quantiles_pct_flow
@@ -469,7 +724,7 @@ diff_in_mean <- function(x,var_col,yr_col,quantile_first_col,quantile_last_col){
   #yr_col <- "yr"
   #quantile_first_col <- "X1"
   #quantile_last_col <- paste("X",quantile_nums[j],sep="")
-
+  
   
   averages_quantile_cast <- ddply(x, c(yr_col,var_col), function(z){
     stats <- suppressWarnings(as.data.frame(describe(z[,-match(c("yr",var_col),names(z))], 
@@ -549,7 +804,7 @@ diff_in_mean <- function(x,var_col,yr_col,quantile_first_col,quantile_last_col){
     return(test_data)
   })
   
-
+  
   
   combined_table <- merge(averages_quantile_cast2, averages_quantile_cast_ttest, 
                           by.x=c(yr_col,var_col), by.y=c(yr_col,var_col), 
@@ -638,15 +893,15 @@ rolling_reg_sub <- function(x,equations,width) {
                     #coef_z_df <- data.frame(matrix(NA, ncol=(2+length(vars_independent)), nrow=nrow(datain), dimnames=list(c(), c("id",paste("int",y[,c("description")],sep="_"),vars_independent_name))), 
                     #                        stringsAsFactors=FALSE)
                     #coef_z_df[,c("id")] <- seq(1,nrow(coef_z_df),1)
-                  
+                    
                     #coef_z_df_trim <- data.frame(coef_z_df,
                     #                             matrix(NA, ncol=length(vars_independent_name), nrow=nrow(coef_z_df), dimnames=list(c(), c(paste(vars_independent_name,"lag1",sep="_")))), 
                     #                             stringsAsFactors=FALSE)
                     
                     coef_z_df_final <- data.frame(matrix(NA, ncol=3, nrow=nrow(datain), dimnames=list(c(), c("id",
-                                                                                                       paste("int",y[,c("description")],"nonloading",sep="_"),
-                                                                                                       paste("int",y[,c("description")],"loading",sep="_")))), 
-                                                                    stringsAsFactors=FALSE)
+                                                                                                             paste("int",y[,c("description")],"nonloading",sep="_"),
+                                                                                                             paste("int",y[,c("description")],"loading",sep="_")))), 
+                                                  stringsAsFactors=FALSE)
                     coef_z_df_final[,c("id")] <- seq(1,nrow(coef_z_df_final),1)
                     
                     
@@ -701,7 +956,7 @@ rolling_reg_sub <- function(x,equations,width) {
                     
                     colnames(coef_z_df_trim2)[match(paste("int",y[,c("description")],"coef",sep="_"),colnames(coef_z_df_trim2))] <- paste("int",y[,c("description")],"nonloading",sep="_")
                     colnames(coef_z_df_trim2)[match("temp_factor_loading_alpha",colnames(coef_z_df_trim2))] <- paste("int",y[,c("description")],"loading",sep="_")
-                                    
+                    
                     coef_z_df_final <- coef_z_df_trim2[,(colnames(coef_z_df_trim2) %in% c("id",
                                                                                           paste("int",y[,c("description")],"nonloading",sep="_"),
                                                                                           paste("int",y[,c("description")],"loading",sep="_")))]
@@ -744,7 +999,7 @@ external_packages <- c("compare","cwhmisc","data.table","descr","fastmatch","for
                        "gtools","Hmisc","installr","knitr","leaps","lmtest","markdown","memisc","mitools",
                        "pander","pbapply","PerformanceAnalytics","plm","plyr","psych","quantreg","R.oo","R2wd",
                        "reporttools","reshape2","rms","RSQLite","sandwich","sqldf","stargazer","stringr",
-                       "texreg","UsingR","xtable","zoo")
+                       "texreg","taRifx","UsingR","xtable","zoo")
 invisible(unlist(sapply(external_packages,load_external_packages, repo_str=repo, simplify=FALSE, USE.NAMES=FALSE)))
 installed_packages <- list_installed_packages(external_packages)
 
@@ -802,8 +1057,8 @@ EurekahedgeHF_Excel_aca_full_import_vars_remove <- c("exposure_cash","exposure_c
                                                      "secondary_prime_broker_broker6",
                                                      "synthetic_prime_broker","synthetic_prime_broker1","synthetic_prime_broker2","synthetic_prime_broker3","synthetic_prime_broker4",
                                                      "base_currency","minimum_investment_currency","reuters","strategy","secondary_investment_strategy",
-                                                     "administrator","auditor","countries","domicile","equalisation_share_class","exchange_name","industry_focus","investment_geography",
-                                                     "manager_profile","penalty","redemption_frequency","redemption_notification_period","subscription_frequency",
+                                                     "administrator","auditor","countries","equalisation_share_class","exchange_name","industry_focus","investment_geography",
+                                                     "manager_profile",
                                                      "monthly_ret2","yearly_ret","limited_bin","synthetic_prime_broker_count")
 EurekahedgeHF_Excel_aca_full_import_vars_keep0 <- descriptive_stats_fields[descriptive_stats_fields[,"table"]==fund_table,c("field")]
 EurekahedgeHF_Excel_aca_full_import_vars_keep1 <- EurekahedgeHF_Excel_aca_full_import_vars_keep0[!(EurekahedgeHF_Excel_aca_full_import_vars_keep0 %in% EurekahedgeHF_Excel_aca_full_import_vars_remove)]
@@ -830,6 +1085,8 @@ query_EurekahedgeHF_Excel_aca_full <- paste(query_EurekahedgeHF_Excel_aca_full, 
 query_EurekahedgeHF_Excel_aca_full <- paste(query_EurekahedgeHF_Excel_aca_full, "from         ",fund_table, "                                ", sep=" ")
 query_EurekahedgeHF_Excel_aca_full <- trim(gsub(" {2,}", " ", query_EurekahedgeHF_Excel_aca_full))
 
+rm2(EurekahedgeHF_Excel_aca_full_import_vars_keep2)
+
 #EurekahedgeHF_Excel_aca_full <- runsql("SELECT * FROM EurekahedgeHF_Excel_aca_full14",descriptive_stats_db)
 
 EurekahedgeHF_Excel_aca_full <- data.frame(runsql(query_EurekahedgeHF_Excel_aca_full,descriptive_stats_db),
@@ -838,72 +1095,315 @@ EurekahedgeHF_Excel_aca_full <- data.frame(runsql(query_EurekahedgeHF_Excel_aca_
                                            yr_month=NA,
                                            stringsAsFactors=FALSE)
 
-#Create total fees, negative return, and yr_month
-EurekahedgeHF_Excel_aca_full[,"total_fee"] <- rowMeans(EurekahedgeHF_Excel_aca_full[,c("management_fee","performance_fee","other_fee")],na.rm=TRUE)
-EurekahedgeHF_Excel_aca_full[,"fund_ret_mkt_neg"] <- ifelse(EurekahedgeHF_Excel_aca_full[,"mktadjret"]<0, EurekahedgeHF_Excel_aca_full[,"mktadjret"], 0)
-EurekahedgeHF_Excel_aca_full[,"fund_ret_mkt_neg"] <- ifelse(is.na(EurekahedgeHF_Excel_aca_full[,"mktadjret"]), NA, EurekahedgeHF_Excel_aca_full[,"fund_ret_mkt_neg"])
-EurekahedgeHF_Excel_aca_full[,"yr_month"] <- paste(EurekahedgeHF_Excel_aca_full[,"yr"],EurekahedgeHF_Excel_aca_full[,"month"],sep="_")
-
 colnames(EurekahedgeHF_Excel_aca_full) <- tolower(colnames(EurekahedgeHF_Excel_aca_full))
 
+EurekahedgeHF_Excel_aca_full2 <- unknown_to_NA(EurekahedgeHF_Excel_aca_full,unknowns_strings)
+
+rm(EurekahedgeHF_Excel_aca_full)
+
+EurekahedgeHF_Excel_aca_full2 <- EurekahedgeHF_Excel_aca_full2[!is.na(EurekahedgeHF_Excel_aca_full2[,identifier]),]
+EurekahedgeHF_Excel_aca_full2 <- EurekahedgeHF_Excel_aca_full2[!is.na(EurekahedgeHF_Excel_aca_full2[,"yr"]),]
+
+
+#Create total fees, negative return, and yr_month
+EurekahedgeHF_Excel_aca_full2[,"total_fee"] <- rowMeans(EurekahedgeHF_Excel_aca_full2[,c("management_fee","performance_fee","other_fee")],na.rm=TRUE)
+EurekahedgeHF_Excel_aca_full2[,"fund_ret_mkt_neg"] <- ifelse(EurekahedgeHF_Excel_aca_full2[,"mktadjret"]<0, EurekahedgeHF_Excel_aca_full2[,"mktadjret"], 0)
+EurekahedgeHF_Excel_aca_full2[,"fund_ret_mkt_neg"] <- ifelse(is.na(EurekahedgeHF_Excel_aca_full2[,"mktadjret"]), NA, EurekahedgeHF_Excel_aca_full2[,"fund_ret_mkt_neg"])
+EurekahedgeHF_Excel_aca_full2[,"yr_month"] <- paste(EurekahedgeHF_Excel_aca_full2[,"yr"],EurekahedgeHF_Excel_aca_full2[,"month"],sep="_")
+
 #Trim Years
-fund_type_remove <- EurekahedgeHF_Excel_aca_full[is.na(EurekahedgeHF_Excel_aca_full[,"main_investment_strategy"]),]
-fund_type_remove2 <- unique(fund_type_remove[,identifier])
+monthly_data_all_yr_trim <- EurekahedgeHF_Excel_aca_full2[(EurekahedgeHF_Excel_aca_full2[,"yr"]>=start_year & EurekahedgeHF_Excel_aca_full2[,"yr"]<=end_year),]
 
-EurekahedgeHF_Excel_aca_full1 <- EurekahedgeHF_Excel_aca_full[!(EurekahedgeHF_Excel_aca_full[,identifier] %in% fund_type_remove2),]
+rm2(EurekahedgeHF_Excel_aca_full2)
 
-rm2(EurekahedgeHF_Excel_aca_full)
+#Fix dates
+monthly_data_all04 <- monthly_data_all_yr_trim
 
-monthly_data_all_yr_trim <- EurekahedgeHF_Excel_aca_full1[(EurekahedgeHF_Excel_aca_full1[,"yr"]>=start_year & EurekahedgeHF_Excel_aca_full1[,"yr"]<=end_year),]
+rm2(monthly_data_all_yr_trim)
 
-rm2(EurekahedgeHF_Excel_aca_full1)
-
-monthly_data_all4 <- monthly_data_all_yr_trim
-
-monthly_data_all4_date_cols <- c("date_added","dead_date","inception_date","date")
-for (i in 1:length(monthly_data_all4_date_cols))
+monthly_data_all04_date_cols <- c("date_added","dead_date","inception_date","date","chgdt")
+for (i in 1:length(monthly_data_all04_date_cols))
 {
   #i <- 1
   #i <- 2
-  monthly_data_all4[,monthly_data_all4_date_cols[i]] <- as.Date(monthly_data_all4[,monthly_data_all4_date_cols[i]], 
-                                                                format="%Y-%m-%d", 
-                                                                origin="1970-01-01")
+  monthly_data_all04[,monthly_data_all04_date_cols[i]] <- as.Date(monthly_data_all04[,monthly_data_all04_date_cols[i]], 
+                                                                  format="%Y-%m-%d", 
+                                                                  origin="1970-01-01")
+}
+rm2(monthly_data_all04_date_cols,i)
+
+#Scale AUM and Minimum Invstment Size
+monthly_data_all04[,"aum"] <- (as.numeric(monthly_data_all04[,"aum"])/1000000)
+monthly_data_all04[,"aum_lag1"] <- (as.numeric(monthly_data_all04[,"aum_lag1"])/1000000)
+monthly_data_all04[,"aum_lag2"] <- (as.numeric(monthly_data_all04[,"aum_lag2"])/1000000)
+monthly_data_all04[,"aum_lag3"] <- (as.numeric(monthly_data_all04[,"aum_lag3"])/1000000)
+monthly_data_all04[,"minimum_investment_size"] <- (as.numeric(monthly_data_all04[,"minimum_investment_size"])/1000000)
+
+monthly_data_all04[,"aum_lag4"] <- (as.numeric(monthly_data_all04[,"aum_lag4"])/1000000)
+
+#Strip out comments in parenetheses
+monthly_data_all_strip_comments_cols <- c("annualized_target_return","annualized_target_volatility","domicile","fund_size_us_m",
+                                          "leverage","lock_up","redemption_frequency","redemption_notification_period","subscription_frequency")
+
+#Rename original columns
+monthly_data_all05 <- rename.vars(monthly_data_all04, 
+                                  monthly_data_all_strip_comments_cols, 
+                                  paste(monthly_data_all_strip_comments_cols,"_org",sep=""))
+
+rm2(monthly_data_all04)
+
+strip_cols <- c(monthly_data_all_strip_comments_cols, 
+                paste(monthly_data_all_strip_comments_cols,"_comments",sep=""))
+
+monthly_data_all06 <-  data.frame(monthly_data_all05, 
+                                  matrix(NA, ncol=length(strip_cols), nrow=nrow(monthly_data_all05), dimnames=list(c(), strip_cols)), 
+                                  stringsAsFactors=FALSE)
+
+monthly_data_all06 <- monthly_data_all06[,sort(colnames(monthly_data_all06), decreasing = FALSE)]
+
+monthly_data_all06 <- strip_comments(monthly_data_all06,monthly_data_all_strip_comments_cols)
+monthly_data_all06 <- as.data.frame(monthly_data_all06,stringsAsFactors=FALSE)
+
+rm2(monthly_data_all05,monthly_data_all_strip_comments_cols,strip_cols)
+
+#Get text before comments
+monthly_data_all_yn_cols <- c("annualized_target_return","annualized_target_volatility","domicile","fund_size_us_m",
+                              "leverage","lock_up","redemption_frequency","redemption_notification_period","subscription_frequency")
+monthly_data_all07 <- create_noncomments(monthly_data_all06,monthly_data_all_yn_cols)
+monthly_data_all07 <- as.data.frame(monthly_data_all07,stringsAsFactors=FALSE)
+
+rm2(monthly_data_all06,monthly_data_all_yn_cols)
+
+#Check for uknowns
+monthly_data_all_check_unknown_cols <- c("annualized_target_return","annualized_target_volatility","domicile","fund_size_us_m",
+                                         "leverage","lock_up","redemption_frequency","redemption_notification_period","subscription_frequency")
+monthly_data_all08 <- data.table(monthly_data_all07)[, (monthly_data_all_check_unknown_cols) := llply(.SD, vector_clean_na,unknowns=unknowns_strings,.progress = "text"), 
+                                                     .SDcols = monthly_data_all_check_unknown_cols]
+monthly_data_all08 <- as.data.frame(monthly_data_all08, stringsAsFactors=FALSE)
+
+rm2(monthly_data_all07,monthly_data_all_check_unknown_cols)
+
+#Change not specificied to NA
+NA_Phrases <- c("NA","N/A","N\\A","NOT APPLICABLE","NOT APPILCABLE","NOT DEFINED","NOT DISCLOSED","NOT DISLCOSED","UNDISCLOSED",
+                "TO BE ADVISED","TO BE ADVISE","TBA","SEE PROSPECTUS FOR FULL DETAILS","UPON REQUEST",
+                "SUBJECT TO MANAGER'S DISCRETION")
+monthly_data_all_not_specified_cols <- c("annualized_target_return","annualized_target_volatility","domicile","fund_size_us_m",
+                                         "leverage","lock_up","redemption_frequency","redemption_notification_period","subscription_frequency")
+monthly_data_all09 <- not_specified_to_na(monthly_data_all08,monthly_data_all_not_specified_cols,NA_Phrases)
+monthly_data_all09 <- as.data.frame(monthly_data_all09,stringsAsFactors=FALSE)
+
+rm2(monthly_data_all08,monthly_data_all_not_specified_cols,NA_Phrases)
+
+#Change no phrases to NO
+NO_Phrases <- c("NIL","NONE","NONE AFTER 12 MONTHS","NONE AFTER 1ST YEAR","NO DIVIDEND","NON DIVIDEND","LITTLE OR NO")
+
+monthly_data_all_no_phrases_cols <- c("annualized_target_return","annualized_target_volatility","domicile","fund_size_us_m",
+                                      "leverage","lock_up","redemption_frequency","redemption_notification_period","subscription_frequency")
+monthly_data_all10 <- no_to_no(monthly_data_all09,monthly_data_all_no_phrases_cols,NO_Phrases)
+monthly_data_all10 <- as.data.frame(monthly_data_all10,stringsAsFactors=FALSE)
+
+rm2(monthly_data_all09,monthly_data_all_no_phrases_cols,NO_Phrases)
+
+#Change yes phrases to YES
+YES_Phrases <- c("RARELY","OCCASIONALLY")
+monthly_data_all_yes_phrases_cols <- c("annualized_target_return","annualized_target_volatility","domicile","fund_size_us_m",
+                                       "leverage","lock_up","redemption_frequency","redemption_notification_period","subscription_frequency")
+monthly_data_all11 <- yes_to_yes(monthly_data_all10,monthly_data_all_yes_phrases_cols,YES_Phrases)
+monthly_data_all11 <- as.data.frame(monthly_data_all11,stringsAsFactors=FALSE)
+
+rm2(monthly_data_all10,monthly_data_all_yes_phrases_cols,YES_Phrases)
+
+#Change Y/N to binary
+monthly_data_all_yn_to_bin_cols <-  c("leverage", "lock_up")
+
+bin_cols <- paste(monthly_data_all_yn_to_bin_cols,"_bin",sep="")
+
+monthly_data_all12 <-  data.frame(monthly_data_all11, matrix(NA, ncol=length(bin_cols), nrow=nrow(monthly_data_all11), dimnames=list(c(), bin_cols)), stringsAsFactors=FALSE)
+
+monthly_data_all12[,bin_cols] <-  monthly_data_all12[,monthly_data_all_yn_to_bin_cols]
+
+monthly_data_all12 <- yn_to_binary(monthly_data_all12,bin_cols)
+monthly_data_all12 <- as.data.frame(monthly_data_all12,stringsAsFactors=FALSE)
+
+monthly_data_all12 <- data.table(monthly_data_all12)[, (bin_cols) := llply(.SD, vector_clean_na,unknowns=unknowns_strings,.progress = "text"), .SDcols = bin_cols]
+monthly_data_all12 <- as.data.frame(monthly_data_all12,stringsAsFactors=FALSE)
+
+rm2(monthly_data_all11,monthly_data_all_yn_to_bin_cols,bin_cols)
+
+#Create domicile dummy
+monthly_data_all13 <- data.frame(monthly_data_all12,
+                                 domicile_onshore_bin=0,
+                                 stringsAsFactors=FALSE)
+
+rm2(monthly_data_all12)
+
+monthly_data_all13[,"domicile"] <- gsub("[[:punct:]]", "", monthly_data_all13[,"domicile"])
+monthly_data_all13[,"domicile"] <- trim(monthly_data_all13[,"domicile"])
+
+
+monthly_data_all13[,"domicile_onshore_bin"] <- ifelse(is.na(monthly_data_all13[,"domicile"]), NA, 
+                                                      ifelse(toupper(monthly_data_all13[,"domicile"])=="UNITED STATES", 1, 
+                                                             ifelse(toupper(monthly_data_all13[,"domicile"])=="USA", 1, 
+                                                                    ifelse(toupper(monthly_data_all13[,"domicile"])=="US", 1, monthly_data_all13[,"domicile_onshore_bin"]))))
+
+
+#Convert size to numeric
+monthly_data_all_num_cols <- c("fund_size_us_m")
+
+for (i in 1:length(monthly_data_all_num_cols)) {
+  #i <- 1
+  monthly_data_all13[,monthly_data_all_num_cols[i]] <- destring(monthly_data_all13[,monthly_data_all_num_cols[i]])
+  monthly_data_all13[,monthly_data_all_num_cols[i]] <- as.numeric(monthly_data_all13[,monthly_data_all_num_cols[i]])
 }
 
-#Winsorize values of flow
-flow_vars <- c("nflow","nflow_lag1","nflow_lag2","nflow_lag3","nflow_lag4",
-               "sdnet_flow","sdnet_flow_lag1",
-               "pflow","pflow_lag1","pflow_lag2","pflow_lag3","pflow_lag4",
-               "sdpct_flow","sdpct_flow_lag1")
-for (i in 1:length(flow_vars))
-{
-  #i <- 1
-  #i <- 2
-  monthly_data_all4[,flow_vars[i]] <- 
-    winsorize_both(monthly_data_all4[,flow_vars[i]],q=0.025)
-  
-} 
-rm2(flow_vars,i)
+#Remove unwanted columns
+monthly_data_all14 <- monthly_data_all13[,!(colnames(monthly_data_all13) %in% c("lock_up","lock_up_comments","lock_up_org",
+                                                                                "leverage","leverage_comments","leverage_org",
+                                                                                "domicile","domicile_comments","domicile_org",
+                                                                                "fund_size_us_m_comments","fund_size_us_m_org",
+                                                                                "annualized_target_return_comments","annualized_target_return_org",
+                                                                                "annualized_target_volatility_comments","annualized_target_volatility_org",
+                                                                                "redemption_notification_period_comments","redemption_notification_period_org",
+                                                                                "subscription_frequency_comments","subscription_frequency_org"))]
+
+rm2(monthly_data_all13,monthly_data_all_num_cols)
+
+
+#Make sure that fund has a strategy category
+
+fund_type_remove <- monthly_data_all14[is.na(monthly_data_all14[,"main_investment_strategy"]),]
+fund_type_remove1 <- unique(fund_type_remove[,identifier])
+fund_type_remove2 <- !is.na(fund_type_remove1)
+
+monthly_data_all15 <- monthly_data_all14[!(monthly_data_all14[,identifier] %in% fund_type_remove2),]
+
+rm2(monthly_data_all14)
 
 
 #Make sure funds have atleast 12 months of returns
-firm <- count(monthly_data_all4, c(identifier))
+firm <- count(monthly_data_all15, c(identifier))
 firm_keep <- firm[firm[,"freq"]>=12,]
+firm_keep <- firm[!is.na(firm[,c(identifier)]),]
 row.names(firm_keep) <- seq(nrow(firm_keep))
 
-monthly_data_all4_trim <- monthly_data_all4[(monthly_data_all4[,c(identifier)] %in% firm_keep[,c(identifier)]),]
-row.names(monthly_data_all4_trim) <- seq(nrow(monthly_data_all4_trim))
+monthly_data_all16 <- monthly_data_all15[(monthly_data_all15[,c(identifier)] %in% firm_keep[,c(identifier)]),]
+row.names(monthly_data_all16) <- seq(nrow(monthly_data_all16))
 
-#Scale AUM
-monthly_data_all4_trim <- monthly_data_all4_trim[monthly_data_all4_trim[,"aum"]>=100000,]
-monthly_data_all4_trim[,"aum"] <- (as.numeric(monthly_data_all4_trim[,"aum"])/1000000)
-monthly_data_all4_trim[,"aum_lag1"] <- (as.numeric(monthly_data_all4_trim[,"aum_lag1"])/1000000)
-monthly_data_all4_trim[,"aum_lag2"] <- (as.numeric(monthly_data_all4_trim[,"aum_lag2"])/1000000)
-monthly_data_all4_trim[,"aum_lag3"] <- (as.numeric(monthly_data_all4_trim[,"aum_lag3"])/1000000)
-monthly_data_all4_trim[,"aum_lag4"] <- (as.numeric(monthly_data_all4_trim[,"aum_lag4"])/1000000)
+rm(monthly_data_all15,firm,firm_keep)
 
-rm2(EurekahedgeHF_Excel_aca_full_import_vars_keep2,monthly_data_all_yr_trim,monthly_data_all4,monthly_data_all4_date_cols)
-rm2(firm,firm_keep)
+
+#Trim AUM
+monthly_data_all17 <- monthly_data_all16
+monthly_data_all17 <- monthly_data_all16[!is.na(monthly_data_all16[,"aum"]),]
+
+rm2(monthly_data_all16)
+
+monthly_data_all18 <- monthly_data_all17
+monthly_data_all18 <- monthly_data_all18[monthly_data_all18[,"aum"]>=0.1,]
+
+rm2(monthly_data_all17)
+
+
+#Finalize the data
+monthly_data_all19 <- monthly_data_all18
+monthly_data_all20 <- monthly_data_all19[rowSums(is.na(monthly_data_all19[,1:ncol(monthly_data_all19)]))<ncol(monthly_data_all19),]
+
+
+
+monthly_data_all20 <- monthly_data_all20[order(monthly_data_all20[,identifier], 
+                                               monthly_data_all20[,"yr"],
+                                               monthly_data_all20[,"month"]),]
+
+row.names(monthly_data_all20) <- seq(nrow(monthly_data_all20))
+
+rm2(monthly_data_all19)
+
+# aa <- unique(monthly_data_all11[,!(colnames(monthly_data_all11) %in% c("yr","month"))])
+# 
+# 
+# bb <- unique(aa[,(colnames(aa) %in% c("subscription_frequency", "redemption_notification_period","redemption_frequency"))])
+# 
+# cols <- c("subscription_frequency", "redemption_notification_period","redemption_frequency")
+# 
+# bb1 <- data.frame(bb,
+#                   matrix(0, ncol=length(cols)*3, nrow=nrow(bb), 
+#                          dimnames=list(c(), c(paste(cols,"day",sep="_"),
+#                                               paste(cols,"month",sep="_"),
+#                                               paste(cols,"year",sep="_")))), 
+#                   matrix(NA, ncol=length(cols)*3, nrow=nrow(bb), 
+#                          dimnames=list(c(), c(paste(cols,"combined",sep="_"),
+#                                               paste(cols,"converted",sep="_"),
+#                                               paste(cols,"evaluated",sep="_")))), 
+#                   stringsAsFactors=FALSE)
+# 
+# bb1 <- bb1[,sort(colnames(bb1))]
+# 
+# for (j in 1:length(cols)) {
+#   
+#   #j <- 1
+#   #j <- 2
+#   #j <- 3
+#   
+#   bb1[,paste(cols[j],"day",sep="_")] <- ifelse(is.na(bb1[,cols[j]]), NA, 
+#                                                ifelse(grepl("day", bb1[,cols[j]], ignore.case = TRUE, perl=TRUE), 1, 
+#                                                       ifelse(grepl("daily", bb1[,cols[j]], ignore.case = TRUE, perl=TRUE), 1, 
+#                                                              bb1[,paste(cols[j],"day",sep="_")])))
+#   
+#   bb1[,paste(cols[j],"month",sep="_")] <- ifelse(is.na(bb1[,cols[j]]), NA, 
+#                                                  ifelse(grepl("month", bb1[,cols[j]], ignore.case = TRUE, perl=TRUE), 1, 
+#                                                         ifelse(grepl("monthly", bb1[,cols[j]], ignore.case = TRUE, perl=TRUE), 1, 
+#                                                                bb1[,paste(cols[j],"month",sep="_")])))          
+#   
+#   bb1[,paste(cols[j],"year",sep="_")] <- ifelse(is.na(bb1[,cols[j]]), NA, 
+#                                                 ifelse(grepl("year", bb1[,cols[j]], ignore.case = TRUE, perl=TRUE), 1, 
+#                                                        ifelse(grepl("annual", bb1[,cols[j]], ignore.case = TRUE, perl=TRUE), 1, 
+#                                                               bb1[,paste(cols[j],"year",sep="_")])))    
+#   
+#   bb1[,paste(cols[j],"combined",sep="_")] <- rowSums(bb1[,c(paste(cols[j],"day",sep="_"),
+#                                                             paste(cols[j],"month",sep="_"),
+#                                                             paste(cols[j],"year",sep="_"))],na.rm=TRUE)
+#   bb1[,paste(cols[j],"combined",sep="_")] <- ifelse((is.na(bb1[,paste(cols[j],"day",sep="_")]) 
+#                                                      & is.na(bb1[,paste(cols[j],"month",sep="_")]) 
+#                                                      & is.na(bb1[,paste(cols[j],"month",sep="_")])), NA, bb1[,paste(cols[j],"combined",sep="_")])
+#   
+#   bb1[,paste(cols[j],"converted",sep="_")] <- gsub("[[:alpha:]]", "", bb1[,cols[j]])
+#   #bb1[,paste(cols[j],"converted",sep="_")] <- gsub("([0-9]+).*$", "\\1", bb1[,cols[j]])
+#   #bb1[,paste(cols[j],"converted",sep="_")] <- gsub('.*-([0-9]+).*','\\1',bb1[,cols[j]])
+#   
+#   bb1[,paste(cols[j],"converted",sep="_")] <- gsub("'","",bb1[,paste(cols[j],"converted",sep="_")])
+#   bb1[,paste(cols[j],"converted",sep="_")] <- gsub("+","",bb1[,paste(cols[j],"converted",sep="_")])
+#   bb1[,paste(cols[j],"converted",sep="_")] <- gsub(";","",bb1[,paste(cols[j],"converted",sep="_")])
+#   bb1[,paste(cols[j],"converted",sep="_")] <- gsub("$","",bb1[,paste(cols[j],"converted",sep="_")])
+#   bb1[,paste(cols[j],"converted",sep="_")] <- gsub("%","",bb1[,paste(cols[j],"converted",sep="_")])
+#   bb1[,paste(cols[j],"converted",sep="_")] <- gsub(",","",bb1[,paste(cols[j],"converted",sep="_")])
+#   bb1[,paste(cols[j],"converted",sep="_")] <- gsub("/","-",bb1[,paste(cols[j],"converted",sep="_")])
+#   
+#   bb1[,paste(cols[j],"converted",sep="_")] <- gsub("  "," ",bb1[,paste(cols[j],"converted",sep="_")])
+#   bb1[,paste(cols[j],"converted",sep="_")] <- gsub("  "," ",bb1[,paste(cols[j],"converted",sep="_")])
+#   bb1[,paste(cols[j],"converted",sep="_")] <- gsub("  "," ",bb1[,paste(cols[j],"converted",sep="_")])
+#   bb1[,paste(cols[j],"converted",sep="_")] <- gsub("  "," ",bb1[,paste(cols[j],"converted",sep="_")])
+#   
+#   bb1[,paste(cols[j],"converted",sep="_")] <- trim(bb1[,paste(cols[j],"converted",sep="_")])
+#   
+#   #bb1[,paste(cols[j],"converted",sep="_")] <- gsub(" ","1",bb1[,paste(cols[j],"converted",sep="_")]) 
+#   
+#   # bb1[,paste(cols[j],"converted",sep="_")] <- ifelse(is.na(bb1[,cols[j]]), NA, 
+#   #                                                ifelse(grepl("year", bb1[,cols[j]], ignore.case = TRUE, perl=TRUE), 1, 
+#   #                                                       ifelse(grepl("annual", bb1[,cols[j]], ignore.case = TRUE, perl=TRUE), 1, 
+#   #                                                              bb1[,paste(cols[j],"year",sep="_")])))  
+#   
+#   
+#   bb1[,paste(cols[j],"converted",sep="_")] <- ifelse(is.na(bb1[,paste(cols[j],"combined",sep="_")]), NA, 
+#                                                      ifelse(bb1[,paste(cols[j],"combined",sep="_")]==0, NA, 
+#                                                             ifelse(bb1[,paste(cols[j],"combined",sep="_")]>1, NA, 
+#                                                                    bb1[,paste(cols[j],"converted",sep="_")])))    
+#   bb1[,paste(cols[j],"converted",sep="_")] <- ifelse(bb1[,paste(cols[j],"converted",sep="_")]==" ", "1", bb1[,paste(cols[j],"converted",sep="_")])  
+#   bb1[,paste(cols[j],"converted",sep="_")] <- ifelse(bb1[,paste(cols[j],"converted",sep="_")]=="-", NA, bb1[,paste(cols[j],"converted",sep="_")]) 
+#   
+#   bb1[,paste(cols[j],"converted",sep="_")] <- gsub("/[[:punct:]]?$/","",bb1[,paste(cols[j],"converted",sep="_")])
+#   
+# } 
+
 
 
 ###############################################################################
@@ -962,7 +1462,7 @@ rm2(text_stats_ios_import_vars_keep2,text_stats_ios_yr_trim,text_stats_ios_sim_c
 cat("MERGE FUND AND TEXT DATA", "\n")
 ###############################################################################
 
-data0 <- merge(monthly_data_all4_trim, text_stats_ios_trim, 
+data0 <- merge(monthly_data_all20[,!(colnames(monthly_data_all20) %in% c("main_investment_strategy"))], text_stats_ios_trim, 
                by.x=c(identifier,"yr","month","yr_month"), by.y=c(identifier,"yr","month","yr_month"), 
                all.x=FALSE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables = NA)
 
@@ -973,7 +1473,7 @@ data0 <- data0[order(data0[,identifier],
 row.names(data0) <- seq(nrow(data0))
 
 rm2(fund_table,text_table,fund_type_remove,fund_type_remove2)
-rm2(monthly_data_all4_trim,text_stats_ios_trim)
+#rm2(monthly_data_all20,text_stats_ios_trim)
 
 
 ###############################################################################
@@ -1074,7 +1574,6 @@ for (i in 1:length(lag_vars))
   
 } 
 
-
 rm2(data0,factors_merge,data1_factors0,lag_vars,lag_count,i)
 
 
@@ -1102,8 +1601,7 @@ regression_equations_alpha_include <- regression_equations_alpha[regression_equa
 #firm_keep_temp <- unique(data1_factors[,c(identifier)])
 #data_alphas <- data1_factors[data1_factors[,c(identifier)] %in% firm_keep_temp[1:10],]
 
-data_alphas <- data1_factors
-data_alphas <- ddply(data_alphas, identifier, rolling_reg_sub,equations=regression_equations_alpha_include,width=12,
+data_alphas <- ddply(data1_factors, identifier, rolling_reg_sub,equations=regression_equations_alpha_include,width=12,
                      .progress = "text", .inform = FALSE, .drop = TRUE, .parallel = FALSE, .paropts = NULL)
 data_alphas <- ddply(data_alphas, identifier, rolling_reg_sub,equations=regression_equations_alpha_include,width=24,
                      .progress = "text", .inform = FALSE, .drop = TRUE, .parallel = FALSE, .paropts = NULL)
@@ -1138,17 +1636,48 @@ data2_full <- merge(data1_nofactors, data_alphas,
 data2_na_cols <- c("yr","pflow","nflow","aum", "mktadjret","mktadjret_lag1","mktadjret_lag2","mktadjret_lag3","mktadjret_sq")
 #"mnav_agg","mtna_agg","log_mtna_agg","age_y","sddret_agg","sddret_agg","turn_ratio_agg","exp_ratio_agg","mgmt_fee_agg"
 
-data2 <- data2_full
+data2_no_na <- data2_full
 for (i in 1:length(data2_na_cols))
 {
   #i <- 1
-  data2 <- data2[!(is.na(data2[,data2_na_cols[i]])),]
+  data2_no_na <- data2_no_na[!(is.na(data2_no_na[,data2_na_cols[i]])),]
   
 }
-
-
 rm2(i,data2_na_cols)
 #rm2(data1_nofactors,data_alphas,data_alphas_final,data2_full)
+
+
+###############################################################################
+cat("COMPUTE ADDITIONAL VARIABLES", "\n")
+###############################################################################
+
+#EXRET_squared
+#EXRET_neg
+#ALPHAS_squared
+#ALPHAs_neg
+
+
+###############################################################################
+cat("WINSORIZE", "\n")
+###############################################################################
+
+winsorize_vars <- c("nflow","nflow_lag1","nflow_lag2","nflow_lag3","nflow_lag4",
+                    "sdnet_flow","sdnet_flow_lag1",
+                    "pflow","pflow_lag1","pflow_lag2","pflow_lag3","pflow_lag4",
+                    "sdpct_flow","sdpct_flow_lag1",
+                    "exret","exret_lag1","exret_lag2","exret_lag3","exret_lag4",
+                    "sharpe_ratio","sortino_ratio","minimum_investment_size")
+
+data2 <- data2_no_na
+for (i in 1:length(winsorize_vars))
+{
+  #i <- 1
+  #i <- 2
+  data2[,winsorize_vars[i]] <- 
+    winsorize_both(data2[,winsorize_vars[i]],q=0.025)
+  
+} 
+rm2(data2_no_na,winsorize_vars,i)
 
 
 ###############################################################################
@@ -1176,7 +1705,7 @@ descrip_stats_data <- descrip_stats_data[,!(colnames(descrip_stats_data) %in% de
 descrip_stats_ios_sim_cols <- names(descrip_stats_data)[grep("pct_ios", names(descrip_stats_data))] 
 
 descriptive_overall_vars_model1 <- list(note="PA",
-                                        vars=c("pflow","sdpct_flow","mktadjret","mktadjret_sq","fund_ret_mkt_neg",
+                                        vars=c("pflow","sdpct_flow","mktadjret","mktadjret_sq","fund_ret_mkt_neg","exret",
                                                "int_ff_nonloading_12","int_ff_loading_12","int_ffm_nonloading_12","int_ffm_loading_12","int_ffml_nonloading_12","int_ffml_loading_12",
                                                "int_hf7_nonloading_12","int_hf7_loading_12","int_hf8_nonloading_12","int_hf8_loading_12",
                                                "int_ff_nonloading_24","int_ff_loading_24","int_ffm_nonloading_24","int_ffm_loading_24","int_ffml_nonloading_24","int_ffml_loading_24",
@@ -1189,6 +1718,9 @@ descriptive_overall_vars_model1 <- list(note="PA",
                                                "int_hf7_nonloading_60","int_hf7_loading_60","int_hf8_nonloading_60","int_hf8_loading_60",
                                                "age_y","aum",
                                                "total_fee","management_fee","performance_fee","other_fee",
+                                               "sharpe_ratio","sortino_ratio","minimum_investment_size",
+                                               "listed_on_exchange_bin","hurdle_rate_bin","high_water_mark_bin",
+                                               "domicile_onshore_bin","leverage_bin","lock_up_bin",
                                                "flagship_bin","closed_bin","dead_bin"))
 descriptive_overall_vars_model2 <- list(note="PB",
                                         vars=c("sentences_ios","words_ios","chars_no_space_ios","num_syll_ios","sntc_per_word_ios",
@@ -1204,8 +1736,8 @@ descriptive_overall_vars_model_vars <- sapply(descriptive_overall_vars_model, "[
 
 descriptive_overall_vars_model_vars_all <- unlist(descriptive_overall_vars_model_vars)
 descriptive_overall_vars_model_vars_all <- data.frame(id=NA,
-                                                       descriptive_overall_vars_model_vars_all, 
-                                                       stringsAsFactors=FALSE)
+                                                      descriptive_overall_vars_model_vars_all, 
+                                                      stringsAsFactors=FALSE)
 descriptive_overall_vars_model_vars_all[,c("id")] <- seq(nrow(descriptive_overall_vars_model_vars_all))
 colnames(descriptive_overall_vars_model_vars_all)[2] <- "var"
 
@@ -1215,7 +1747,7 @@ row.names(descriptive_overall_vars_model_vars_all) <- seq(nrow(descriptive_overa
 
 
 ###############################################################################
-cat("DESCRIPTIVE STATISTICS - FUND ATTRIBUTES (PANEL A) & IOS (PANEL B)", "\n")
+cat("DESCRIPTIVE STATISTICS - FUND ATTRIBUTES (PA) & IOS (PB)", "\n")
 ###############################################################################
 
 descriptive_overall_groups <- data.frame(matrix(NA, ncol=2, nrow=5, dimnames=list(c(), c("Start_yr","End_yr"))), 
@@ -1256,7 +1788,7 @@ for (k in 1:nrow(descriptive_overall_groups))
   data_temp_no_id <- data_temp[,!(colnames(data_temp) %in% identifier)]
   
   descriptive_stats_temp_full_all_var <- describe2(data_temp_no_id[,descriptive_overall_vars_model_vars_all[,c("var")]])
-
+  
   for (l in 1:length(descriptive_overall_vars_model))
   {
     #l <- 1
@@ -1297,41 +1829,44 @@ rm2(descriptive_overall_groups,k)
 
 
 ###############################################################################
-cat("DESCRIPTIVE STATISTICS - FUND ATTRIBUTES (PANEL A) & IOS (PANEL B) BY YEAR ", "\n")
+cat("DESCRIPTIVE STATISTICS - FUND ATTRIBUTES (PA) & IOS (PB) BY YEAR ", "\n")
 ###############################################################################
 
-descriptive_year_groups <- data.frame(matrix(NA, ncol=2, nrow=1, dimnames=list(c(), c("Start_yr","End_yr"))), 
-                                      stringsAsFactors=FALSE)
+descriptive_stats_by_var_year <- "yr"
 
-descriptive_year_groups[1,] <- c(start_year,end_year)
+descriptive_overall_groups_by_year <- data.frame(matrix(NA, ncol=2, nrow=1, dimnames=list(c(), c("Start_yr","End_yr"))), 
+                                                 stringsAsFactors=FALSE)
 
-descriptive_year_stats <- c("mean","median")
+descriptive_overall_groups_by_year[1,] <- c(start_year,end_year)
 
-for (k in 1:nrow(descriptive_year_groups))
+descriptive_stats_by_year <- c("mean","median")
+
+for (k in 1:nrow(descriptive_overall_groups_by_year))
 {
   #k <- 1
   
-  cat("START YEAR:", descriptive_year_groups[k,1], "END YEAR:", descriptive_year_groups[k,2],"\n")
+  cat("START YEAR:", descriptive_overall_groups_by_year[k,1], "END YEAR:", descriptive_overall_groups_by_year[k,2],"\n")
   
-  data_temp <- descrip_stats_data[(descrip_stats_data[,"yr"]>=descriptive_year_groups[k,1] & descrip_stats_data[,"yr"]<=descriptive_year_groups[k,2]),]
+  data_temp <- descrip_stats_data[(descrip_stats_data[,"yr"]>=descriptive_overall_groups_by_year[k,1] & descrip_stats_data[,"yr"]<=descriptive_overall_groups_by_year[k,2]),]
   
-  fund_count_yr1 <- ddply(data_temp, "yr", function(x) {data.frame(var="number_of_funds", 
-                                                                   count=as.numeric(length(unique(x[,identifier],comparables=FALSE))),
-                                                                   stringsAsFactors=FALSE)})
-  fund_count_yr2 <- data.frame(yr=9999,
+  fund_count_yr1 <- ddply(data_temp, descriptive_stats_by_var_year, function(x) {data.frame(var="number_of_funds", 
+                                                                                            count=as.numeric(length(unique(x[,identifier],comparables=FALSE))),
+                                                                                            stringsAsFactors=FALSE)})
+  fund_count_yr2 <- data.frame(temp_var="ZZZ",
                                var="number_of_funds", 
                                count=as.numeric(length(unique(data_temp[,identifier],comparables=FALSE))),
                                stringsAsFactors=FALSE)
+  colnames(fund_count_yr2)[match("temp_var",names(fund_count_yr2))] <- descriptive_stats_by_var_year
   
   fund_count_yr <- rbind(fund_count_yr1,fund_count_yr2)
   
   data_temp_no_id <- data_temp[,!(colnames(data_temp) %in% identifier)]
   
-  #descriptive_stats_temp_full_all_var <- describeBy2(descrip_stats_fund2,"yr")
+  #descriptive_stats_temp_full_all_var_year <- describeBy2(descrip_stats_fund2,"yr")
   
-  descriptive_stats_temp_full_all_var <- describeBy2(data_temp_no_id[,c("yr",descriptive_overall_vars_model_vars_all[,c("var")])],"yr")
+  descriptive_stats_temp_full_all_var_year <- describeBy2(data_temp_no_id[,c(descriptive_stats_by_var_year,descriptive_overall_vars_model_vars_all[,c("var")])],descriptive_stats_by_var_year)
   
-  assign("descriptive_stats_temp_full_all_var", descriptive_stats_temp_full_all_var, envir = .GlobalEnv)
+  assign("descriptive_stats_temp_full_all_var_year", descriptive_stats_temp_full_all_var_year, envir = .GlobalEnv)
   
   for (l in 1:length(descriptive_overall_vars_model))
   {
@@ -1350,37 +1885,40 @@ for (k in 1:nrow(descriptive_year_groups))
                                                                                                descriptive_overall_vars_model_vars_temp[,"var"]),]
     row.names(descriptive_overall_vars_model_vars_temp) <- seq(nrow(descriptive_overall_vars_model_vars_temp))
     
-    out_file_name1 <- paste("descriptive_stats",descriptive_year_groups[k,1],descriptive_year_groups[k,2],descriptive_overall_vars_model_note_temp,"year",sep="_")
+    out_file_name1 <- paste("descriptive_stats",descriptive_overall_groups_by_year[k,1],descriptive_overall_groups_by_year[k,2],descriptive_overall_vars_model_note_temp,"year",sep="_")
     
-    descriptive_stats_yr_temp_full_trim <- descriptive_stats_temp_full_all_var[descriptive_stats_temp_full_all_var[,"var"] %in% descriptive_overall_vars_model_vars_temp[,c("var")],]
-
-    for (m in 1:length(descriptive_year_stats))
+    descriptive_stats_yr_temp_full_trim <- descriptive_stats_temp_full_all_var_year[descriptive_stats_temp_full_all_var_year[,"var"] %in% descriptive_overall_vars_model_vars_temp[,c("var")],]
+    
+    for (m in 1:length(descriptive_stats_by_year))
     {
       #m <- 1
       #m <- 2
       
       fund_count_yr_temp <- fund_count_yr
-      colnames(fund_count_yr_temp)[match("count",names(fund_count_yr_temp))] <- descriptive_year_stats[m]
+      colnames(fund_count_yr_temp)[match("count",names(fund_count_yr_temp))] <- descriptive_stats_by_year[m]
       
-      out_file_name2 <- paste(out_file_name1,descriptive_year_stats[m],sep="_")
-    
-      descriptive_stats_yr_temp_trim <- rbind(descriptive_stats_yr_temp_full_trim[c("yr","var",descriptive_year_stats[m])],fund_count_yr_temp)
-  
-      descriptive_stats_yr_temp <- suppressMessages(dcast(descriptive_stats_yr_temp_trim, var~yr))
-
+      out_file_name2 <- paste(out_file_name1,descriptive_stats_by_year[m],sep="_")
+      
+      descriptive_stats_yr_temp_trim <- rbind(descriptive_stats_yr_temp_full_trim[c(descriptive_stats_by_var_year,"var",descriptive_stats_by_year[m])],
+                                              fund_count_yr_temp)
+      
+      #descriptive_stats_yr_temp <- suppressMessages(dcast(descriptive_stats_yr_temp_trim, var~yr))
+      descriptive_stats_yr_temp <- suppressMessages(dcast(descriptive_stats_yr_temp_trim, 
+                                                          eval(parse(text=paste("var",descriptive_stats_by_var_year,sep="~")))))
+      
       descriptive_stats_yr_temp2 <- merge(descriptive_stats_yr_temp, descriptive_overall_vars_model_vars_temp, 
                                           by.x=c("var"), by.y=c("var"), 
                                           all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
       descriptive_stats_yr_temp2 <- descriptive_stats_yr_temp2[order(descriptive_stats_yr_temp2[,"id"]),]
       row.names(descriptive_stats_yr_temp2) <- seq(nrow(descriptive_stats_yr_temp2))
-      colnames(descriptive_stats_yr_temp2)[match("9999",names(descriptive_stats_yr_temp2))] <- "Full"
+      colnames(descriptive_stats_yr_temp2)[match("ZZZ",names(descriptive_stats_yr_temp2))] <- "Full"
       
       descriptive_stats_yr_temp2 <- descriptive_stats_yr_temp2[,!(colnames(descriptive_stats_yr_temp2) %in% c("id"))]
       
       descriptive_stats_yr_temp3 <- descriptive_stats_yr_temp2
       
       #descriptive_stats_yr_temp3[,(2:ncol(descriptive_stats_yr_temp3))] <- format(round(descriptive_stats_yr_temp3[,(2:ncol(descriptive_stats_yr_temp3))],  digits = 6))
-          
+      
       descriptive_stats_yr_temp3 <- apply(descriptive_stats_yr_temp3,2,function(x) {x <- ifelse(is.na(x),"", x)})
       descriptive_stats_yr_temp3 <- as.data.frame(descriptive_stats_yr_temp3,stringsAsFactors=FALSE)
       
@@ -1397,9 +1935,123 @@ for (k in 1:nrow(descriptive_year_groups))
   rm2(data_temp,fund_count_yr1,fund_count_yr2,fund_count_yr,data_temp_no_id,l)
   
 }
-rm2(descriptive_year_groups,k)
+rm2(descriptive_stats_by_var_year,descriptive_overall_groups_by_year,descriptive_stats_by_year,k)
 
-rm2(descrip_stats_data,descrip_stats_fund_vars_remove,descrip_stats_ios_vars_remove,descriptive_year_stats)
+
+###############################################################################
+cat("DESCRIPTIVE STATISTICS - FUND ATTRIBUTES (PA) & IOS (PB) BY STRATEGY", "\n")
+###############################################################################
+
+descriptive_stats_by_var_strategy <- "main_investment_strategy"
+
+descriptive_overall_groups_by_strategy <- data.frame(matrix(NA, ncol=2, nrow=5, dimnames=list(c(), c("Start_yr","End_yr"))), 
+                                                     stringsAsFactors=FALSE)
+
+descriptive_overall_groups_by_strategy[1,] <- c(start_year,end_year)
+descriptive_overall_groups_by_strategy[2,] <- c(1994,1999)
+descriptive_overall_groups_by_strategy[3,] <- c(2000,2011)
+descriptive_overall_groups_by_strategy[4,] <- c(2000,2005)
+descriptive_overall_groups_by_strategy[5,] <- c(2006,2011)
+
+descriptive_stats_by_strategy <- c("mean","median")
+
+for (k in 1:nrow(descriptive_overall_groups_by_strategy))
+{
+  #k <- 1
+  
+  cat("START YEAR:", descriptive_overall_groups_by_strategy[k,1], "END YEAR:", descriptive_overall_groups_by_strategy[k,2],"\n")
+  
+  data_temp <- descrip_stats_data[(descrip_stats_data[,"yr"]>=descriptive_overall_groups_by_strategy[k,1] & descrip_stats_data[,"yr"]<=descriptive_overall_groups_by_strategy[k,2]),]
+  
+  fund_count_yr1 <- ddply(data_temp, descriptive_stats_by_var_strategy, function(x) {data.frame(var="number_of_funds", 
+                                                                                                count=as.numeric(length(unique(x[,identifier],comparables=FALSE))),
+                                                                                                stringsAsFactors=FALSE)})
+  fund_count_yr2 <- data.frame(temp_var="ZZZ",
+                               var="number_of_funds", 
+                               count=as.numeric(length(unique(data_temp[,identifier],comparables=FALSE))),
+                               stringsAsFactors=FALSE)
+  colnames(fund_count_yr2)[match("temp_var",names(fund_count_yr2))] <- descriptive_stats_by_var_strategy
+  
+  fund_count_yr <- rbind(fund_count_yr1,fund_count_yr2)
+  
+  data_temp_no_id <- data_temp[,!(colnames(data_temp) %in% identifier)]
+  
+  #descriptive_stats_temp_full_all_var_strategy <- describeBy2(descrip_stats_fund2,"yr")
+  descriptive_stats_temp_full_all_var_strategy <- describeBy2(data_temp_no_id[,c(descriptive_stats_by_var_strategy,descriptive_overall_vars_model_vars_all[,c("var")])],descriptive_stats_by_var_strategy)
+  
+  assign("descriptive_stats_temp_full_all_var_strategy", descriptive_stats_temp_full_all_var_strategy, envir = .GlobalEnv)
+  
+  for (l in 1:length(descriptive_overall_vars_model))
+  {
+    #l <- 1
+    #l <- 2
+    
+    descriptive_overall_vars_model_note_temp <- unlist(descriptive_overall_vars_model_note[l])
+    descriptive_overall_vars_model_vars_temp <- unlist(descriptive_overall_vars_model_vars[l])
+    descriptive_overall_vars_model_vars_temp <- data.frame(id=NA,
+                                                           descriptive_overall_vars_model_vars_temp, 
+                                                           stringsAsFactors=FALSE)
+    descriptive_overall_vars_model_vars_temp[,c("id")] <- seq(nrow(descriptive_overall_vars_model_vars_temp))
+    colnames(descriptive_overall_vars_model_vars_temp)[2] <- "var"
+    
+    descriptive_overall_vars_model_vars_temp <- descriptive_overall_vars_model_vars_temp[order(descriptive_overall_vars_model_vars_temp[,"id"],
+                                                                                               descriptive_overall_vars_model_vars_temp[,"var"]),]
+    row.names(descriptive_overall_vars_model_vars_temp) <- seq(nrow(descriptive_overall_vars_model_vars_temp))
+    
+    out_file_name1 <- paste("descriptive_stats",descriptive_overall_groups_by_strategy[k,1],descriptive_overall_groups_by_strategy[k,2],descriptive_overall_vars_model_note_temp,"strategy",sep="_")
+    
+    descriptive_stats_strategy_temp_full_trim <- descriptive_stats_temp_full_all_var_strategy[descriptive_stats_temp_full_all_var_strategy[,"var"] %in% descriptive_overall_vars_model_vars_temp[,c("var")],]
+    
+    for (m in 1:length(descriptive_stats_by_strategy))
+    {
+      #m <- 1
+      #m <- 2
+      
+      fund_count_yr_temp <- fund_count_yr
+      colnames(fund_count_yr_temp)[match("count",names(fund_count_yr_temp))] <- descriptive_stats_by_strategy[m]
+      
+      out_file_name2 <- paste(out_file_name1,descriptive_stats_by_strategy[m],sep="_")
+      
+      descriptive_stats_strategy_temp_trim <- rbind(descriptive_stats_strategy_temp_full_trim[c(descriptive_stats_by_var_strategy,"var",descriptive_stats_by_strategy[m])],
+                                                    fund_count_yr_temp)
+      
+      #descriptive_stats_strategy_temp <- suppressMessages(dcast(descriptive_stats_strategy_temp_trim, var~yr))
+      descriptive_stats_strategy_temp <- suppressMessages(dcast(descriptive_stats_strategy_temp_trim, 
+                                                                eval(parse(text=paste("var",descriptive_stats_by_var_strategy,sep="~")))))
+      
+      descriptive_stats_strategy_temp2 <- merge(descriptive_stats_strategy_temp, descriptive_overall_vars_model_vars_temp, 
+                                                by.x=c("var"), by.y=c("var"), 
+                                                all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+      descriptive_stats_strategy_temp2 <- descriptive_stats_strategy_temp2[order(descriptive_stats_strategy_temp2[,"id"]),]
+      row.names(descriptive_stats_strategy_temp2) <- seq(nrow(descriptive_stats_strategy_temp2))
+      colnames(descriptive_stats_strategy_temp2)[match("ZZZ",names(descriptive_stats_strategy_temp2))] <- "Full"
+      
+      descriptive_stats_strategy_temp2 <- descriptive_stats_strategy_temp2[,!(colnames(descriptive_stats_strategy_temp2) %in% c("id"))]
+      
+      descriptive_stats_strategy_temp3 <- descriptive_stats_strategy_temp2
+      
+      #descriptive_stats_strategy_temp3[,(2:ncol(descriptive_stats_strategy_temp3))] <- format(round(descriptive_stats_strategy_temp3[,(2:ncol(descriptive_stats_strategy_temp3))],  digits = 6))
+      
+      descriptive_stats_strategy_temp3 <- apply(descriptive_stats_strategy_temp3,2,function(x) {x <- ifelse(is.na(x),"", x)})
+      descriptive_stats_strategy_temp3 <- as.data.frame(descriptive_stats_strategy_temp3,stringsAsFactors=FALSE)
+      
+      write.csv(descriptive_stats_strategy_temp3,file=paste(output_directory,out_file_name2,".csv",sep=""),na="",quote=TRUE,row.names=FALSE)
+      
+      rm2(fund_count_yr_temp,out_file_name2,descriptive_stats_strategy_temp_trim)
+      rm2(descriptive_stats_strategy_temp,descriptive_stats_strategy_temp2,descriptive_stats_strategy_temp3)
+      
+    }
+    rm2(descriptive_overall_vars_model_note_temp,descriptive_overall_vars_model_vars_temp,out_file_name1,m)
+    rm2(descriptive_stats_strategy_temp_full_trim)
+    
+  }
+  rm2(data_temp,fund_count_yr1,fund_count_yr2,fund_count_yr,data_temp_no_id,l)
+  
+  
+}
+rm2(descriptive_stats_by_var_strategy,descriptive_overall_groups_by_strategy,descriptive_stats_by_strategy,k)
+
+rm2(descrip_stats_data,descrip_stats_fund_vars_remove,descrip_stats_ios_vars_remove)
 rm2(descriptive_overall_vars_model1,descriptive_overall_vars_model2,descriptive_overall_vars_model)
 rm2(descriptive_overall_vars_model_note,descriptive_overall_vars_model_vars,descriptive_overall_vars_model_vars_all)
 
@@ -1455,8 +2107,9 @@ quintile_vars_ios <- c("ari_ios","coleman_liau_ios","flesch_kincaid_ios","fog_io
                        "all_similarity_750pct_ios","main_investment_strategy_similarity_750pct_ios",
                        "all_similarity_900pct_ios","main_investment_strategy_similarity_900pct_ios")
 
-quintile_vars_data_ios <- descriptive_stats_temp_full_all_var[tolower(descriptive_stats_temp_full_all_var[,"var"]) %in% quintile_vars_ios,
-                                                          c("yr","var","quartile1","quartile3")] 
+
+quintile_vars_data_ios <- descriptive_stats_temp_full_all_var_year[tolower(descriptive_stats_temp_full_all_var_year[,"var"]) %in% quintile_vars_ios,
+                                                                   c("yr","var","quartile1","quartile3")] 
 
 quintile_vars_dv_temp_ios <- lapply(quintile_vars_ios,quantile_dvs,
                                     data=data2,
@@ -1471,7 +2124,8 @@ row.names(quintile_vars_dv_temp2_ios) <- seq(nrow(quintile_vars_dv_temp2_ios))
 
 quintile_vars_dv_temp2_ios <- quintile_vars_dv_temp2_ios[,unique(colnames(quintile_vars_dv_temp2_ios))]
 
-rm2(quintile_vars_ios,quintile_vars_data_ios,quintile_vars_dv_temp_ios,descriptive_stats_temp_full_all_var)
+rm2(quintile_vars_ios,quintile_vars_data_ios,quintile_vars_dv_temp_ios)
+rm2(descriptive_stats_temp_full_all_var_strategy,descriptive_stats_temp_full_all_var_year)
 
 
 ###############################################################################
@@ -1498,21 +2152,29 @@ rm2(quintile_vars_dv_temp2_ios,quintile_vars_dv,data2)
 
 
 ###############################################################################
-cat("UNIVARIATE ANALYSIS", "\n")
+cat("UNIVARIATE ANALYSIS - VARIABLES", "\n")
 ###############################################################################
 
-data_all_univariate <- data_all[,c("yr","pflow","mktadjret",
-                                   "pflow_lag1","pflow_lag2","pflow_lag3","pflow_lag4",
-                                   "log_aum_lag1","log_aum_lag2","log_aum_lag3","log_aum_lag4",
-                                   "mktadjret_lag1","mktadjret_lag2","mktadjret_lag3","mktadjret_lag4",
-                                   "mktadjret_lag1_sq","mktadjret_lag2_sq","mktadjret_lag3_sq","mktadjret_lag4_sq",
-                                   "age_y","total_fee",
-                                   "ari_ios","coleman_liau_ios","flesch_kincaid_ios","fog_ios","smog_ios",
-                                   "avg_grade_level_ios","avg_grade_level_acf_ios","avg_grade_level_ac_ios",
-                                   "all_similarity_050pct_ios","all_similarity_100pct_ios","all_similarity_250pct_ios","all_similarity_500pct_ios","all_similarity_750pct_ios","all_similarity_900pct_ios",
-                                   "main_investment_strategy_similarity_050pct_ios","main_investment_strategy_similarity_100pct_ios","main_investment_strategy_similarity_250pct_ios",
-                                   "main_investment_strategy_similarity_500pct_ios","main_investment_strategy_similarity_750pct_ios","main_investment_strategy_similarity_900pct_ios")]
+univariate_vars_dep <- c("pflow","mktadjret","exret")
+
+univariate_vars_binary <- c("listed_on_exchange_bin","hurdle_rate_bin","high_water_mark_bin","domicile_onshore_bin",
+                            "leverage_bin","lock_up_bin","flagship_bin","closed_bin","dead_bin")
+
+univariate_vars_continuous <- c("total_fee",
+                                "sharpe_ratio","sortino_ratio",
+                                "ari_ios","coleman_liau_ios","flesch_kincaid_ios","fog_ios","smog_ios",
+                                "avg_grade_level_ios","avg_grade_level_acf_ios","avg_grade_level_ac_ios",
+                                "all_similarity_050pct_ios","all_similarity_100pct_ios","all_similarity_250pct_ios","all_similarity_500pct_ios","all_similarity_750pct_ios","all_similarity_900pct_ios",
+                                "main_investment_strategy_similarity_050pct_ios","main_investment_strategy_similarity_100pct_ios","main_investment_strategy_similarity_250pct_ios",
+                                "main_investment_strategy_similarity_500pct_ios","main_investment_strategy_similarity_750pct_ios","main_investment_strategy_similarity_900pct_ios")
+
+# "pflow_lag1","pflow_lag2","pflow_lag3","pflow_lag4",
+# "log_aum_lag1","log_aum_lag2","log_aum_lag3","log_aum_lag4",
+# "mktadjret_lag1","mktadjret_lag2","mktadjret_lag3","mktadjret_lag4",
+# "mktadjret_lag1_sq","mktadjret_lag2_sq","mktadjret_lag3_sq","mktadjret_lag4_sq",
+# "age_y","total_fee",
 # "performance_fee","management_fee","other_fee",
+
 # "ari_ios_below_quartile1","ari_ios_above_quartile3",
 # "coleman_liau_ios_below_quartile1","coleman_liau_ios_above_quartile3",
 # "flesch_kincaid_ios_below_quartile1","flesch_kincaid_ios_above_quartile3",
@@ -1533,36 +2195,42 @@ data_all_univariate <- data_all[,c("yr","pflow","mktadjret",
 # "main_investment_strategy_similarity_250pct_ios_above_quartile3","main_investment_strategy_similarity_500pct_ios_above_quartile3",
 # "main_investment_strategy_similarity_750pct_ios_above_quartile3","main_investment_strategy_similarity_900pct_ios_above_quartile3"
 
-quantile_vars <- c("pflow","mktadjret")
-quantile_type <- c("year","agg")
-quantile_nums <- c(5,4,3)
 
-univariate_data_year_groups <- data.frame(matrix(NA, ncol=2, nrow=5, dimnames=list(c(), c("Start_yr","End_yr"))), 
-                                          stringsAsFactors=FALSE)
+###############################################################################
+cat("UNIVARIATE ANALYSIS - CONTINUOUS", "\n")
+###############################################################################
 
-univariate_data_year_groups[1,] <- c(start_year,end_year)
-univariate_data_year_groups[2,] <- c(2000,2011)
-univariate_data_year_groups[3,] <- c(1994,1999)
-univariate_data_year_groups[4,] <- c(2000,2005)
-univariate_data_year_groups[5,] <- c(2006,2011)
+data_all_univariate_continuous <- data_all[,c("yr",univariate_vars_dep,univariate_vars_continuous)]
 
-for (l in 1:length(quantile_vars))
+quantile_type_continuous <- c("year","agg")
+quantile_nums_continuous <- c(5,4,3)
+
+univariate_data_year_groups_continuous <- data.frame(matrix(NA, ncol=2, nrow=5, dimnames=list(c(), c("Start_yr","End_yr"))), 
+                                                     stringsAsFactors=FALSE)
+
+univariate_data_year_groups_continuous[1,] <- c(start_year,end_year)
+univariate_data_year_groups_continuous[2,] <- c(2000,2011)
+univariate_data_year_groups_continuous[3,] <- c(1994,1999)
+univariate_data_year_groups_continuous[4,] <- c(2000,2005)
+univariate_data_year_groups_continuous[5,] <- c(2006,2011)
+
+for (l in 1:length(univariate_vars_dep))
 {
   #l <- 1
   #l <- 2
   
-  cat("DEP VAR:",quantile_vars[l], "\n")
+  cat("DEP VAR:",univariate_vars_dep[l], "\n")
   
-  univariate_vars <- colnames(data_all_univariate)[!(colnames(data_all_univariate) %in% c("yr",quantile_vars[l]))]
+  univariate_vars_indep_continuous <- colnames(data_all_univariate_continuous)[!(colnames(data_all_univariate_continuous) %in% c("yr",univariate_vars_dep[l]))]
   
-  for (i in 1:length(quantile_type))
+  for (i in 1:length(quantile_type_continuous))
   {
     #i <- 1
     #i <- 2
     
     #cat("I:",i, "\n")
     
-    for (j in 1:length(quantile_nums))
+    for (j in 1:length(quantile_nums_continuous))
     {
       #j <- 1
       #j <- 2
@@ -1570,29 +2238,20 @@ for (l in 1:length(quantile_vars))
       
       #cat("J:",j, "\n")
       
-      if (quantile_type[i]=="year")
-      {
-        quantiles_pct_flow_temp <- lapply(univariate_vars,quantile_yr_cast,data=data_all_univariate,
-                                          dep_var=quantile_vars[l],group_var="yr",quantile_count=quantile_nums[j])
-        
-      } else if (quantile_type[i]=="agg")
-      {
-        quantiles_pct_flow_temp <- lapply(univariate_vars,quantile_cast,data=data_all_univariate,
-                                          dep_var=quantile_vars[l],group_var="yr",quantile_count=quantile_nums[j])
-      } else
-      {
-        cat("ERROR!!", "\n")
-        
-      }
+      #         quantiles_pct_flow_temp <- lapply(univariate_vars_indep_continuous,quantile_cast,data=data_all_univariate_continuous,
+      #                                           dep_var=univariate_vars_dep[l],group_var="yr",quantile_count=quantile_nums_continuous[j])
+      quantiles_pct_flow_temp <- lapply(univariate_vars_indep_continuous,quantile_cast_by_continuous,data=data_all_univariate_continuous,
+                                        dep_var=univariate_vars_dep[l],quantile_type="quantile",quantile_count=quantile_nums_continuous[j],group_var="yr",group=quantile_type_continuous[i])
+      
       
       quantiles_pct_flow <- do.call(rbind.fill, quantiles_pct_flow_temp)
       quantiles_pct_flow <- quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% "variable")]
-      quantiles_pct_flow <- quantiles_pct_flow[,c("cut_var","yr",paste("X",seq(1,quantile_nums[j]),sep=""))]
+      quantiles_pct_flow <- quantiles_pct_flow[,c("cut_var","yr",paste("X",seq(1,quantile_nums_continuous[j]),sep=""))]
       
       #Quantile by Year
-      averages_yr_quan_all_cast <- diff_in_mean(quantiles_pct_flow,"cut_var","yr","X1",paste("X",quantile_nums[j],sep=""))
+      averages_yr_quan_all_cast <- diff_in_mean(quantiles_pct_flow,"cut_var","yr","X1",paste("X",quantile_nums_continuous[j],sep=""))
       averages_yr_quan_all_cast <- averages_yr_quan_all_cast[order(averages_yr_quan_all_cast[,"yr"]),]
-      averages_yr_quan_all_cast <- averages_yr_quan_all_cast[!(averages_yr_quan_all_cast[,"cut_var"] %in% quantile_vars),]
+      averages_yr_quan_all_cast <- averages_yr_quan_all_cast[!(averages_yr_quan_all_cast[,"cut_var"] %in% univariate_vars_dep),]
       row.names(averages_yr_quan_all_cast) <- seq(nrow(averages_yr_quan_all_cast))
       
       
@@ -1609,25 +2268,25 @@ for (l in 1:length(quantile_vars))
       
       
       
-      name1 <- paste("quantiles",quantile_type[i],quantile_vars[l],"yearly",quantile_nums[j],sep="_")
+      name1 <- paste("quantiles",quantile_type_continuous[i],univariate_vars_dep[l],"yearly",quantile_nums_continuous[j],sep="_")
       #assign(name1, averages_yr_quan_all_cast, envir = .GlobalEnv)
       write.csv(averages_yr_quan_all_cast,file=paste(output_directory,name1,".csv",sep=""),na="",quote=TRUE,row.names=FALSE)
       
       rm2(averages_yr_quan_all_cast,name1)
       
       #Quantile by Year Groups
-      for (k in 1:nrow(univariate_data_year_groups))
+      for (k in 1:nrow(univariate_data_year_groups_continuous))
       {
         #k <- 1
         
-        quantiles_pct_flow_no_yr_temp <- quantiles_pct_flow[(quantiles_pct_flow[,"yr"]>=univariate_data_year_groups[k,1] 
-                                                             & quantiles_pct_flow[,"yr"]<=univariate_data_year_groups[k,2]),]
+        quantiles_pct_flow_no_yr_temp <- quantiles_pct_flow[(quantiles_pct_flow[,"yr"]>=univariate_data_year_groups_continuous[k,1] 
+                                                             & quantiles_pct_flow[,"yr"]<=univariate_data_year_groups_continuous[k,2]),]
         quantiles_pct_flow_no_yr_temp[,"yr"] <- 9999
         
-        averages_quan_temp_cast <- diff_in_mean(quantiles_pct_flow_no_yr_temp,"cut_var","yr","X1",paste("X",quantile_nums[j],sep=""))
+        averages_quan_temp_cast <- diff_in_mean(quantiles_pct_flow_no_yr_temp,"cut_var","yr","X1",paste("X",quantile_nums_continuous[j],sep=""))
         averages_quan_temp_cast <- averages_quan_temp_cast[,!(colnames(averages_quan_temp_cast) %in% "yr")]
-        averages_quan_temp_cast <- averages_quan_temp_cast[order(order(univariate_vars)),] 
-        averages_quan_temp_cast <- averages_quan_temp_cast[!(averages_quan_temp_cast[,"cut_var"] %in% quantile_vars),]
+        averages_quan_temp_cast <- averages_quan_temp_cast[order(order(univariate_vars_indep_continuous)),] 
+        averages_quan_temp_cast <- averages_quan_temp_cast[!(averages_quan_temp_cast[,"cut_var"] %in% univariate_vars_dep),]
         row.names(averages_quan_temp_cast) <- seq(nrow(averages_quan_temp_cast))
         
         averages_quan_temp_cast[,2:ncol(averages_quan_temp_cast)] <- format(round(averages_quan_temp_cast[,2:ncol(averages_quan_temp_cast)],  digits = 4))
@@ -1642,7 +2301,7 @@ for (l in 1:length(quantile_vars))
                                                              ifelse(averages_quan_temp_cast[,"f_p_val"] < .1000, paste(averages_quan_temp_cast[,"f_p_val"], "*  ", sep=""), 
                                                                     paste(averages_quan_temp_cast[,"f_p_val"], "   ", sep=""))))   
         
-        name_temp <- paste("quantiles",quantile_type[i],quantile_vars[l],univariate_data_year_groups[k,1],univariate_data_year_groups[k,2],quantile_nums[j],sep="_")
+        name_temp <- paste("quantiles",quantile_type_continuous[i],univariate_vars_dep[l],univariate_data_year_groups_continuous[k,1],univariate_data_year_groups_continuous[k,2],quantile_nums_continuous[j],sep="_")
         write.csv(averages_quan_temp_cast,file=paste(output_directory,name_temp,".csv",sep=""),na="",quote=TRUE,row.names=FALSE)
         #assign(name_temp, averages_quan_temp_cast, envir = .GlobalEnv)
         
@@ -1650,17 +2309,158 @@ for (l in 1:length(quantile_vars))
       }
       rm2(quantiles_pct_flow_temp,quantiles_pct_flow,k)
       
-      progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(quantile_type), 
-                        inner_loop_count=j, inner_loop_start_val=1, inner_loop_end_val=length(quantile_nums))
+      progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(quantile_type_continuous), 
+                        inner_loop_count=j, inner_loop_start_val=1, inner_loop_end_val=length(quantile_nums_continuous))
       
     }
     rm2(j)
     
   }
-  rm2(i,univariate_vars)
+  rm2(i,univariate_vars_indep_continuous)
   
 }
-rm2(l,quantile_type,quantile_nums,data_all_univariate,univariate_data_year_groups)
+rm2(l,quantile_type_continuous,quantile_nums_continuous,data_all_univariate_continuous,univariate_data_year_groups_continuous)
+
+
+
+###############################################################################
+cat("UNIVARIATE ANALYSIS - BINARY", "\n")
+###############################################################################
+
+data_all_univariate_binary <- data_all[,c("yr",univariate_vars_dep,univariate_vars_binary)]
+
+quantile_type_binary <- c("year","agg") 
+quantile_nums_binary <- 2
+
+univariate_data_year_groups_binary <- data.frame(matrix(NA, ncol=2, nrow=5, dimnames=list(c(), c("Start_yr","End_yr"))), 
+                                                 stringsAsFactors=FALSE)
+
+univariate_data_year_groups_binary[1,] <- c(start_year,end_year)
+univariate_data_year_groups_binary[2,] <- c(2000,2011)
+univariate_data_year_groups_binary[3,] <- c(1994,1999)
+univariate_data_year_groups_binary[4,] <- c(2000,2005)
+univariate_data_year_groups_binary[5,] <- c(2006,2011)
+
+for (l in 1:length(univariate_vars_dep))
+{
+  #l <- 1
+  #l <- 2
+  
+  cat("DEP VAR:",univariate_vars_dep[l], "\n")
+  
+  #univariate_vars_indep_binary <- colnames(data_all_univariate_binary)[!(colnames(data_all_univariate_binary) %in% c("yr",univariate_vars_dep[l]))]
+  univariate_vars_indep_binary <- colnames(data_all_univariate_binary)[!(colnames(data_all_univariate_binary) %in% c("yr",univariate_vars_dep))] 
+  
+  for (i in 1:length(quantile_type_binary))
+  {
+    #i <- 1
+    #i <- 2
+    
+    #cat("I:",i, "\n")
+    
+    for (j in 1:length(quantile_nums_binary))
+    {
+      #j <- 1
+
+      #cat("J:",j, "\n")
+      
+      quantiles_pct_flow_temp <- lapply(univariate_vars_indep_binary,quantile_cast_by_continuous,data=data_all_univariate_binary,
+                                        dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[i])
+      
+#       quantiles_pct_flow_temp2 <- lapply(univariate_vars_indep_binary,quantile_cast_by_binary,data=data_all_univariate_binary,
+#                                          dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[i])
+#       quantiles_pct_flow_temp3 <- lapply(univariate_vars_indep_binary,quantile_cast_by_continuous,data=data_all_univariate_binary,
+#                                         dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[2])
+#       
+#       quantiles_pct_flow_temp4 <- lapply(univariate_vars_indep_binary,quantile_cast_by_binary,data=data_all_univariate_binary,
+#                                          dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[2])
+#       
+      
+#       quantiles_pct_flow <- do.call(rbind.fill, quantiles_pct_flow_temp)
+#       quantiles_pct_flow2 <- do.call(rbind.fill, quantiles_pct_flow_temp2)
+#       quantiles_pct_flow3 <- do.call(rbind.fill, quantiles_pct_flow_temp3)
+#       quantiles_pct_flow4 <- do.call(rbind.fill, quantiles_pct_flow_temp4)
+#       
+#       comparison <- compare(quantiles_pct_flow2,quantiles_pct_flow4,allowAll=TRUE)
+#       difference <- data.frame(lapply(1:ncol(quantiles_pct_flow2),function(i)setdiff(quantiles_pct_flow2[,i],comparison$tM[,i])))
+#       colnames(difference) <- colnames(quantiles_pct_flow2)
+#       
+      
+      quantiles_pct_flow <- quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% "variable")]
+      quantiles_pct_flow <- quantiles_pct_flow[,c("cut_var","yr",paste("X",seq(1,quantile_nums_binary[j]),sep=""))]
+      
+      #Quantile by Year
+      averages_yr_quan_all_cast <- diff_in_mean(quantiles_pct_flow,"cut_var","yr","X1",paste("X",quantile_nums_binary[j],sep=""))
+      averages_yr_quan_all_cast <- averages_yr_quan_all_cast[order(averages_yr_quan_all_cast[,"yr"]),]
+      averages_yr_quan_all_cast <- averages_yr_quan_all_cast[!(averages_yr_quan_all_cast[,"cut_var"] %in% univariate_vars_dep),]
+      row.names(averages_yr_quan_all_cast) <- seq(nrow(averages_yr_quan_all_cast))
+      
+      
+      averages_yr_quan_all_cast[,3:ncol(averages_yr_quan_all_cast)] <- format(round(averages_yr_quan_all_cast[,3:ncol(averages_yr_quan_all_cast)],  digits = 4))
+      
+      averages_yr_quan_all_cast[,"t_p_val"] <- ifelse(averages_yr_quan_all_cast[,"t_p_val"] < .0100, paste(averages_yr_quan_all_cast[,"t_p_val"], "***", sep=""), 
+                                                      ifelse(averages_yr_quan_all_cast[,"t_p_val"] < .0500, paste(averages_yr_quan_all_cast[,"t_p_val"], "** ", sep=""), 
+                                                             ifelse(averages_yr_quan_all_cast[,"t_p_val"] < .1000, paste(averages_yr_quan_all_cast[,"t_p_val"], "*  ", sep=""), 
+                                                                    averages_yr_quan_all_cast[,"t_p_val"])))           
+      
+      averages_yr_quan_all_cast[,"f_p_val"] <- ifelse(averages_yr_quan_all_cast[,"f_p_val"] < .0100, paste(averages_yr_quan_all_cast[,"f_p_val"], "***", sep=""), 
+                                                      ifelse(averages_yr_quan_all_cast[,"f_p_val"] < .0500, paste(averages_yr_quan_all_cast[,"f_p_val"], "** ", sep=""), 
+                                                             ifelse(averages_yr_quan_all_cast[,"f_p_val"] < .1000, paste(averages_yr_quan_all_cast[,"f_p_val"], "*  ", sep=""), averages_yr_quan_all_cast[,"f_p_val"])))   
+      
+      
+      
+      name1 <- paste("quantiles",quantile_type_binary[i],univariate_vars_dep[l],"yearly",quantile_nums_binary[j],sep="_")
+      #assign(name1, averages_yr_quan_all_cast, envir = .GlobalEnv)
+      write.csv(averages_yr_quan_all_cast,file=paste(output_directory,name1,".csv",sep=""),na="",quote=TRUE,row.names=FALSE)
+      
+      rm2(averages_yr_quan_all_cast,name1)
+      
+      #Quantile by Year Groups
+      for (k in 1:nrow(univariate_data_year_groups_binary))
+      {
+        #k <- 1
+        
+        quantiles_pct_flow_no_yr_temp <- quantiles_pct_flow[(quantiles_pct_flow[,"yr"]>=univariate_data_year_groups_binary[k,1] 
+                                                             & quantiles_pct_flow[,"yr"]<=univariate_data_year_groups_binary[k,2]),]
+        quantiles_pct_flow_no_yr_temp[,"yr"] <- 9999
+        
+        averages_quan_temp_cast <- diff_in_mean(quantiles_pct_flow_no_yr_temp,"cut_var","yr","X1",paste("X",quantile_nums_binary[j],sep=""))
+        averages_quan_temp_cast <- averages_quan_temp_cast[,!(colnames(averages_quan_temp_cast) %in% "yr")]
+        averages_quan_temp_cast <- averages_quan_temp_cast[order(order(univariate_vars_indep_binary)),] 
+        averages_quan_temp_cast <- averages_quan_temp_cast[!(averages_quan_temp_cast[,"cut_var"] %in% univariate_vars_dep),]
+        row.names(averages_quan_temp_cast) <- seq(nrow(averages_quan_temp_cast))
+        
+        averages_quan_temp_cast[,2:ncol(averages_quan_temp_cast)] <- format(round(averages_quan_temp_cast[,2:ncol(averages_quan_temp_cast)],  digits = 4))
+        
+        averages_quan_temp_cast[,"t_p_val"] <- ifelse(averages_quan_temp_cast[,"t_p_val"] < .0100, paste(averages_quan_temp_cast[,"t_p_val"], "***", sep=""), 
+                                                      ifelse(averages_quan_temp_cast[,"t_p_val"] < .0500, paste(averages_quan_temp_cast[,"t_p_val"], "** ", sep=""), 
+                                                             ifelse(averages_quan_temp_cast[,"t_p_val"] < .1000, paste(averages_quan_temp_cast[,"t_p_val"], "*  ", sep=""), 
+                                                                    paste(averages_quan_temp_cast[,"t_p_val"], "   ", sep=""))))           
+        
+        averages_quan_temp_cast[,"f_p_val"] <- ifelse(averages_quan_temp_cast[,"f_p_val"] < .0100, paste(averages_quan_temp_cast[,"f_p_val"], "***", sep=""), 
+                                                      ifelse(averages_quan_temp_cast[,"f_p_val"] < .0500, paste(averages_quan_temp_cast[,"f_p_val"], "** ", sep=""), 
+                                                             ifelse(averages_quan_temp_cast[,"f_p_val"] < .1000, paste(averages_quan_temp_cast[,"f_p_val"], "*  ", sep=""), 
+                                                                    paste(averages_quan_temp_cast[,"f_p_val"], "   ", sep=""))))   
+        
+        name_temp <- paste("quantiles",quantile_type_binary[i],univariate_vars_dep[l],univariate_data_year_groups_binary[k,1],univariate_data_year_groups_binary[k,2],quantile_nums_binary[j],sep="_")
+        write.csv(averages_quan_temp_cast,file=paste(output_directory,name_temp,".csv",sep=""),na="",quote=TRUE,row.names=FALSE)
+        #assign(name_temp, averages_quan_temp_cast, envir = .GlobalEnv)
+        
+        rm2(quantiles_pct_flow_no_yr_temp,averages_quan_temp_cast,name_temp)
+      }
+      rm2(quantiles_pct_flow_temp,quantiles_pct_flow,k)
+      
+      progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(quantile_type_binary), 
+                        inner_loop_count=j, inner_loop_start_val=1, inner_loop_end_val=length(quantile_nums_binary))
+      
+    }
+    rm2(j)
+    
+  }
+  rm2(i,univariate_vars_indep_binary)
+  
+}
+rm2(l,quantile_type_binary,quantile_nums,data_all_univariate_binary,univariate_data_year_groups_binary)
 
 
 ###############################################################################
@@ -1727,13 +2527,14 @@ rm2(grade,similarity,controls,quantile,fixed_effects,temp_char_vec,regression_eq
 cat("PANEL REGRESSION - READBILITY", "\n")
 ###############################################################################
 
-data_year_groups1 <- data.frame(matrix(NA, ncol=2, nrow=4, dimnames=list(c(), c("Start_yr","End_yr"))), 
+data_year_groups1 <- data.frame(matrix(NA, ncol=2, nrow=5, dimnames=list(c(), c("Start_yr","End_yr"))), 
                                 stringsAsFactors=FALSE)
 
 data_year_groups1[1,] <- c(start_year,end_year)
-data_year_groups1[2,] <- c(1994,1999)
-data_year_groups1[3,] <- c(2000,2005)
-data_year_groups1[4,] <- c(2006,2011)
+data_year_groups1[2,] <- c(2000,2011)
+data_year_groups1[3,] <- c(1994,1999)
+data_year_groups1[4,] <- c(2000,2005)
+data_year_groups1[5,] <- c(2006,2011)
 
 #dep_var1 <- c("pflow","nflow")
 dep_var1 <- c("pflow","mktadjret")
@@ -1895,13 +2696,14 @@ rm2(data_year_groups1,dep_var1,model_type1,note1,temp_char_vec,regression_equati
 cat("PANEL REGRESSION - SIMILARITY", "\n")
 ###############################################################################
 
-data_year_groups2 <- data.frame(matrix(NA, ncol=2, nrow=4, dimnames=list(c(), c("Start_yr","End_yr"))), 
+data_year_groups2 <- data.frame(matrix(NA, ncol=2, nrow=5, dimnames=list(c(), c("Start_yr","End_yr"))), 
                                 stringsAsFactors=FALSE)
 
 data_year_groups2[1,] <- c(start_year,end_year)
-data_year_groups2[2,] <- c(1994,1999)
-data_year_groups2[3,] <- c(2000,2005)
-data_year_groups2[4,] <- c(2006,2011)
+data_year_groups2[2,] <- c(2000,2011)
+data_year_groups2[3,] <- c(1994,1999)
+data_year_groups2[4,] <- c(2000,2005)
+data_year_groups2[5,] <- c(2006,2011)
 
 
 #dep_var2 <- c("pflow","nflow")
@@ -2047,13 +2849,14 @@ rm2(data_year_groups2,dep_var2,model_type2,note2,sim_type2,temp_char_vec,regress
 cat("PANEL REGRESSION - READABILITY & SIMILARITY", "\n")
 ###############################################################################
 
-data_year_groups3 <- data.frame(matrix(NA, ncol=2, nrow=4, dimnames=list(c(), c("Start_yr","End_yr"))), 
+data_year_groups3 <- data.frame(matrix(NA, ncol=2, nrow=5, dimnames=list(c(), c("Start_yr","End_yr"))), 
                                 stringsAsFactors=FALSE)
 
 data_year_groups3[1,] <- c(start_year,end_year)
-data_year_groups3[2,] <- c(1994,1999)
-data_year_groups3[3,] <- c(2000,2005)
-data_year_groups3[4,] <- c(2006,2011)
+data_year_groups3[2,] <- c(2000,2011)
+data_year_groups3[3,] <- c(1994,1999)
+data_year_groups3[4,] <- c(2000,2005)
+data_year_groups3[5,] <- c(2006,2011)
 
 
 #dep_var3 <- c("pflow","nflow")
@@ -2202,13 +3005,14 @@ rm2(data_year_groups3,dep_var3,model_type3,note3,sim_type3,temp_char_vec,regress
 cat("YOUNG FUNDS", "\n")
 ###############################################################################
 
-data_year_groups4 <- data.frame(matrix(NA, ncol=2, nrow=4, dimnames=list(c(), c("Start_yr","End_yr"))), 
+data_year_groups4 <- data.frame(matrix(NA, ncol=2, nrow=5, dimnames=list(c(), c("Start_yr","End_yr"))), 
                                 stringsAsFactors=FALSE)
 
 data_year_groups4[1,] <- c(start_year,end_year)
-data_year_groups4[2,] <- c(1994,1999)
-data_year_groups4[3,] <- c(2000,2005)
-data_year_groups4[4,] <- c(2006,2011)
+data_year_groups4[2,] <- c(2000,2011)
+data_year_groups4[3,] <- c(1994,1999)
+data_year_groups4[4,] <- c(2000,2005)
+data_year_groups4[5,] <- c(2006,2011)
 
 #dep_var4 <- c("pflow","nflow")
 dep_var4 <- c("pflow")
@@ -2432,13 +3236,14 @@ cat("FLOW VOLATILITY REGRESSION", "\n")
 ###############################################################################
 
 
-data_year_groups5 <- data.frame(matrix(NA, ncol=2, nrow=4, dimnames=list(c(), c("Start_yr","End_yr"))), 
+data_year_groups5 <- data.frame(matrix(NA, ncol=2, nrow=5, dimnames=list(c(), c("Start_yr","End_yr"))), 
                                 stringsAsFactors=FALSE)
 
 data_year_groups5[1,] <- c(start_year,end_year)
-data_year_groups5[2,] <- c(1994,1999)
-data_year_groups5[3,] <- c(2000,2005)
-data_year_groups5[4,] <- c(2006,2011)
+data_year_groups5[2,] <- c(2000,2011)
+data_year_groups5[3,] <- c(1994,1999)
+data_year_groups5[4,] <- c(2000,2005)
+data_year_groups5[5,] <- c(2006,2011)
 
 
 dep_var5 <- c("sdpct_flow")
@@ -2836,12 +3641,13 @@ cat("PRINCIPAL COMPONENT REGRESSION", "\n")
 
 
 # 
-# data_year_groups4 <- data.frame(matrix(NA, ncol=2, nrow=4, dimnames=list(c(), c("Start_yr","End_yr"))), 
+# data_year_groups4 <- data.frame(matrix(NA, ncol=2, nrow=5, dimnames=list(c(), c("Start_yr","End_yr"))), 
 #                                 stringsAsFactors=FALSE)
 # data_year_groups4[1,] <- c(1992,2012)
-# data_year_groups4[2,] <- c(1992,1998)
-# data_year_groups4[3,] <- c(1999,2005)
-# data_year_groups4[4,] <- c(2006,2012)
+# data_year_groups4[2,] <- c(2000,2011)
+# data_year_groups4[3,] <- c(1992,1998)
+# data_year_groups4[4,] <- c(1999,2005)
+# data_year_groups4[5,] <- c(2006,2012)
 # 
 # #dep_var4 <- c("pflow","nflow")
 # dep_var4 <- c("pflow")

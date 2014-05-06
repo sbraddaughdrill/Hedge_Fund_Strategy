@@ -531,6 +531,103 @@ calculate_similarity_by_group <- function(merged_data,group_var,group_var_value,
   
 }
 
+strip_comments <- function(x, cols) {
+  
+  require(data.table)
+  
+  DT <- data.table(x)
+  for (j in cols) {
+    set(DT, i=NULL, j=paste(j,"_comments",sep = ""), value=gsub("\\(([^()]+)\\)", "\\1", str_extract_all(DT[[paste(j,"_org",sep = "")]], "\\(([^()]+)\\)"), perl=TRUE))
+    set(DT, i=NULL, j=paste(j,"_comments",sep = ""), value=gsub("^\\s+|\\s+$", "", DT[[paste(j,"_comments",sep = "")]], perl=TRUE))
+    set(DT, i=which(toupper(DT[[paste(j,"_comments",sep = "")]]) == "CHARACTER0"), j=paste(j,"_comments",sep = ""), value=NA_character_)
+    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
+  }
+  return(DT)
+}
+
+create_noncomments <- function(x, cols) {
+  
+  require(data.table)
+  
+  DT <- data.table(x)
+  for (j in cols) {
+    set(DT, i=NULL, j=j, value=gsub("[(].*$", "", DT[[paste(j,"_org",sep = "")]], "\\(([^()]+)\\)", perl=TRUE))
+    set(DT, i=NULL, j=j, value=gsub("^\\s+|\\s+$", "", DT[[j]], perl=TRUE))
+    set(DT, i=which(toupper(DT[[j]]) == "CHARACTER0"), j=j, value=NA_character_)
+    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
+  }
+  return(DT)
+}
+not_specified_to_na <- function(x, cols, phrases) {
+  
+  require(data.table)
+  
+  DT <- data.table(x)
+  for (j in cols) {
+    for (k in 1:length(phrases)) {
+      #k <- 1
+      set(DT, i=grep(phrases[k], DT[[j]], ignore.case = TRUE, perl=TRUE), j=j, value=NA_character_)
+    }
+    
+    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
+  }
+  return(DT)
+}
+no_to_no <- function(x, cols, phrases) {
+  
+  require(data.table)
+  
+  DT <- data.table(x)
+  for (j in cols) {
+    for (k in 1:length(phrases)) {
+      #k <- 1
+      set(DT, i=grep(phrases[k], DT[[j]], ignore.case = TRUE, perl=TRUE), j=j, value="No")
+    }
+    
+    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
+  }
+  return(DT)
+}  
+
+yes_to_yes <- function(x, cols, phrases) {
+  
+  require(data.table)
+  
+  DT <- data.table(x)
+  for (j in cols) {
+    for (k in 1:length(phrases)) {
+      #k <- 1
+      set(DT, i=grep(phrases[k], DT[[j]], ignore.case = TRUE, perl=TRUE), j=j, value="Yes")
+    }
+    
+    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
+  }
+  return(DT)
+}  
+
+yn_to_binary <- function(x, cols) {
+  
+  #x <- EurekahedgeHF_Excel_aca_full5
+  #cols <- bin_cols
+  
+  require(data.table)
+  require(taRifx)
+  
+  DT <- data.table(x)
+  for (j in cols) {
+    
+    #j <- cols[1]
+    #j <- cols[9]
+    
+    set(DT, i=grep("Yes", DT[[j]], ignore.case = TRUE, perl=TRUE), j=j, value="1")
+    set(DT, i=grep("No", DT[[j]], ignore.case = TRUE, perl=TRUE), j=j, value="0")
+    set(DT, i=NULL, j=j, value=destring(DT[[j]]))
+    #set(DT, i=NULL, j=j, value=as.numeric(DT[[j]]))
+    
+    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
+  }
+  return(DT)
+}  
 
 
 ###############################################################################
@@ -813,17 +910,6 @@ cat("STRIP COMMENTS FROM VARIABLES", "\n")
 EurekahedgeHF_Excel_aca_full3 <- EurekahedgeHF_Excel_aca_full
 
 #Strip out comments in parenetheses
-strip_comments <- function(x, cols) {
-  DT <- data.table(x)
-  for (j in cols) {
-    set(DT, i=NULL, j=paste(j,"_comments",sep = ""), value=gsub("\\(([^()]+)\\)", "\\1", str_extract_all(DT[[paste(j,"_org",sep = "")]], "\\(([^()]+)\\)"), perl=TRUE))
-    set(DT, i=NULL, j=paste(j,"_comments",sep = ""), value=gsub("^\\s+|\\s+$", "", DT[[paste(j,"_comments",sep = "")]], perl=TRUE))
-    set(DT, i=which(toupper(DT[[paste(j,"_comments",sep = "")]]) == "CHARACTER0"), j=paste(j,"_comments",sep = ""), value=NA_character_)
-    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
-  }
-  return(DT)
-}
-
 EurekahedgeHF_Excel_aca_full_strip_comments_cols <- c("dividend_policy","fund_closed","high_water_mark","hurdle_rate","listed_on_exchange",
                                                       "management_fee","other_fee","performance_fee")
 
@@ -845,16 +931,6 @@ EurekahedgeHF_Excel_aca_full4 <- strip_comments(EurekahedgeHF_Excel_aca_full4,Eu
 EurekahedgeHF_Excel_aca_full4 <- as.data.frame(EurekahedgeHF_Excel_aca_full4,stringsAsFactors=FALSE)
 
 #Get text before comments
-create_noncomments <- function(x, cols) {
-  DT <- data.table(x)
-  for (j in cols) {
-    set(DT, i=NULL, j=j, value=gsub("[(].*$", "", DT[[paste(j,"_org",sep = "")]], "\\(([^()]+)\\)", perl=TRUE))
-    set(DT, i=NULL, j=j, value=gsub("^\\s+|\\s+$", "", DT[[j]], perl=TRUE))
-    set(DT, i=which(toupper(DT[[j]]) == "CHARACTER0"), j=j, value=NA_character_)
-    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
-  }
-  return(DT)
-}
 EurekahedgeHF_Excel_aca_full_yn_cols <- c("dividend_policy","fund_closed","high_water_mark","hurdle_rate","listed_on_exchange",
                                           "management_fee","other_fee","performance_fee")
 EurekahedgeHF_Excel_aca_full4 <- create_noncomments(EurekahedgeHF_Excel_aca_full4,EurekahedgeHF_Excel_aca_full_yn_cols)
@@ -868,20 +944,9 @@ EurekahedgeHF_Excel_aca_full4 <- data.table(EurekahedgeHF_Excel_aca_full4)[, (Eu
 EurekahedgeHF_Excel_aca_full4 <- as.data.frame(EurekahedgeHF_Excel_aca_full4, stringsAsFactors=FALSE)
 
 #Change not specificied to NA
-NA_Phrases <- c("NA","N/A","N\\A","NOT APPLICABLE","NOT DEFINED","NOT DISCLOSED","NOT DISLCOSED","UNDISCLOSED",
-                "TO BE ADVISED","TO BE ADVISE","TBA","SEE PROSPECTUS FOR FULL DETAILS","DISCUSS WITH MANAGER","UPON REQUEST")
-not_specified_to_na <- function(x, cols, phrases) {
-  DT <- data.table(x)
-  for (j in cols) {
-    for (k in 1:length(phrases)) {
-      #k <- 1
-      set(DT, i=grep(phrases[k], DT[[j]], ignore.case = TRUE, perl=TRUE), j=j, value=NA_character_)
-    }
-    
-    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
-  }
-  return(DT)
-}
+NA_Phrases <- c("NA","N/A","N\\A","NOT APPLICABLE","NOT APPILCABLE","NOT DEFINED","NOT DISCLOSED","NOT DISLCOSED","UNDISCLOSED",
+                "TO BE ADVISED","TO BE ADVISE","TBA","SEE PROSPECTUS FOR FULL DETAILS","UPON REQUEST",
+                "SUBJECT TO MANAGER'S DISCRETION")
 EurekahedgeHF_Excel_aca_full_not_specified_cols <- c("dividend_policy","domicile","exchange_name","fund_closed","high_water_mark","hurdle_rate","listed_on_exchange",
                                                      "management_fee","other_fee","performance_fee","fund_size_us_m")
 EurekahedgeHF_Excel_aca_full4 <- not_specified_to_na(EurekahedgeHF_Excel_aca_full4,EurekahedgeHF_Excel_aca_full_not_specified_cols,NA_Phrases)
@@ -890,18 +955,7 @@ EurekahedgeHF_Excel_aca_full4 <- as.data.frame(EurekahedgeHF_Excel_aca_full4,str
 
 #Change no phrases to NO
 NO_Phrases <- c("NIL","NONE","NONE AFTER 12 MONTHS","NONE AFTER 1ST YEAR","NO DIVIDEND","NON DIVIDEND","LITTLE OR NO")
-no_to_no <- function(x, cols, phrases) {
-  DT <- data.table(x)
-  for (j in cols) {
-    for (k in 1:length(phrases)) {
-      #k <- 1
-      set(DT, i=grep(phrases[k], DT[[j]], ignore.case = TRUE, perl=TRUE), j=j, value="No")
-    }
-    
-    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
-  }
-  return(DT)
-}  
+
 EurekahedgeHF_Excel_aca_full_no_phrases_cols <- c("dividend_policy","fund_closed","high_water_mark","hurdle_rate","listed_on_exchange",
                                                   "management_fee","other_fee","performance_fee")
 EurekahedgeHF_Excel_aca_full4 <- no_to_no(EurekahedgeHF_Excel_aca_full4,EurekahedgeHF_Excel_aca_full_no_phrases_cols,NO_Phrases)
@@ -910,18 +964,6 @@ EurekahedgeHF_Excel_aca_full4 <- as.data.frame(EurekahedgeHF_Excel_aca_full4,str
 
 #Change yes phrases to YES
 YES_Phrases <- c("RARELY","OCCASIONALLY")
-yes_to_yes <- function(x, cols, phrases) {
-  DT <- data.table(x)
-  for (j in cols) {
-    for (k in 1:length(phrases)) {
-      #k <- 1
-      set(DT, i=grep(phrases[k], DT[[j]], ignore.case = TRUE, perl=TRUE), j=j, value="Yes")
-    }
-    
-    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
-  }
-  return(DT)
-}  
 EurekahedgeHF_Excel_aca_full_yes_phrases_cols <- c("dividend_policy","fund_closed","high_water_mark","hurdle_rate","listed_on_exchange",
                                                    "management_fee","other_fee","performance_fee")
 EurekahedgeHF_Excel_aca_full4 <- yes_to_yes(EurekahedgeHF_Excel_aca_full4,EurekahedgeHF_Excel_aca_full_yes_phrases_cols,YES_Phrases)
@@ -965,26 +1007,6 @@ bin_cols <- paste(EurekahedgeHF_Excel_aca_full_yn_to_bin_cols,"_bin",sep="")
 EurekahedgeHF_Excel_aca_full5 <-  data.frame(EurekahedgeHF_Excel_aca_full4, matrix(NA, ncol=length(bin_cols), nrow=nrow(EurekahedgeHF_Excel_aca_full4), dimnames=list(c(), bin_cols)), stringsAsFactors=FALSE)
 
 EurekahedgeHF_Excel_aca_full5[,bin_cols] <-  EurekahedgeHF_Excel_aca_full5[,EurekahedgeHF_Excel_aca_full_yn_to_bin_cols]
-
-yn_to_binary <- function(x, cols) {
-  
-  #x <- EurekahedgeHF_Excel_aca_full5
-  #cols <- bin_cols
-  
-  DT <- data.table(x)
-  for (j in cols) {
-    
-    #j <- cols[1]
-    #j <- cols[9]
-    
-    set(DT, i=grep("Yes", DT[[j]], ignore.case = TRUE, perl=TRUE), j=j, value="1")
-    set(DT, i=grep("No", DT[[j]], ignore.case = TRUE, perl=TRUE), j=j, value="0")
-    set(DT, i=NULL, j=j, value=as.numeric(DT[[j]]))
-    
-    cat("Loop: ",which(cols==j)," of ",length(cols), "\n")
-  }
-  return(DT)
-}  
 
 EurekahedgeHF_Excel_aca_full5 <- yn_to_binary(EurekahedgeHF_Excel_aca_full5,bin_cols)
 EurekahedgeHF_Excel_aca_full5 <- as.data.frame(EurekahedgeHF_Excel_aca_full5,stringsAsFactors=FALSE)
