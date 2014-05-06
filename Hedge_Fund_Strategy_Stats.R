@@ -2202,6 +2202,7 @@ cat("UNIVARIATE ANALYSIS - CONTINUOUS", "\n")
 
 data_all_univariate_continuous <- data_all[,c("yr",univariate_vars_dep,univariate_vars_continuous)]
 
+quantile_name_continuous <- "continuous"
 quantile_type_continuous <- c("year","agg")
 quantile_nums_continuous <- c(5,4,3)
 
@@ -2268,7 +2269,7 @@ for (l in 1:length(univariate_vars_dep))
       
       
       
-      name1 <- paste("quantiles",quantile_type_continuous[i],univariate_vars_dep[l],"yearly",quantile_nums_continuous[j],sep="_")
+      name1 <- paste("quantiles",quantile_type_continuous[i],univariate_vars_dep[l],"yearly",quantile_name_continuous,quantile_nums_continuous[j],sep="_")
       #assign(name1, averages_yr_quan_all_cast, envir = .GlobalEnv)
       write.csv(averages_yr_quan_all_cast,file=paste(output_directory,name1,".csv",sep=""),na="",quote=TRUE,row.names=FALSE)
       
@@ -2301,7 +2302,7 @@ for (l in 1:length(univariate_vars_dep))
                                                              ifelse(averages_quan_temp_cast[,"f_p_val"] < .1000, paste(averages_quan_temp_cast[,"f_p_val"], "*  ", sep=""), 
                                                                     paste(averages_quan_temp_cast[,"f_p_val"], "   ", sep=""))))   
         
-        name_temp <- paste("quantiles",quantile_type_continuous[i],univariate_vars_dep[l],univariate_data_year_groups_continuous[k,1],univariate_data_year_groups_continuous[k,2],quantile_nums_continuous[j],sep="_")
+        name_temp <- paste("quantiles",quantile_type_continuous[i],univariate_vars_dep[l],univariate_data_year_groups_continuous[k,1],univariate_data_year_groups_continuous[k,2],quantile_name_continuous,quantile_nums_continuous[j],sep="_")
         write.csv(averages_quan_temp_cast,file=paste(output_directory,name_temp,".csv",sep=""),na="",quote=TRUE,row.names=FALSE)
         #assign(name_temp, averages_quan_temp_cast, envir = .GlobalEnv)
         
@@ -2329,6 +2330,7 @@ cat("UNIVARIATE ANALYSIS - BINARY", "\n")
 
 data_all_univariate_binary <- data_all[,c("yr",univariate_vars_dep,univariate_vars_binary)]
 
+quantile_name_binary <- "binary"
 quantile_type_binary <- c("year","agg") 
 quantile_nums_binary <- 2
 
@@ -2376,7 +2378,7 @@ for (l in 1:length(univariate_vars_dep))
 #                                          dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[2])
 #       
       
-#       quantiles_pct_flow <- do.call(rbind.fill, quantiles_pct_flow_temp)
+      quantiles_pct_flow <- do.call(rbind.fill, quantiles_pct_flow_temp)
 #       quantiles_pct_flow2 <- do.call(rbind.fill, quantiles_pct_flow_temp2)
 #       quantiles_pct_flow3 <- do.call(rbind.fill, quantiles_pct_flow_temp3)
 #       quantiles_pct_flow4 <- do.call(rbind.fill, quantiles_pct_flow_temp4)
@@ -2387,8 +2389,9 @@ for (l in 1:length(univariate_vars_dep))
 #       
       
       quantiles_pct_flow <- quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% "variable")]
-      quantiles_pct_flow <- quantiles_pct_flow[,c("cut_var","yr",paste("X",seq(1,quantile_nums_binary[j]),sep=""))]
-      
+      quantiles_pct_flow <- quantiles_pct_flow[,c("cut_var","yr",paste("X",seq(0,(quantile_nums_binary[j]-1)),sep=""))]
+      colnames(quantiles_pct_flow) <- c("cut_var","yr",paste("X",seq(1,(quantile_nums_binary[j])),sep=""))
+
       #Quantile by Year
       averages_yr_quan_all_cast <- diff_in_mean(quantiles_pct_flow,"cut_var","yr","X1",paste("X",quantile_nums_binary[j],sep=""))
       averages_yr_quan_all_cast <- averages_yr_quan_all_cast[order(averages_yr_quan_all_cast[,"yr"]),]
@@ -2409,7 +2412,7 @@ for (l in 1:length(univariate_vars_dep))
       
       
       
-      name1 <- paste("quantiles",quantile_type_binary[i],univariate_vars_dep[l],"yearly",quantile_nums_binary[j],sep="_")
+      name1 <- paste("quantiles",quantile_type_binary[i],univariate_vars_dep[l],"yearly",quantile_name_binary,quantile_nums_binary[j],sep="_")
       #assign(name1, averages_yr_quan_all_cast, envir = .GlobalEnv)
       write.csv(averages_yr_quan_all_cast,file=paste(output_directory,name1,".csv",sep=""),na="",quote=TRUE,row.names=FALSE)
       
@@ -2442,7 +2445,7 @@ for (l in 1:length(univariate_vars_dep))
                                                              ifelse(averages_quan_temp_cast[,"f_p_val"] < .1000, paste(averages_quan_temp_cast[,"f_p_val"], "*  ", sep=""), 
                                                                     paste(averages_quan_temp_cast[,"f_p_val"], "   ", sep=""))))   
         
-        name_temp <- paste("quantiles",quantile_type_binary[i],univariate_vars_dep[l],univariate_data_year_groups_binary[k,1],univariate_data_year_groups_binary[k,2],quantile_nums_binary[j],sep="_")
+        name_temp <- paste("quantiles",quantile_type_binary[i],univariate_vars_dep[l],univariate_data_year_groups_binary[k,1],univariate_data_year_groups_binary[k,2],quantile_name_binary,quantile_nums_binary[j],sep="_")
         write.csv(averages_quan_temp_cast,file=paste(output_directory,name_temp,".csv",sep=""),na="",quote=TRUE,row.names=FALSE)
         #assign(name_temp, averages_quan_temp_cast, envir = .GlobalEnv)
         
