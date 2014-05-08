@@ -13,8 +13,9 @@ cat("SECTION: INITIAL SETUP", "\n")
 ###############################################################################
 
 rm(list=ls(all=TRUE)) #Clear workspace
+rm(list = ls(all.names = TRUE))
 
-Sys.setenv(R_HISTSIZE=500) #Limit History so that it never contains more than 50 lines
+Sys.setenv(R_HISTSIZE=1500) #Limit History so that it never contains more than 50 lines
 
 repo <- c("http://cran.us.r-project.org")
 options(repos=structure(repo))
@@ -459,15 +460,16 @@ quantile_cast_by_continuous <- function(x,data,dep_var,quantile_type,quantile_co
   #x <- univariate_vars_indep_continuous[21]
   #x <- univariate_vars_indep_continuous[27]
   #data <- data_all_univariate_continuous  
+  #quantile_type <- "quantile"
   
   #x <- univariate_vars_indep_binary[1]
   #x <- univariate_vars_indep_binary[10]
   #x <- univariate_vars_indep_binary[21]
   #x <- univariate_vars_indep_binary[27]
   #data <- data_all_univariate_binary
+  #quantile_type <- "dv"
   
   #dep_var <- univariate_vars_dep[l]
-  #quantile_type <- "quantile"
   #quantile_count <- quantile_nums_continuous[j]
   #group_var <- "yr"
   #group <- "year"
@@ -492,12 +494,39 @@ quantile_cast_by_continuous <- function(x,data,dep_var,quantile_type,quantile_co
   
   if (group == "year") {
     
-    quantiles <- ddply(.data=data_trim, .variables=group_var, quantile_cast_cuts, split_var=x, quantile_num=quantile_count)
+    #quantiles <- ddply(.data=data_trim, .variables=group_var, quantile_cast_cuts, split_var=x, quantile_num=quantile_count)
+    quantiles <- ddply(.data=data_trim, .variables=group_var, 
+                       function(z,split_var,quantile_num){
+                         
+                         #z <- data_trim[data_trim[,"yr"]==1999,]
+                         #split_var <- x
+                         #quantile_num <- 5 
+                         
+                         eps <- .Machine$double.eps 
+                         df <- data.frame(z,
+                                          quantile=as.integer(with(z, cut(z[,split_var], breaks=quantile(z[,split_var], probs=(0:quantile_num)/quantile_num,na.rm=TRUE)+eps*(0:quantile_num),include.lowest=TRUE))),
+                                          stringsAsFactors=FALSE)
+                         return(df)
+                       }, split_var=x, quantile_num=quantile_count)
     
   } else if (group == "agg") {
     
     #quantiles <- quantile_cast_cuts(data_trim,split_var=x,quantile_num=quantile_count)
-    quantiles <- ddply(.data=data_trim, .variables=NULL, quantile_cast_cuts, split_var=x, quantile_num=quantile_count)
+    #quantiles <- ddply(.data=data_trim, .variables=NULL, quantile_cast_cuts, split_var=x, quantile_num=quantile_count)
+    quantiles <- ddply(.data=data_trim, .variables=NULL, 
+                       function(z,split_var,quantile_num){
+                         
+                         #z <- data_trim[data_trim[,"yr"]==1999,]
+                         #split_var <- x
+                         #quantile_num <- 5 
+                         
+                         eps <- .Machine$double.eps 
+                         df <- data.frame(z,
+                                          quantile=as.integer(with(z, cut(z[,split_var], breaks=quantile(z[,split_var], probs=(0:quantile_num)/quantile_num,na.rm=TRUE)+eps*(0:quantile_num),include.lowest=TRUE))),
+                                          stringsAsFactors=FALSE)
+                         return(df)
+                       }, split_var=x, quantile_num=quantile_count)
+    
     
   } else {
     cat("ERROR IN GROUPS", "\n")
@@ -516,11 +545,285 @@ quantile_cast_by_continuous <- function(x,data,dep_var,quantile_type,quantile_co
   quantiles_melt_cast <- ddply(quantiles_melt, c("yr"), quantile_cast_merge,quantile_num=quantile_count,quantile_var=quantile_var)
   quantiles_melt_cast <- quantiles_melt_cast[,!(colnames(quantiles_melt_cast) %in% "temp_id")]
   
-  z <- data.frame(cut_var=x,quantiles_melt_cast,stringsAsFactors=FALSE)
+  y <- data.frame(cut_var=x,quantiles_melt_cast,stringsAsFactors=FALSE)
   
-  return(z)
+  y <- y[!(rowSums(is.na(y[,4:ncol(y)]))==(ncol(y)-3)),]
+  row.names(y) <- seq(nrow(y))
+  
+  #quantiles_old <- quantiles
+  #quantiles_oldb <- quantiles_old[order(quantiles_old[,group_var],quantiles_old[,x]),] 
+  #row.names(quantiles_oldb) <- seq(nrow(quantiles_oldb))
+  
+  #quantiles2_old <- quantiles2
+  #quantiles2_oldb <- quantiles2_old[order(quantiles2_old[,group_var],quantiles2_old[,x]),] 
+  #row.names(quantiles2_oldb) <- seq(nrow(quantiles2_oldb))
+  
+  #quantiles_melt_old <- quantiles_melt
+  #quantiles_melt_oldb <- quantiles_melt_old[order(quantiles_melt_old[,"value"]),] 
+  #row.names(quantiles_melt_oldb) <- seq(nrow(quantiles_melt_oldb))
+  
+  #quantiles_melt_cast_old <- quantiles_melt_cast
+  #quantiles_melt_cast_oldb <- quantiles_melt_cast_old[order(quantiles_melt_cast_old[,group_var],quantiles_melt_cast_old[,"variable"],quantiles_melt_cast_old[,"1"]),] 
+  #row.names(quantiles_melt_cast_oldb) <- seq(nrow(quantiles_melt_cast_oldb))
+  
+  #y_old <- y
+  
+  return(y)
   
 }
+
+
+quantile_cast_by_continuous2 <- function(x,data,dep_var,quantile_type,quantile_count_dep,quantile_count_indep,group_var,group){
+  
+  #x <- univariate_vars_indep_continuous[1]
+  #x <- univariate_vars_indep_continuous[10]
+  #x <- univariate_vars_indep_continuous[21]
+  #x <- univariate_vars_indep_continuous[27]
+  #data <- data_all_univariate_continuous  
+  #quantile_type <- "quantile"
+  
+  #x <- univariate_vars_indep_binary[1]
+  #x <- univariate_vars_indep_binary[10]
+  #x <- univariate_vars_indep_binary[21]
+  #x <- univariate_vars_indep_binary[27]
+  #data <- data_all_univariate_binary
+  #quantile_type <- "dv"
+  
+  #dep_var <- univariate_vars_dep[l]
+  #quantile_count_dep <- quantile_nums_binary[j]
+  #quantile_count_indep <- 1
+  #group_var <- "yr"
+  #group <- "year"
+  #group <- "agg"
+  
+  eps <- .Machine$double.eps 
+  
+  data_trim <- data[,c(dep_var,group_var,x)]
+  data_trim <- data_trim[!is.na(data_trim[,x]),]
+  
+  data_trim <- data_trim[order(data_trim[,group_var],
+                               data_trim[,x],
+                               data_trim[,univariate_vars_dep[l]]),] 
+  row.names(data_trim) <- seq(nrow(data_trim))
+  
+  quantiles1a <- data_trim2 <- data.frame(data_trim,
+                                          quantile_var_indep1=NA,
+                                          quantile_var_indep2=NA,stringsAsFactors=FALSE)
+  
+  quantile_var <- c("quantile_var_indep1","quantile_var_indep2")
+  #   if (quantile_type == "quantile") {
+  #     
+  #     #quantile_var <- "quantile"
+  #     quantile_var <- c("quantile_var_indep1","quantile_var_indep2")
+  #     
+  #   } else if (quantile_type == "dv") {
+  #     
+  #     #quantile_var <- x
+  #     quantile_var <- c("quantile_var_indep1","quantile_var_indep2")
+  #     
+  #   } else {
+  #     
+  #     cat("ERROR IN QUANTILE TYPE", "\n")
+  #     
+  #   }
+  
+  if (group == "year") {
+    
+    quantiles1b <- ddply(.data=quantiles1a, .variables=group_var, 
+                         function(z,var,quantile_num,col,small){
+                           
+                           z[,col] <- as.integer(with(z, cut(z[,var], breaks=quantile(z[,var], probs=(0:quantile_num)/quantile_num,na.rm=TRUE)+small*(0:quantile_num),include.lowest=TRUE)))
+                           
+                           return(z)
+                         }, var=x, quantile_num=quantile_count_dep,col="quantile_var_indep1",small=eps)
+    
+    quantiles1c <- ddply(.data=quantiles1b, .variables=c(group_var,"quantile_var_indep1"), 
+                         function(z,var,quantile_num,col,small){
+                           
+                           z[,col] <- as.integer(with(z, cut(z[,var], breaks=quantile(z[,var], probs=(0:quantile_num)/quantile_num,na.rm=TRUE)+small*(0:quantile_num),include.lowest=TRUE)))
+                           
+                           return(z)
+                         }, var=x, quantile_num=quantile_count_indep,col="quantile_var_indep2",small=eps)
+    
+    
+  } else if (group == "agg") {
+    
+    quantiles1b <- ddply(.data=quantiles1a, .variables=NULL, 
+                         function(z,var,quantile_num,col,small){
+                           
+                           z[,col] <- as.integer(with(z, cut(z[,var], breaks=quantile(z[,var], probs=(0:quantile_num)/quantile_num,na.rm=TRUE)+small*(0:quantile_num),include.lowest=TRUE)))
+                           
+                           return(z)
+                         }, var=x, quantile_num=quantile_count_dep,col="quantile_var_indep1",small=eps)
+    
+    quantiles1c <- ddply(.data=quantiles1b, .variables=c("quantile_var_indep1"), 
+                         function(z,var,quantile_num,col,small){
+                           
+                           z[,col] <- as.integer(with(z, cut(z[,var], breaks=quantile(z[,var], probs=(0:quantile_num)/quantile_num,na.rm=TRUE)+small*(0:quantile_num),include.lowest=TRUE)))
+                           
+                           return(z)
+                         }, var=x, quantile_num=quantile_count_indep,col="quantile_var_indep2",small=eps)
+    
+    
+  } else {
+    cat("ERROR IN GROUPS", "\n")
+    
+  }
+  
+  
+  quantiles2 <- quantiles1c[,(colnames(quantiles1c) %in% c(group_var,univariate_vars_dep[l],x,quantile_var))]
+  
+  quantiles2 <- quantiles2[,c(group_var,
+                              univariate_vars_dep[l],
+                              colnames(quantiles2[,!(colnames(quantiles2) %in% c(group_var,univariate_vars_dep[l]))]))]
+  
+  
+  
+  #quantiles2 <- quantiles2[order(quantiles2[,group_var],
+  #                               quantiles2[,univariate_vars_dep[l]],
+  #                               quantiles2[,x]),] 
+  
+  #quantiles3 <- sortData(quantiles2,c(group_var,univariate_vars_dep[l],x),increasing= c(TRUE,TRUE))
+  
+  #index <- with(quantiles2, order(group_var,univariate_vars_dep[l],x))
+  #quantiles3 <- quantiles2[,index]
+  
+  quantiles3 <- quantiles2[order(quantiles2[,group_var],
+                                 quantiles2[,quantile_var[1]],
+                                 quantiles2[,quantile_var[2]],
+                                 quantiles2[,x],
+                                 quantiles2[,univariate_vars_dep[l]]),] 
+  row.names(quantiles3) <- seq(nrow(quantiles3))
+  
+  
+  #aa <- quantiles3[quantiles3[,"yr"]==1994,]
+  #aa1 <- aa[,!(colnames(aa) %in% c("yr"))]
+  
+  
+  #   bb_dep <- melt(data=aa1,id.vars=c(quantile_var[1]),measure.vars=c(univariate_vars_dep[l]))
+  #   colnames(bb_dep)[match(c("variable"),names(bb_dep))] <- "variable_dep"
+  #   colnames(bb_dep)[match(c("value"),names(bb_dep))] <- "value_dep"
+  #   bb_dep[sapply(bb_dep, is.factor)] <- lapply(bb_dep[sapply(bb_dep, is.factor)], as.character)
+  #   bb_dep <- data.frame(bb_dep, stringsAsFactors=FALSE)
+  #   
+  #   bb_indep <- melt(data=aa1,id.vars=c(quantile_var[2]),measure.vars=c(x))
+  #   colnames(bb_indep)[match(c("variable"),names(bb_indep))] <- "variable_indep"
+  #   colnames(bb_indep)[match(c("value"),names(bb_indep))] <- "value_indep"
+  #   bb_indep[sapply(bb_indep, is.factor)] <- lapply(bb_indep[sapply(bb_indep, is.factor)], as.character)
+  #   bb_indep <- data.frame(bb_indep, stringsAsFactors=FALSE)
+  #   bb <- cbind(bb_dep,bb_indep)
+  
+  quantiles4 <- ddply(.data=quantiles3, .variables=c(group_var), 
+                      function(x,var_dep,quantile_dep,var_indep,quantile_indep) {
+                        
+                        bb_dep <- melt(data=x,id.vars=c(quantile_dep),measure.vars=c(var_dep))
+                        colnames(bb_dep)[match(c("variable"),names(bb_dep))] <- "variable_dep"
+                        colnames(bb_dep)[match(c("value"),names(bb_dep))] <- "value_dep"
+                        bb_dep[sapply(bb_dep, is.factor)] <- lapply(bb_dep[sapply(bb_dep, is.factor)], as.character)
+                        bb_dep <- data.frame(bb_dep, stringsAsFactors=FALSE)
+                        
+                        bb_indep <- melt(data=x,id.vars=c(quantile_indep),measure.vars=c(var_indep))
+                        colnames(bb_indep)[match(c("variable"),names(bb_indep))] <- "variable_indep"
+                        colnames(bb_indep)[match(c("value"),names(bb_indep))] <- "value_indep"
+                        bb_indep[sapply(bb_indep, is.factor)] <- lapply(bb_indep[sapply(bb_indep, is.factor)], as.character)
+                        bb_indep <- data.frame(bb_indep, stringsAsFactors=FALSE)
+                        bb <- cbind(bb_dep,bb_indep)
+                        
+                      },var_dep=univariate_vars_dep[l],quantile_dep=quantile_var[1],var_indep=x,quantile_indep=quantile_var[2])
+  
+  
+  #bb2 <- aa_yr[aa_yr[,"yr"]==1994,]
+  #bb3 <- bb2[,!(colnames(bb2) %in% c("yr"))]
+  
+  #quantiles_melt <- melt(quantiles3,c(group_var,quantile_var),dep_var)
+  #quantiles_melt <- ddply(quantiles_melt, c("yr","variable"), function(y){data.frame(temp_id=seq(1,nrow(y)),y,stringsAsFactors=FALSE)})
+  
+  
+  #quantiles2_old2 <- quantiles2_old
+  #quantiles2_old2 <- quantiles2_old2[order(quantiles2_old2[,"pflow"]),] 
+  #quantiles4_2 <- quantiles4[order(quantiles4[,"value_dep"]),] 
+  
+  quantiles5 <- quantiles4
+  if (quantile_type == "dv") {
+    
+    quantiles5[,"quantile_var_indep1"] <- quantiles5[,"value_indep"]
+    
+  }
+  quantiles5 <- quantiles5[,!(colnames(quantiles5) %in% c("value_indep"))]
+  quantiles5 <- quantiles5[,c(group_var,"variable_dep","variable_indep",quantile_var,"value_dep")]
+  quantiles5 <- quantiles5[order(quantiles5[,group_var],
+                                 quantiles5[,"variable_dep"],
+                                 quantiles5[,"variable_indep"],
+                                 quantiles5[,quantile_var[1]],
+                                 quantiles5[,quantile_var[2]]),] 
+  row.names(quantiles5) <- seq(nrow(quantiles5))
+  
+  
+  quantiles6 <- ddply(.data=quantiles5, .variables=c(group_var,"variable_dep","variable_indep",quantile_var), 
+                      function(x,var) {data.frame(x, id = seq_along(x[,var]),  stringsAsFactors=FALSE)},var="value_dep")
+  
+  quantiles_melt_cast_full2 <- ddply(.data=quantiles6, .variables=c(group_var), 
+                                     function(x,cat1,quantile1,cat2,quantile2,value_var,id_var) {
+                                       
+                                       #cat1 <- "variable_dep"
+                                       #quantile1 <- "quantile_var_indep1"
+                                       #cat2 <- "variable_indep"
+                                       #quantile2 <- "quantile_var_indep2"
+                                       #value_var <- "value_dep"
+                                       #id_var <- "id"
+                                       
+                                       #x <- quantiles6[quantiles6[,"yr"]==1994,]
+                                       x2 <- x[,!(colnames(x) %in% c("yr"))]
+                                       
+                                       tempcast <- dcast(x2,formula=eval(parse(text=paste(paste(cat2,quantile2,id_var,sep="+"),paste(cat1,quantile1,sep="+"),sep="~"))), 
+                                                         value.var=value_var, fill = NA_real_, fun.aggregate=function(X) mean(X, na.rm=TRUE), margins=c(cat1, cat2))
+                                       
+                                       return(tempcast)
+                                       
+                                     },cat1="variable_dep",quantile1="quantile_var_indep1",cat2="variable_indep",quantile2="quantile_var_indep2",value_var="value_dep",id_var="id")
+  
+  quantiles_melt_cast_full2a <- quantiles_melt_cast_full2
+  quantiles_melt_cast_full2a[sapply(quantiles_melt_cast_full2a, is.factor)] <- lapply(quantiles_melt_cast_full2a[sapply(quantiles_melt_cast_full2a, is.factor)], as.character)
+  
+  quantiles_melt_cast_full2b <- quantiles_melt_cast_full2a
+  quantiles_melt_cast_full2b <- quantiles_melt_cast_full2b[,!(colnames(quantiles_melt_cast_full2b) %in% c("id","(all)_(all)"))]
+  quantiles_melt_cast_full2b <- quantiles_melt_cast_full2b[!(quantiles_melt_cast_full2b[,"variable_indep"] %in% c("(all)")),]
+  quantiles_melt_cast_full2b <- quantiles_melt_cast_full2b[!(quantiles_melt_cast_full2b[,"quantile_var_indep2"] %in% c("(all)")),]
+  quantiles_melt_cast_full2b <- quantiles_melt_cast_full2b[order(quantiles_melt_cast_full2b[,group_var],
+                                                                 quantiles_melt_cast_full2b[,"variable_indep"],
+                                                                 quantiles_melt_cast_full2b[,"quantile_var_indep2"]),] 
+  row.names(quantiles_melt_cast_full2b) <- seq(nrow(quantiles_melt_cast_full2b))
+  
+  quantiles_melt_cast_full2b <- data.frame(quantiles_melt_cast_full2b,stringsAsFactors=FALSE)
+  
+  quantiles_melt_cast_sort <- ddply(quantiles_melt_cast_full2b, c(group_var,"variable_indep","quantile_var_indep2"), function(z){
+    
+    temp1 <- z[,!(colnames(z) %in% c(group_var,"variable_indep","quantile_var_indep2"))]
+    temp2 <- alply(.data=temp1, .margins=2, function(x){
+      
+      x2 <- data.frame(x[order(x[,1]),] , stringsAsFactors=FALSE)
+      colnames(x2) <- colnames(x)
+      return(x2)
+    }, .expand = FALSE)
+    temp3 <- do.call(cbind,temp2)
+    
+    return(temp3)
+  })
+  row.names(quantiles_melt_cast_sort) <- seq(nrow(quantiles_melt_cast_sort))
+  
+  quantiles_melt_cast_trim <- quantiles_melt_cast_sort[!(rowSums(is.na(quantiles_melt_cast_sort[,4:ncol(quantiles_melt_cast_sort)]))==(ncol(quantiles_melt_cast_sort)-3)),]
+  row.names(quantiles_melt_cast_trim) <- seq(nrow(quantiles_melt_cast_trim))
+  
+  return(quantiles_melt_cast_trim)
+  
+}
+
+
+
+
+
+
+
 
 # quantile_cast_by_binary <- function(x,data,dep_var,quantile_type,quantile_count,group_var,group){
 #   
@@ -666,19 +969,19 @@ quantile_cast_by_continuous <- function(x,data,dep_var,quantile_type,quantile_co
 #   return(z)
 #   
 # }
-
-quantile_cast_cuts <- function(z,split_var,quantile_num){
-  
-  #z <- data_trim[data_trim[,"yr"]==1999,]
-  #split_var <- x
-  #quantile_num <- 5
-  
-  eps <- .Machine$double.eps 
-  df <- data.frame(z,
-                   quantile=as.integer(with(z, cut(z[,split_var], breaks=quantile(z[,split_var], probs=(0:quantile_num)/quantile_num,na.rm=TRUE)+eps*(0:quantile_num),include.lowest=TRUE))),
-                   stringsAsFactors=FALSE)
-  return(df)
-}
+# 
+# quantile_cast_cuts <- function(z,split_var,quantile_num){
+#   
+#   #z <- data_trim[data_trim[,"yr"]==1999,]
+#   #split_var <- x
+#   #quantile_num <- 5
+#   
+#   eps <- .Machine$double.eps 
+#   df <- data.frame(z,
+#                    quantile=as.integer(with(z, cut(z[,split_var], breaks=quantile(z[,split_var], probs=(0:quantile_num)/quantile_num,na.rm=TRUE)+eps*(0:quantile_num),include.lowest=TRUE))),
+#                    stringsAsFactors=FALSE)
+#   return(df)
+# }
 
 quantile_cast_merge <- function(w,quantile_num,quantile_var){
   #w <- quantiles_melt[quantiles_melt[,"yr"]==1992,]
@@ -1624,12 +1927,30 @@ cat("MERGE IN FUNDS AND ALPHAS", "\n")
 
 #data_alphas <- read.csv(file=paste(output_directory,"data_alphas.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
 
-#Get end of year alphas
+#Get end of period alphas
+data_alphas_period_trim0 <- data_alphas[,c("yr",
+                                           "month",
+                                           "fund_id",
+                                           colnames(data_alphas[,!(colnames(data_alphas) %in% c("yr","month","fund_id"))]))]
+
+colnames(data_alphas_period_trim0) <- c("yr",
+                                        "month",
+                                        "fund_id",
+                                        paste(colnames(data_alphas_period_trim0[,!(colnames(data_alphas_period_trim0) %in% c("yr","month","fund_id"))]),"trim",sep="_"))
+
+data_alphas_period_trim <- data_alphas_period_trim0[(data_alphas_period_trim0[,"yr"] %in% c(1999,2005,2011)
+                                                     & data_alphas_period_trim0[,"month"] %in% c(12)),]
+
+
+
 #data_alphas <- data_alphas[data_alphas[,c("month")]==12,]
+data_alphas_full <- merge(data_alphas, data_alphas_period_trim[,c("yr","month","fund_id",names(data_alphas_period_trim)[grep("int_", names(data_alphas_period_trim))])],
+                          by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
+                          all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
 #row.names(data_alphas) <- seq(nrow(data_alphas))
 
 
-data2_full <- merge(data1_nofactors, data_alphas, 
+data2_full <- merge(data1_nofactors, data_alphas_full, 
                     by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
                     all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
 
@@ -1644,7 +1965,7 @@ for (i in 1:length(data2_na_cols))
   
 }
 rm2(i,data2_na_cols)
-#rm2(data1_nofactors,data_alphas,data_alphas_final,data2_full)
+#rm2(data1_nofactors,data_alphas,data_alphas_full,data2_full)
 
 
 ###############################################################################
@@ -1706,16 +2027,6 @@ descrip_stats_ios_sim_cols <- names(descrip_stats_data)[grep("pct_ios", names(de
 
 descriptive_overall_vars_model1 <- list(note="PA",
                                         vars=c("pflow","sdpct_flow","mktadjret","mktadjret_sq","fund_ret_mkt_neg","exret",
-                                               "int_ff_nonloading_12","int_ff_loading_12","int_ffm_nonloading_12","int_ffm_loading_12","int_ffml_nonloading_12","int_ffml_loading_12",
-                                               "int_hf7_nonloading_12","int_hf7_loading_12","int_hf8_nonloading_12","int_hf8_loading_12",
-                                               "int_ff_nonloading_24","int_ff_loading_24","int_ffm_nonloading_24","int_ffm_loading_24","int_ffml_nonloading_24","int_ffml_loading_24",
-                                               "int_hf7_nonloading_24","int_hf7_loading_24","int_hf8_nonloading_24","int_hf8_loading_24",
-                                               "int_ff_nonloading_36","int_ff_loading_36","int_ffm_nonloading_36","int_ffm_loading_36","int_ffml_nonloading_36","int_ffml_loading_36",
-                                               "int_hf7_nonloading_36","int_hf7_loading_36","int_hf8_nonloading_36","int_hf8_loading_36",
-                                               "int_ff_nonloading_48","int_ff_loading_48","int_ffm_nonloading_48","int_ffm_loading_48","int_ffml_nonloading_48","int_ffml_loading_48",
-                                               "int_hf7_nonloading_48","int_hf7_loading_48","int_hf8_nonloading_48","int_hf8_loading_48",
-                                               "int_ff_nonloading_60","int_ff_loading_60","int_ffm_nonloading_60","int_ffm_loading_60","int_ffml_nonloading_60","int_ffml_loading_60",
-                                               "int_hf7_nonloading_60","int_hf7_loading_60","int_hf8_nonloading_60","int_hf8_loading_60",
                                                "age_y","aum",
                                                "total_fee","management_fee","performance_fee","other_fee",
                                                "sharpe_ratio","sortino_ratio","minimum_investment_size",
@@ -1728,8 +2039,31 @@ descriptive_overall_vars_model2 <- list(note="PB",
                                                "syll_per100_ios","lett_per100_ios","fog_hard_words_ios",
                                                "ari_ios","coleman_liau_ios","flesch_kincaid_ios","fog_ios","smog_ios",
                                                "avg_grade_level_ios","avg_grade_level_ac_ios","avg_grade_level_acf_ios",descrip_stats_ios_sim_cols))
+descriptive_overall_vars_model3 <- list(note="PC",
+                                        vars=c("int_ff_nonloading_12","int_ff_loading_12","int_ffm_nonloading_12","int_ffm_loading_12","int_ffml_nonloading_12","int_ffml_loading_12",
+                                               "int_hf7_nonloading_12","int_hf7_loading_12","int_hf8_nonloading_12","int_hf8_loading_12",
+                                               "int_ff_nonloading_24","int_ff_loading_24","int_ffm_nonloading_24","int_ffm_loading_24","int_ffml_nonloading_24","int_ffml_loading_24",
+                                               "int_hf7_nonloading_24","int_hf7_loading_24","int_hf8_nonloading_24","int_hf8_loading_24",
+                                               "int_ff_nonloading_36","int_ff_loading_36","int_ffm_nonloading_36","int_ffm_loading_36","int_ffml_nonloading_36","int_ffml_loading_36",
+                                               "int_hf7_nonloading_36","int_hf7_loading_36","int_hf8_nonloading_36","int_hf8_loading_36",
+                                               "int_ff_nonloading_48","int_ff_loading_48","int_ffm_nonloading_48","int_ffm_loading_48","int_ffml_nonloading_48","int_ffml_loading_48",
+                                               "int_hf7_nonloading_48","int_hf7_loading_48","int_hf8_nonloading_48","int_hf8_loading_48",
+                                               "int_ff_nonloading_60","int_ff_loading_60","int_ffm_nonloading_60","int_ffm_loading_60","int_ffml_nonloading_60","int_ffml_loading_60",
+                                               "int_hf7_nonloading_60","int_hf7_loading_60","int_hf8_nonloading_60","int_hf8_loading_60"))
+descriptive_overall_vars_model4 <- list(note="PD",
+                                        vars=c("int_ff_nonloading_12_trim","int_ff_loading_12_trim","int_ffm_nonloading_12_trim","int_ffm_loading_12_trim","int_ffml_nonloading_12_trim","int_ffml_loading_12_trim",
+                                               "int_hf7_nonloading_12_trim","int_hf7_loading_12_trim","int_hf8_nonloading_12_trim","int_hf8_loading_12_trim",
+                                               "int_ff_nonloading_24_trim","int_ff_loading_24_trim","int_ffm_nonloading_24_trim","int_ffm_loading_24_trim","int_ffml_nonloading_24_trim","int_ffml_loading_24_trim",
+                                               "int_hf7_nonloading_24_trim","int_hf7_loading_24_trim","int_hf8_nonloading_24_trim","int_hf8_loading_24_trim",
+                                               "int_ff_nonloading_36_trim","int_ff_loading_36_trim","int_ffm_nonloading_36_trim","int_ffm_loading_36_trim","int_ffml_nonloading_36_trim","int_ffml_loading_36_trim",
+                                               "int_hf7_nonloading_36_trim","int_hf7_loading_36_trim","int_hf8_nonloading_36_trim","int_hf8_loading_36_trim",
+                                               "int_ff_nonloading_48_trim","int_ff_loading_48_trim","int_ffm_nonloading_48_trim","int_ffm_loading_48_trim","int_ffml_nonloading_48_trim","int_ffml_loading_48_trim",
+                                               "int_hf7_nonloading_48_trim","int_hf7_loading_48_trim","int_hf8_nonloading_48_trim","int_hf8_loading_48_trim",
+                                               "int_ff_nonloading_60_trim","int_ff_loading_60_trim","int_ffm_nonloading_60_trim","int_ffm_loading_60_trim","int_ffml_nonloading_60_trim","int_ffml_loading_60_trim",
+                                               "int_hf7_nonloading_60_trim","int_hf7_loading_60_trim","int_hf8_nonloading_60_trim","int_hf8_loading_60_trim"))
 
-descriptive_overall_vars_model <- list(descriptive_overall_vars_model1,descriptive_overall_vars_model2)
+descriptive_overall_vars_model <- list(descriptive_overall_vars_model1,descriptive_overall_vars_model2,
+                                       descriptive_overall_vars_model3,descriptive_overall_vars_model4)
 
 descriptive_overall_vars_model_note <- sapply(descriptive_overall_vars_model, "[[", "note")
 descriptive_overall_vars_model_vars <- sapply(descriptive_overall_vars_model, "[[", "vars")
@@ -2241,14 +2575,19 @@ for (l in 1:length(univariate_vars_dep))
       
       #         quantiles_pct_flow_temp <- lapply(univariate_vars_indep_continuous,quantile_cast,data=data_all_univariate_continuous,
       #                                           dep_var=univariate_vars_dep[l],group_var="yr",quantile_count=quantile_nums_continuous[j])
-      quantiles_pct_flow_temp <- lapply(univariate_vars_indep_continuous,quantile_cast_by_continuous,data=data_all_univariate_continuous,
-                                        dep_var=univariate_vars_dep[l],quantile_type="quantile",quantile_count=quantile_nums_continuous[j],group_var="yr",group=quantile_type_continuous[i])
-      
-      
+      #       quantiles_pct_flow_temp <- lapply(univariate_vars_indep_continuous,quantile_cast_by_continuous,data=data_all_univariate_continuous,
+      #                                         dep_var=univariate_vars_dep[l],quantile_type="quantile",quantile_count=quantile_nums_continuous[j],group_var="yr",group=quantile_type_continuous[i])
+
+      quantiles_pct_flow_temp <- lapply(univariate_vars_indep_continuous,quantile_cast_by_continuous2,data=data_all_univariate_continuous,
+                                         dep_var=univariate_vars_dep[l],quantile_type="quantile",quantile_count_dep=quantile_nums_continuous[j],quantile_count_indep=1,group_var="yr",group=quantile_type_continuous[i])
       quantiles_pct_flow <- do.call(rbind.fill, quantiles_pct_flow_temp)
-      quantiles_pct_flow <- quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% "variable")]
-      quantiles_pct_flow <- quantiles_pct_flow[,c("cut_var","yr",paste("X",seq(1,quantile_nums_continuous[j]),sep=""))]
-      
+      #quantiles_pct_flow <- quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% "quantile_var_indep2")]
+      quantiles_pct_flow <- quantiles_pct_flow[,c("yr","variable_indep","quantile_var_indep2",
+                                                    colnames(quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% c("yr","variable_indep","quantile_var_indep2"))]))]
+      colnames(quantiles_pct_flow) <- c("yr","cut_var","quantile_var_indep2",paste("X",seq(1,quantile_nums_continuous[j]),sep=""))
+      #quantiles_pct_flow <- quantiles_pct_flow[order(quantiles_pct_flow[,"yr"],quantiles_pct_flow[,"cut_var"],quantiles_pct_flow[,"quantile_var_indep2"]),]
+      row.names(quantiles_pct_flow) <- seq(nrow(quantiles_pct_flow))
+       
       #Quantile by Year
       averages_yr_quan_all_cast <- diff_in_mean(quantiles_pct_flow,"cut_var","yr","X1",paste("X",quantile_nums_continuous[j],sep=""))
       averages_yr_quan_all_cast <- averages_yr_quan_all_cast[order(averages_yr_quan_all_cast[,"yr"]),]
@@ -2363,35 +2702,42 @@ for (l in 1:length(univariate_vars_dep))
     for (j in 1:length(quantile_nums_binary))
     {
       #j <- 1
-
+      
       #cat("J:",j, "\n")
       
-      quantiles_pct_flow_temp <- lapply(univariate_vars_indep_binary,quantile_cast_by_continuous,data=data_all_univariate_binary,
-                                        dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[i])
-      
-#       quantiles_pct_flow_temp2 <- lapply(univariate_vars_indep_binary,quantile_cast_by_binary,data=data_all_univariate_binary,
-#                                          dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[i])
-#       quantiles_pct_flow_temp3 <- lapply(univariate_vars_indep_binary,quantile_cast_by_continuous,data=data_all_univariate_binary,
-#                                         dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[2])
-#       
-#       quantiles_pct_flow_temp4 <- lapply(univariate_vars_indep_binary,quantile_cast_by_binary,data=data_all_univariate_binary,
-#                                          dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[2])
-#       
-      
-      quantiles_pct_flow <- do.call(rbind.fill, quantiles_pct_flow_temp)
-#       quantiles_pct_flow2 <- do.call(rbind.fill, quantiles_pct_flow_temp2)
-#       quantiles_pct_flow3 <- do.call(rbind.fill, quantiles_pct_flow_temp3)
-#       quantiles_pct_flow4 <- do.call(rbind.fill, quantiles_pct_flow_temp4)
-#       
-#       comparison <- compare(quantiles_pct_flow2,quantiles_pct_flow4,allowAll=TRUE)
-#       difference <- data.frame(lapply(1:ncol(quantiles_pct_flow2),function(i)setdiff(quantiles_pct_flow2[,i],comparison$tM[,i])))
-#       colnames(difference) <- colnames(quantiles_pct_flow2)
-#       
-      
-      quantiles_pct_flow <- quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% "variable")]
-      quantiles_pct_flow <- quantiles_pct_flow[,c("cut_var","yr",paste("X",seq(0,(quantile_nums_binary[j]-1)),sep=""))]
-      colnames(quantiles_pct_flow) <- c("cut_var","yr",paste("X",seq(1,(quantile_nums_binary[j])),sep=""))
 
+      #       quantiles_pct_flow_temp2 <- lapply(univariate_vars_indep_binary,quantile_cast_by_binary,data=data_all_univariate_binary,
+      #                                          dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[i])
+      #       quantiles_pct_flow_temp3 <- lapply(univariate_vars_indep_binary,quantile_cast_by_continuous,data=data_all_univariate_binary,
+      #                                         dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[2])
+      #       
+      #       quantiles_pct_flow_temp4 <- lapply(univariate_vars_indep_binary,quantile_cast_by_binary,data=data_all_univariate_binary,
+      #                                          dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[2])
+      #       
+      
+#       
+#       quantiles_pct_flow_temp <- lapply(univariate_vars_indep_binary,quantile_cast_by_continuous,data=data_all_univariate_binary,
+#                                         dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[i])
+#       
+#       quantiles_pct_flow <- do.call(rbind.fill, quantiles_pct_flow_temp)
+#       quantiles_pct_flow <- quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% "variable")]
+#       quantiles_pct_flow <- quantiles_pct_flow[,c("cut_var","yr",paste("X",seq(0,(quantile_nums_binary[j]-1)),sep=""))]
+#       colnames(quantiles_pct_flow) <- c("cut_var","yr",paste("X",seq(1,(quantile_nums_binary[j])),sep=""))
+#       
+      
+      quantiles_pct_flow_temp <- lapply(univariate_vars_indep_binary,quantile_cast_by_continuous2,data=data_all_univariate_binary,
+                                         dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count_dep=quantile_nums_binary[j],quantile_count_indep=1,group_var="yr",group=quantile_type_binary[i])
+      quantiles_pct_flow <- do.call(rbind.fill, quantiles_pct_flow_temp)
+      #quantiles_pct_flow <- quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% "quantile_var_indep2")]
+      
+      quantiles_pct_flow <- quantiles_pct_flow[,c("yr","variable_indep","quantile_var_indep2",
+                                                    colnames(quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% c("yr","variable_indep","quantile_var_indep2"))]))]
+      #colnames(quantiles_pct_flow) <- c("yr","cut_var","quantile_var_indep2",paste("X",seq(1,quantile_nums_binary[j]),sep=""))
+      colnames(quantiles_pct_flow) <- c("yr","cut_var","quantile_var_indep2",paste("X",seq(0,(quantile_nums_binary[j]-1)),sep=""))
+      #quantiles_pct_flow <- quantiles_pct_flow[order(quantiles_pct_flow[,"yr"],quantiles_pct_flow[,"cut_var"],quantiles_pct_flow[,"quantile_var_indep2"]),]
+      row.names(quantiles_pct_flow) <- seq(nrow(quantiles_pct_flow))
+
+      
       #Quantile by Year
       averages_yr_quan_all_cast <- diff_in_mean(quantiles_pct_flow,"cut_var","yr","X1",paste("X",quantile_nums_binary[j],sep=""))
       averages_yr_quan_all_cast <- averages_yr_quan_all_cast[order(averages_yr_quan_all_cast[,"yr"]),]
@@ -2463,7 +2809,7 @@ for (l in 1:length(univariate_vars_dep))
   rm2(i,univariate_vars_indep_binary)
   
 }
-rm2(l,quantile_type_binary,quantile_nums,data_all_univariate_binary,univariate_data_year_groups_binary)
+rm2(l,quantile_type_binary,quantile_nums_binary,data_all_univariate_binary,univariate_data_year_groups_binary)
 
 
 ###############################################################################
