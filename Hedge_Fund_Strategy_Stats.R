@@ -820,11 +820,6 @@ quantile_cast_by_continuous2 <- function(x,data,dep_var,quantile_type,quantile_c
 
 
 
-
-
-
-
-
 # quantile_cast_by_binary <- function(x,data,dep_var,quantile_type,quantile_count,group_var,group){
 #   
 #   #x <- univariate_vars_indep_continuous[1]
@@ -983,61 +978,64 @@ quantile_cast_by_continuous2 <- function(x,data,dep_var,quantile_type,quantile_c
 #   return(df)
 # }
 
-quantile_cast_merge <- function(w,quantile_num,quantile_var){
-  #w <- quantiles_melt[quantiles_melt[,"yr"]==1992,]
-  #w <- quantiles_melt[quantiles_melt[,"yr"]==1995,]
-  #quantile_num <- 5
-  #quantile_var <- "quantile"
-  
-  merge_table <- unique(w[,c("temp_id","yr","variable")])
-  quantile_u <- sort(unique(w[,quantile_var]))
-  
-  for (i in 1:length(quantile_u))
-  {
-    #i <- 1
-    #i <- 2
-    
-    v <- w[w[,quantile_var]==quantile_u[i],]
-    v <- v[!is.na(v[,"value"]),]
-    colnames(v)[match(c("value"),names(v))] <- quantile_u[i]
-    v[,"temp_id"] <- seq(1,nrow(v))
-    merge_table <- merge(merge_table,v[,-match(c(quantile_var),names(v))], 
-                         by.x=c("temp_id","yr","variable"), by.y=c("temp_id","yr","variable"), 
-                         all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
-    
-  }
-  
-  if (ncol(merge_table) == 4) {
-    
-    merge_table <- merge_table[!(is.na(merge_table[,4])),]
-    
-  } else {
-    
-    merge_table <- merge_table[!(rowSums(is.na(merge_table[,4:ncol(merge_table)]))==quantile_num),]
-    
-  }
-  
-  return(merge_table)
-}
+# quantile_cast_merge <- function(w,quantile_num,quantile_var){
+#   #w <- quantiles_melt[quantiles_melt[,"yr"]==1992,]
+#   #w <- quantiles_melt[quantiles_melt[,"yr"]==1995,]
+#   #quantile_num <- 5
+#   #quantile_var <- "quantile"
+#   
+#   merge_table <- unique(w[,c("temp_id","yr","variable")])
+#   quantile_u <- sort(unique(w[,quantile_var]))
+#   
+#   for (i in 1:length(quantile_u))
+#   {
+#     #i <- 1
+#     #i <- 2
+#     
+#     v <- w[w[,quantile_var]==quantile_u[i],]
+#     v <- v[!is.na(v[,"value"]),]
+#     colnames(v)[match(c("value"),names(v))] <- quantile_u[i]
+#     v[,"temp_id"] <- seq(1,nrow(v))
+#     merge_table <- merge(merge_table,v[,-match(c(quantile_var),names(v))], 
+#                          by.x=c("temp_id","yr","variable"), by.y=c("temp_id","yr","variable"), 
+#                          all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
+#     
+#   }
+#   
+#   if (ncol(merge_table) == 4) {
+#     
+#     merge_table <- merge_table[!(is.na(merge_table[,4])),]
+#     
+#   } else {
+#     
+#     merge_table <- merge_table[!(rowSums(is.na(merge_table[,4:ncol(merge_table)]))==quantile_num),]
+#     
+#   }
+#   
+#   return(merge_table)
+# }
 
 
 diff_in_mean <- function(x,var_col,yr_col,quantile_first_col,quantile_last_col){
+  
+  #diff_in_mean(quantiles_pct_flow,"cut_var","yr","X1",paste("X",quantile_nums_continuous[j],sep=""))
+  
   #x <- quantiles_pct_flow
-  #var_col <- "cut_var"
+  #var_col <- c("cut_var","quantile_var_indep2")
   #yr_col <- "yr"
   #quantile_first_col <- "X1"
-  #quantile_last_col <- paste("X",quantile_nums[j],sep="")
+  #quantile_last_col <- paste("X",quantile_nums_continuous[j],sep="")
   
   
   averages_quantile_cast <- ddply(x, c(yr_col,var_col), function(z){
-    stats <- suppressWarnings(as.data.frame(describe(z[,-match(c("yr",var_col),names(z))], 
+    stats <- suppressWarnings(as.data.frame(describe(z[,!(colnames(z) %in% c(yr_col,var_col))], 
                                                      na.rm=TRUE,skew=FALSE,range=FALSE),stringsAsFactors=FALSE))
     stats[,"var"] <- row.names(stats)
     return(stats)
   })
   colnames(averages_quantile_cast)[match(c("var"),names(averages_quantile_cast))] <- "quantile"
   
-  averages_quantile_cast2 <- ddply(averages_quantile_cast, c("yr"), function(z){
+  averages_quantile_cast2 <- ddply(averages_quantile_cast, c("yr","quantile_var_indep2"), function(z){
     return(suppressMessages(dcast(z[c(yr_col,"quantile",var_col,"mean")], cut_var~quantile)))
   })
   
@@ -1609,6 +1607,9 @@ rm2(monthly_data_all17)
 
 #Finalize the data
 monthly_data_all19 <- monthly_data_all18
+
+rm2(monthly_data_all18)
+
 monthly_data_all20 <- monthly_data_all19[rowSums(is.na(monthly_data_all19[,1:ncol(monthly_data_all19)]))<ncol(monthly_data_all19),]
 
 
@@ -1941,23 +1942,30 @@ colnames(data_alphas_period_trim0) <- c("yr",
 data_alphas_period_trim <- data_alphas_period_trim0[(data_alphas_period_trim0[,"yr"] %in% c(1999,2005,2011)
                                                      & data_alphas_period_trim0[,"month"] %in% c(12)),]
 
-
+rm2(data_alphas_period_trim0)
 
 #data_alphas <- data_alphas[data_alphas[,c("month")]==12,]
+#row.names(data_alphas) <- seq(nrow(data_alphas))
 data_alphas_full <- merge(data_alphas, data_alphas_period_trim[,c("yr","month","fund_id",names(data_alphas_period_trim)[grep("int_", names(data_alphas_period_trim))])],
                           by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
                           all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
-#row.names(data_alphas) <- seq(nrow(data_alphas))
+
+rm2(data_alphas,data_alphas_period_trim)
 
 
 data2_full <- merge(data1_nofactors, data_alphas_full, 
                     by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
                     all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
 
+#rm2(data1_nofactors,data_alphas_full)
+
 data2_na_cols <- c("yr","pflow","nflow","aum", "mktadjret","mktadjret_lag1","mktadjret_lag2","mktadjret_lag3","mktadjret_sq")
 #"mnav_agg","mtna_agg","log_mtna_agg","age_y","sddret_agg","sddret_agg","turn_ratio_agg","exp_ratio_agg","mgmt_fee_agg"
 
 data2_no_na <- data2_full
+
+rm2(data2_full)
+
 for (i in 1:length(data2_na_cols))
 {
   #i <- 1
@@ -1965,7 +1973,7 @@ for (i in 1:length(data2_na_cols))
   
 }
 rm2(i,data2_na_cols)
-#rm2(data1_nofactors,data_alphas,data_alphas_full,data2_full)
+
 
 
 ###############################################################################
@@ -2386,7 +2394,8 @@ for (k in 1:nrow(descriptive_overall_groups_by_strategy))
 rm2(descriptive_stats_by_var_strategy,descriptive_overall_groups_by_strategy,descriptive_stats_by_strategy,k)
 
 rm2(descrip_stats_data,descrip_stats_fund_vars_remove,descrip_stats_ios_vars_remove)
-rm2(descriptive_overall_vars_model1,descriptive_overall_vars_model2,descriptive_overall_vars_model)
+rm2(descriptive_overall_vars_model1,descriptive_overall_vars_model2,descriptive_overall_vars_model3,descriptive_overall_vars_model4)
+rm2(descriptive_overall_vars_model)
 rm2(descriptive_overall_vars_model_note,descriptive_overall_vars_model_vars,descriptive_overall_vars_model_vars_all)
 
 
@@ -2481,6 +2490,9 @@ data_all <- data_all[order(data_all[,identifier],
                            data_all[,"month"],
                            data_all[,"yr_month"]),]
 row.names(data_all) <- seq(nrow(data_all))
+
+write.csv(data_all,file=paste(output_directory,"data_all",".csv",sep=""),na="",quote=TRUE,row.names=FALSE)
+#data_all <- read.csv(file=paste(output_directory,"data_all",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
 
 rm2(quintile_vars_dv_temp2_ios,quintile_vars_dv,data2)
 
@@ -2577,25 +2589,28 @@ for (l in 1:length(univariate_vars_dep))
       #                                           dep_var=univariate_vars_dep[l],group_var="yr",quantile_count=quantile_nums_continuous[j])
       #       quantiles_pct_flow_temp <- lapply(univariate_vars_indep_continuous,quantile_cast_by_continuous,data=data_all_univariate_continuous,
       #                                         dep_var=univariate_vars_dep[l],quantile_type="quantile",quantile_count=quantile_nums_continuous[j],group_var="yr",group=quantile_type_continuous[i])
-
+      
       quantiles_pct_flow_temp <- lapply(univariate_vars_indep_continuous,quantile_cast_by_continuous2,data=data_all_univariate_continuous,
-                                         dep_var=univariate_vars_dep[l],quantile_type="quantile",quantile_count_dep=quantile_nums_continuous[j],quantile_count_indep=1,group_var="yr",group=quantile_type_continuous[i])
+                                        dep_var=univariate_vars_dep[l],quantile_type="quantile",quantile_count_dep=quantile_nums_continuous[j],quantile_count_indep=1,group_var="yr",group=quantile_type_continuous[i])
       quantiles_pct_flow <- do.call(rbind.fill, quantiles_pct_flow_temp)
       #quantiles_pct_flow <- quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% "quantile_var_indep2")]
       quantiles_pct_flow <- quantiles_pct_flow[,c("yr","variable_indep","quantile_var_indep2",
-                                                    colnames(quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% c("yr","variable_indep","quantile_var_indep2"))]))]
+                                                  colnames(quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% c("yr","variable_indep","quantile_var_indep2"))]))]
       colnames(quantiles_pct_flow) <- c("yr","cut_var","quantile_var_indep2",paste("X",seq(1,quantile_nums_continuous[j]),sep=""))
       #quantiles_pct_flow <- quantiles_pct_flow[order(quantiles_pct_flow[,"yr"],quantiles_pct_flow[,"cut_var"],quantiles_pct_flow[,"quantile_var_indep2"]),]
       row.names(quantiles_pct_flow) <- seq(nrow(quantiles_pct_flow))
-       
+      
       #Quantile by Year
-      averages_yr_quan_all_cast <- diff_in_mean(quantiles_pct_flow,"cut_var","yr","X1",paste("X",quantile_nums_continuous[j],sep=""))
-      averages_yr_quan_all_cast <- averages_yr_quan_all_cast[order(averages_yr_quan_all_cast[,"yr"]),]
+      averages_yr_quan_all_cast <- diff_in_mean(quantiles_pct_flow,c("cut_var","quantile_var_indep2"),"yr","X1",paste("X",quantile_nums_continuous[j],sep=""))
+      #averages_yr_quan_all_cast <- averages_yr_quan_all_cast[order(averages_yr_quan_all_cast[,"yr"]),]
+      
+      averages_yr_quan_all_cast <- ddply(.data=averages_yr_quan_all_cast, .variables=c("yr","quantile_var_indep2"), 
+                  .fun = function(x,var_order){x[order(order(var_order)),] },var_order=univariate_vars_indep_continuous)
+
       averages_yr_quan_all_cast <- averages_yr_quan_all_cast[!(averages_yr_quan_all_cast[,"cut_var"] %in% univariate_vars_dep),]
       row.names(averages_yr_quan_all_cast) <- seq(nrow(averages_yr_quan_all_cast))
       
-      
-      averages_yr_quan_all_cast[,3:ncol(averages_yr_quan_all_cast)] <- format(round(averages_yr_quan_all_cast[,3:ncol(averages_yr_quan_all_cast)],  digits = 4))
+      averages_yr_quan_all_cast[,4:ncol(averages_yr_quan_all_cast)] <- format(round(averages_yr_quan_all_cast[,4:ncol(averages_yr_quan_all_cast)],  digits = 4))
       
       averages_yr_quan_all_cast[,"t_p_val"] <- ifelse(averages_yr_quan_all_cast[,"t_p_val"] < .0100, paste(averages_yr_quan_all_cast[,"t_p_val"], "***", sep=""), 
                                                       ifelse(averages_yr_quan_all_cast[,"t_p_val"] < .0500, paste(averages_yr_quan_all_cast[,"t_p_val"], "** ", sep=""), 
@@ -2605,7 +2620,9 @@ for (l in 1:length(univariate_vars_dep))
       averages_yr_quan_all_cast[,"f_p_val"] <- ifelse(averages_yr_quan_all_cast[,"f_p_val"] < .0100, paste(averages_yr_quan_all_cast[,"f_p_val"], "***", sep=""), 
                                                       ifelse(averages_yr_quan_all_cast[,"f_p_val"] < .0500, paste(averages_yr_quan_all_cast[,"f_p_val"], "** ", sep=""), 
                                                              ifelse(averages_yr_quan_all_cast[,"f_p_val"] < .1000, paste(averages_yr_quan_all_cast[,"f_p_val"], "*  ", sep=""), averages_yr_quan_all_cast[,"f_p_val"])))   
-      
+     
+      averages_yr_quan_all_cast <- averages_yr_quan_all_cast[,c("yr","quantile_var_indep2","cut_var",
+                                                  colnames(averages_yr_quan_all_cast[,!(colnames(averages_yr_quan_all_cast) %in% c("yr","quantile_var_indep2","cut_var"))]))]
       
       
       name1 <- paste("quantiles",quantile_type_continuous[i],univariate_vars_dep[l],"yearly",quantile_name_continuous,quantile_nums_continuous[j],sep="_")
@@ -2623,13 +2640,16 @@ for (l in 1:length(univariate_vars_dep))
                                                              & quantiles_pct_flow[,"yr"]<=univariate_data_year_groups_continuous[k,2]),]
         quantiles_pct_flow_no_yr_temp[,"yr"] <- 9999
         
-        averages_quan_temp_cast <- diff_in_mean(quantiles_pct_flow_no_yr_temp,"cut_var","yr","X1",paste("X",quantile_nums_continuous[j],sep=""))
+        averages_quan_temp_cast <- diff_in_mean(quantiles_pct_flow_no_yr_temp,c("cut_var","quantile_var_indep2"),"yr","X1",paste("X",quantile_nums_continuous[j],sep=""))
+        
+        averages_quan_temp_cast <- ddply(.data=averages_quan_temp_cast, .variables=c("yr","quantile_var_indep2"), 
+                                           .fun = function(x,var_order){x[order(order(var_order)),] },var_order=univariate_vars_indep_continuous)
+        
         averages_quan_temp_cast <- averages_quan_temp_cast[,!(colnames(averages_quan_temp_cast) %in% "yr")]
-        averages_quan_temp_cast <- averages_quan_temp_cast[order(order(univariate_vars_indep_continuous)),] 
         averages_quan_temp_cast <- averages_quan_temp_cast[!(averages_quan_temp_cast[,"cut_var"] %in% univariate_vars_dep),]
         row.names(averages_quan_temp_cast) <- seq(nrow(averages_quan_temp_cast))
         
-        averages_quan_temp_cast[,2:ncol(averages_quan_temp_cast)] <- format(round(averages_quan_temp_cast[,2:ncol(averages_quan_temp_cast)],  digits = 4))
+        averages_quan_temp_cast[,3:ncol(averages_quan_temp_cast)] <- format(round(averages_quan_temp_cast[,3:ncol(averages_quan_temp_cast)],  digits = 4))
         
         averages_quan_temp_cast[,"t_p_val"] <- ifelse(averages_quan_temp_cast[,"t_p_val"] < .0100, paste(averages_quan_temp_cast[,"t_p_val"], "***", sep=""), 
                                                       ifelse(averages_quan_temp_cast[,"t_p_val"] < .0500, paste(averages_quan_temp_cast[,"t_p_val"], "** ", sep=""), 
@@ -2640,6 +2660,12 @@ for (l in 1:length(univariate_vars_dep))
                                                       ifelse(averages_quan_temp_cast[,"f_p_val"] < .0500, paste(averages_quan_temp_cast[,"f_p_val"], "** ", sep=""), 
                                                              ifelse(averages_quan_temp_cast[,"f_p_val"] < .1000, paste(averages_quan_temp_cast[,"f_p_val"], "*  ", sep=""), 
                                                                     paste(averages_quan_temp_cast[,"f_p_val"], "   ", sep=""))))   
+        
+        
+        averages_quan_temp_cast <- averages_quan_temp_cast[,c("quantile_var_indep2","cut_var",
+                                                                  colnames(averages_quan_temp_cast[,!(colnames(averages_quan_temp_cast) %in% c("quantile_var_indep2","cut_var"))]))]
+        
+        
         
         name_temp <- paste("quantiles",quantile_type_continuous[i],univariate_vars_dep[l],univariate_data_year_groups_continuous[k,1],univariate_data_year_groups_continuous[k,2],quantile_name_continuous,quantile_nums_continuous[j],sep="_")
         write.csv(averages_quan_temp_cast,file=paste(output_directory,name_temp,".csv",sep=""),na="",quote=TRUE,row.names=FALSE)
@@ -2705,7 +2731,7 @@ for (l in 1:length(univariate_vars_dep))
       
       #cat("J:",j, "\n")
       
-
+      
       #       quantiles_pct_flow_temp2 <- lapply(univariate_vars_indep_binary,quantile_cast_by_binary,data=data_all_univariate_binary,
       #                                          dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[i])
       #       quantiles_pct_flow_temp3 <- lapply(univariate_vars_indep_binary,quantile_cast_by_continuous,data=data_all_univariate_binary,
@@ -2715,37 +2741,41 @@ for (l in 1:length(univariate_vars_dep))
       #                                          dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[2])
       #       
       
-#       
-#       quantiles_pct_flow_temp <- lapply(univariate_vars_indep_binary,quantile_cast_by_continuous,data=data_all_univariate_binary,
-#                                         dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[i])
-#       
-#       quantiles_pct_flow <- do.call(rbind.fill, quantiles_pct_flow_temp)
-#       quantiles_pct_flow <- quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% "variable")]
-#       quantiles_pct_flow <- quantiles_pct_flow[,c("cut_var","yr",paste("X",seq(0,(quantile_nums_binary[j]-1)),sep=""))]
-#       colnames(quantiles_pct_flow) <- c("cut_var","yr",paste("X",seq(1,(quantile_nums_binary[j])),sep=""))
-#       
+      #       
+      #       quantiles_pct_flow_temp <- lapply(univariate_vars_indep_binary,quantile_cast_by_continuous,data=data_all_univariate_binary,
+      #                                         dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count=quantile_nums_binary[j],group_var="yr",group=quantile_type_binary[i])
+      #       
+      #       quantiles_pct_flow <- do.call(rbind.fill, quantiles_pct_flow_temp)
+      #       quantiles_pct_flow <- quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% "variable")]
+      #       quantiles_pct_flow <- quantiles_pct_flow[,c("cut_var","yr",paste("X",seq(0,(quantile_nums_binary[j]-1)),sep=""))]
+      #       colnames(quantiles_pct_flow) <- c("cut_var","yr",paste("X",seq(1,(quantile_nums_binary[j])),sep=""))
+      #       
       
       quantiles_pct_flow_temp <- lapply(univariate_vars_indep_binary,quantile_cast_by_continuous2,data=data_all_univariate_binary,
-                                         dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count_dep=quantile_nums_binary[j],quantile_count_indep=1,group_var="yr",group=quantile_type_binary[i])
+                                        dep_var=univariate_vars_dep[l],quantile_type="dv",quantile_count_dep=quantile_nums_binary[j],quantile_count_indep=1,group_var="yr",group=quantile_type_binary[i])
       quantiles_pct_flow <- do.call(rbind.fill, quantiles_pct_flow_temp)
       #quantiles_pct_flow <- quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% "quantile_var_indep2")]
       
       quantiles_pct_flow <- quantiles_pct_flow[,c("yr","variable_indep","quantile_var_indep2",
-                                                    colnames(quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% c("yr","variable_indep","quantile_var_indep2"))]))]
+                                                  colnames(quantiles_pct_flow[,!(colnames(quantiles_pct_flow) %in% c("yr","variable_indep","quantile_var_indep2"))]))]
       #colnames(quantiles_pct_flow) <- c("yr","cut_var","quantile_var_indep2",paste("X",seq(1,quantile_nums_binary[j]),sep=""))
       colnames(quantiles_pct_flow) <- c("yr","cut_var","quantile_var_indep2",paste("X",seq(0,(quantile_nums_binary[j]-1)),sep=""))
       #quantiles_pct_flow <- quantiles_pct_flow[order(quantiles_pct_flow[,"yr"],quantiles_pct_flow[,"cut_var"],quantiles_pct_flow[,"quantile_var_indep2"]),]
       row.names(quantiles_pct_flow) <- seq(nrow(quantiles_pct_flow))
-
+      
       
       #Quantile by Year
-      averages_yr_quan_all_cast <- diff_in_mean(quantiles_pct_flow,"cut_var","yr","X1",paste("X",quantile_nums_binary[j],sep=""))
-      averages_yr_quan_all_cast <- averages_yr_quan_all_cast[order(averages_yr_quan_all_cast[,"yr"]),]
+      averages_yr_quan_all_cast <- diff_in_mean(quantiles_pct_flow,c("cut_var","quantile_var_indep2"),"yr","X0",paste("X",(quantile_nums_binary[j]-1),sep=""))
+      #averages_yr_quan_all_cast <- averages_yr_quan_all_cast[order(averages_yr_quan_all_cast[,"yr"]),]
+      
+      averages_yr_quan_all_cast <- ddply(.data=averages_yr_quan_all_cast, .variables=c("yr","quantile_var_indep2"), 
+                                         .fun = function(x,var_order){x[order(order(var_order)),] },var_order=univariate_vars_indep_binary)
+      
       averages_yr_quan_all_cast <- averages_yr_quan_all_cast[!(averages_yr_quan_all_cast[,"cut_var"] %in% univariate_vars_dep),]
       row.names(averages_yr_quan_all_cast) <- seq(nrow(averages_yr_quan_all_cast))
       
       
-      averages_yr_quan_all_cast[,3:ncol(averages_yr_quan_all_cast)] <- format(round(averages_yr_quan_all_cast[,3:ncol(averages_yr_quan_all_cast)],  digits = 4))
+      averages_yr_quan_all_cast[,4:ncol(averages_yr_quan_all_cast)] <- format(round(averages_yr_quan_all_cast[,4:ncol(averages_yr_quan_all_cast)],  digits = 4))
       
       averages_yr_quan_all_cast[,"t_p_val"] <- ifelse(averages_yr_quan_all_cast[,"t_p_val"] < .0100, paste(averages_yr_quan_all_cast[,"t_p_val"], "***", sep=""), 
                                                       ifelse(averages_yr_quan_all_cast[,"t_p_val"] < .0500, paste(averages_yr_quan_all_cast[,"t_p_val"], "** ", sep=""), 
@@ -2756,7 +2786,8 @@ for (l in 1:length(univariate_vars_dep))
                                                       ifelse(averages_yr_quan_all_cast[,"f_p_val"] < .0500, paste(averages_yr_quan_all_cast[,"f_p_val"], "** ", sep=""), 
                                                              ifelse(averages_yr_quan_all_cast[,"f_p_val"] < .1000, paste(averages_yr_quan_all_cast[,"f_p_val"], "*  ", sep=""), averages_yr_quan_all_cast[,"f_p_val"])))   
       
-      
+      averages_yr_quan_all_cast <- averages_yr_quan_all_cast[,c("yr","quantile_var_indep2","cut_var",
+                                                                colnames(averages_yr_quan_all_cast[,!(colnames(averages_yr_quan_all_cast) %in% c("yr","quantile_var_indep2","cut_var"))]))]
       
       name1 <- paste("quantiles",quantile_type_binary[i],univariate_vars_dep[l],"yearly",quantile_name_binary,quantile_nums_binary[j],sep="_")
       #assign(name1, averages_yr_quan_all_cast, envir = .GlobalEnv)
@@ -2773,13 +2804,16 @@ for (l in 1:length(univariate_vars_dep))
                                                              & quantiles_pct_flow[,"yr"]<=univariate_data_year_groups_binary[k,2]),]
         quantiles_pct_flow_no_yr_temp[,"yr"] <- 9999
         
-        averages_quan_temp_cast <- diff_in_mean(quantiles_pct_flow_no_yr_temp,"cut_var","yr","X1",paste("X",quantile_nums_binary[j],sep=""))
+        averages_quan_temp_cast <- diff_in_mean(quantiles_pct_flow_no_yr_temp,c("cut_var","quantile_var_indep2"),"yr","X0",paste("X",(quantile_nums_binary[j]-1),sep=""))
+        
+        averages_quan_temp_cast <- ddply(.data=averages_quan_temp_cast, .variables=c("yr","quantile_var_indep2"), 
+                                         .fun = function(x,var_order){x[order(order(var_order)),] },var_order=univariate_vars_indep_binary)
+        
         averages_quan_temp_cast <- averages_quan_temp_cast[,!(colnames(averages_quan_temp_cast) %in% "yr")]
-        averages_quan_temp_cast <- averages_quan_temp_cast[order(order(univariate_vars_indep_binary)),] 
         averages_quan_temp_cast <- averages_quan_temp_cast[!(averages_quan_temp_cast[,"cut_var"] %in% univariate_vars_dep),]
         row.names(averages_quan_temp_cast) <- seq(nrow(averages_quan_temp_cast))
         
-        averages_quan_temp_cast[,2:ncol(averages_quan_temp_cast)] <- format(round(averages_quan_temp_cast[,2:ncol(averages_quan_temp_cast)],  digits = 4))
+        averages_quan_temp_cast[,3:ncol(averages_quan_temp_cast)] <- format(round(averages_quan_temp_cast[,3:ncol(averages_quan_temp_cast)],  digits = 4))
         
         averages_quan_temp_cast[,"t_p_val"] <- ifelse(averages_quan_temp_cast[,"t_p_val"] < .0100, paste(averages_quan_temp_cast[,"t_p_val"], "***", sep=""), 
                                                       ifelse(averages_quan_temp_cast[,"t_p_val"] < .0500, paste(averages_quan_temp_cast[,"t_p_val"], "** ", sep=""), 
@@ -2790,6 +2824,9 @@ for (l in 1:length(univariate_vars_dep))
                                                       ifelse(averages_quan_temp_cast[,"f_p_val"] < .0500, paste(averages_quan_temp_cast[,"f_p_val"], "** ", sep=""), 
                                                              ifelse(averages_quan_temp_cast[,"f_p_val"] < .1000, paste(averages_quan_temp_cast[,"f_p_val"], "*  ", sep=""), 
                                                                     paste(averages_quan_temp_cast[,"f_p_val"], "   ", sep=""))))   
+        
+        averages_quan_temp_cast <- averages_quan_temp_cast[,c("quantile_var_indep2","cut_var",
+                                                              colnames(averages_quan_temp_cast[,!(colnames(averages_quan_temp_cast) %in% c("quantile_var_indep2","cut_var"))]))]
         
         name_temp <- paste("quantiles",quantile_type_binary[i],univariate_vars_dep[l],univariate_data_year_groups_binary[k,1],univariate_data_year_groups_binary[k,2],quantile_name_binary,quantile_nums_binary[j],sep="_")
         write.csv(averages_quan_temp_cast,file=paste(output_directory,name_temp,".csv",sep=""),na="",quote=TRUE,row.names=FALSE)
