@@ -1,0 +1,1825 @@
+# TODO: Add comment
+# 
+# Author: Brad
+# File: Hedge_Fund_Strategy_Multivariate.R
+# Version: 1.0
+# Date: 05.20.2014
+# Purpose: Run regressions
+#
+###############################################################################
+
+###############################################################################
+cat("SECTION: INITIAL SETUP", "\n")
+###############################################################################
+
+# Clear workspace
+rm(list = ls(all = TRUE))
+rm(list = ls(all.names = TRUE))
+
+# Limit History to not exceed 500 lines
+Sys.setenv(R_HISTSIZE = 500)
+
+repo <- c("http://cran.us.r-project.org")
+options(repos = structure(repo))
+options(install.packages.check.source = FALSE)
+
+# String as factors is False -- used for read.csv
+options(StringsAsFactors = FALSE)
+
+# Default maxprint option
+options(max.print = 500)
+# options(max.print=99999)
+
+# Memory limit
+#memory.limit(size = 8183)
+
+#Remove scientific notation if digits less than 100
+options("scipen"=100)
+
+#Uknown Strings
+unknowns_strings <- c(" ","\n","",".","n/a","na","NA",NA,"<NA>","null","NULL",NULL,"nan","NaN",NaN,Inf,
+                      NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
+                      NA_character_,"NA_character_",NA_real_,"NA_real_")
+
+# Set location (1=HOME,2=WORK,3=CORALSEA FROM HOME,4=CORALSEA FROM WORK,5=CORALSEA FROM LAPTOP) 
+Location <- 3
+
+
+if (Location == 1) {
+  #setwd("C:/Research_temp2/")
+  input_directory <- normalizePath("C:/Users/S.Brad/Dropbox/Research/Fund_Strategies/Data/",winslash="\\", mustWork=TRUE)
+  output_directory <- normalizePath("F:/Research_temp2/",winslash="\\", mustWork=TRUE)
+  function_directory <- normalizePath("C:/Users/S.Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
+  treetag_directory <- normalizePath("F:/TreeTagger",winslash="\\", mustWork=TRUE) 
+  
+} else if (Location == 2) {
+  #setwd("C:/Research_temp2/")
+  input_directory <- normalizePath("C:/Users/bdaughdr/Dropbox/Research/Fund_Strategies/Data/",winslash="\\", mustWork=TRUE)
+  output_directory <- normalizePath("C:/Research_temp2/",winslash="\\", mustWork=TRUE)
+  function_directory <- normalizePath("C:/Users/bdaughdr/Dropbox/Research_Methods/R/",winslash="\\", mustWork=TRUE) 
+  treetag_directory <- normalizePath("C:/TreeTagger",winslash="\\", mustWork=TRUE) 
+  
+} else if (Location == 3) {
+  #setwd("//tsclient/C/Research_temp2/")
+  input_directory <- normalizePath("//tsclient/C/Users/S.Brad/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
+  #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
+  output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
+  function_directory <- normalizePath("//tsclient/C/Users/S.Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
+  treetag_directory <- normalizePath("//tsclient/F/TreeTagger",winslash="\\", mustWork=TRUE) 
+  
+} else if (Location == 4) {
+  #setwd("//tsclient/C/Research_temp2/")
+  input_directory <- normalizePath("//tsclient/C/Users/bdaughdr/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
+  #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
+  output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
+  function_directory <- normalizePath("//tsclient/C/Users/bdaughdr/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
+  treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE) 
+  
+} else if (Location == 5) {
+  #setwd("//tsclient/C/Research_temp2/")
+  input_directory <- normalizePath("//tsclient/C/Users/S. Brad Daughdrill/Documents/My Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
+  #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
+  output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
+  function_directory <- normalizePath("//tsclient/C/Users/S. Brad Daughdrill/Documents/My Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
+  treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE) 
+  
+} else {
+  cat("ERROR ASSIGNING DIRECTORIES", "\n")
+  
+}
+rm(Location)
+
+
+###############################################################################
+cat("SECTION: FUNCTIONS", "\n")
+###############################################################################
+
+source(file=paste(function_directory,"functions_db.R",sep=""),echo=FALSE)
+source(file=paste(function_directory,"functions_statistics.R",sep=""),echo=FALSE)
+source(file=paste(function_directory,"functions_text_analysis.R",sep=""),echo=FALSE)
+source(file=paste(function_directory,"functions_utilities.R",sep=""),echo=FALSE)
+
+###############################################################################
+cat("SECTION: LIBRARIES", "\n")
+###############################################################################
+
+update.packages(ask=FALSE, checkBuilt=TRUE)
+
+#Load External Packages
+external_packages <- c("compare","cwhmisc","data.table","descr","fastmatch","formatR","gdata",
+                       "gtools","Hmisc","installr","knitr","leaps","lmtest","markdown","memisc","mitools",
+                       "pander","pbapply","PerformanceAnalytics","plm","plyr","psych","quantreg","R.oo","R2wd",
+                       "reporttools","reshape2","rms","RSQLite","sandwich","sqldf","stargazer","stringr",
+                       "texreg","taRifx","UsingR","xtable","zoo")
+invisible(unlist(sapply(external_packages,load_external_packages, repo_str=repo, simplify=FALSE, USE.NAMES=FALSE)))
+installed_packages <- list_installed_packages(external_packages)
+
+rm2(repo,external_packages,installed_packages)
+
+
+###############################################################################
+cat("SECTION: SQLITE DATABASES", "\n")
+###############################################################################
+
+#crsp_db <- paste(output_directory,"CRSPMF_Formatted.s3db",sep="")
+#mflinks_db <- paste(output_directory,"MFLinks_Formatted.s3db",sep="")
+#msd_db <- paste(output_directory,"MDMF_Formatted.s3db",sep="")
+#similarity_db <- paste(output_directory,"Similarity_Analysis.s3db",sep="")
+descriptive_stats_db <- paste(output_directory,"Descriptive_stats.s3db",sep="")
+data_fulll_db <- paste(output_directory,"Data_full.s3db",sep="")
+
+###############################################################################
+cat("IMPORT DATA", "\n")
+###############################################################################
+
+identifier <- "fund_id"
+
+start_year <- 1994
+end_year <- 2011
+
+descriptive_stats_tables <- ListTables(descriptive_stats_db)
+descriptive_stats_fields <- ListFields(descriptive_stats_db)
+
+data_all <- read.csv(file=paste(output_directory,"data_all",".csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
+
+
+###############################################################################
+cat("ALL POSSIBLE MODELS", "\n")
+###############################################################################
+
+#### NOT USING RIGHT NOW ####
+
+#Create Different Independent Variable Groups
+grade <- c("coleman_liau_XXX",
+           "ari_XXX",
+           "ari_XXX + flesch_kincaid_XXX + coleman_liau_XXX",
+           "ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX",
+           "avg_grade_level_XXX",
+           "avg_grade_level_ac_XXX")
+
+similarity <- c("all_similarity_250pct_XXX + main_investment_strategy_similarity_250pct_XXX",
+                "main_investment_strategy_similarity_250pct_XXX")
+
+controls <- c("mktadjret_lag1 + mktadjret_lag1_sq + mktadjret_lag2 + mktadjret_lag2_sq  + age_y ",
+              "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + age_y")
+
+quantile <- c("main_investment_strategy_similarity_050pct_XXX_below_quartile1 + main_investment_strategy_similarity_050pct_XXX_above_quartile3",
+              "avg_grade_level_XXX_below_quartile1 + avg_grade_level_XXX_above_quartile3 + main_investment_strategy_similarity_050pct_XXX_below_quartile1 + main_investment_strategy_similarity_050pct_XXX_above_quartile3",
+              "avg_grade_level_ac_XXX_below_quartile1 + avg_grade_level_ac_XXX_above_quartile3 + main_investment_strategy_similarity_900pct_XXX_below_quartile1 + main_investment_strategy_similarity_900pct_XXX_above_quartile3",
+              "coleman_liau_XXX_below_quartile1 + coleman_liau_XXX_above_quartile3 + main_investment_strategy_similarity_050pct_XXX_below_quartile1 + main_investment_strategy_similarity__050pct_XXX_above_quartile3",
+              "")
+
+# c("mktadjret_lag1:main_investment_strategy_similarity_050pct_XXX_below_quartile1 + mktadjret_lag1:main_investment_strategy_similarity_050pct_XXX_above_quartile3",
+#   "mktadjret_lag1:avg_grade_level_XXX_below_quartile1 + mktadjret_lag1:avg_grade_level_XXX_above_quartile3 + mktadjret_lag1:main_investment_strategy_similarity_050pct_XXX_below_quartile1 + mktadjret_lag1:main_investment_strategy_similarity_050pct_XXX_above_quartile3",
+#   "mktadjret_lag1:avg_grade_level_ac_XXX_below_quartile1 + mktadjret_lag1:avg_grade_level_ac_XXX_above_quartile3 + mktadjret_lag1:main_investment_strategy_similarity_050pct_XXX_below_quartile1 + mktadjret_lag1:main_investment_strategy_similarity__050pct_XXX_above_quartile3",
+#   "mktadjret_lag1:coleman_liau_XXX_below_quartile1 + mktadjret_lag1:coleman_liau_XXX_above_quartile3 + mktadjret_lag1:main_investment_strategy_similarity_050pct_XXX_below_quartile1 + mktadjret_lag1:main_investment_strategy_similarity_050pct_XXX_above_quartile3",
+#   "mktadjret_lag1:ari_XXX_below_quartile1 + mktadjret_lag1:ari_XXX_above_quartile3",
+#   "")
+
+fixed_effects <- c("factor(yr)",
+                   "")
+
+regression_equations_all <- expand.grid(grade,
+                                        similarity,
+                                        controls,
+                                        quantile,
+                                        fixed_effects)
+regression_equations_all <- data.frame(lapply(regression_equations_all, as.character), 
+                                       all_ind_vars=NA,
+                                       stringsAsFactors=FALSE)
+colnames(regression_equations_all) <- c("grade","similarity","controls","quantile","fixed_effects","full_independent_vars")
+
+regression_equations_all <- unknown_to_NA(regression_equations_all,unknowns_strings)
+
+#Create Independent Variable Equation
+for (i in 1:nrow(regression_equations_all))
+{
+  
+  temp_char_vec <- c(na.omit(as.character(unlist(regression_equations_all[i,1:(ncol(regression_equations_all)-1)], use.names=FALSE))))
+  regression_equations_all[i,"full_independent_vars"] <- paste(temp_char_vec, sep="", collapse=" + ") 
+  
+}
+
+rm2(grade,similarity,controls,quantile,fixed_effects,temp_char_vec,regression_equations_all)
+
+
+###############################################################################
+cat("PANEL REGRESSION - READBILITY", "\n")
+###############################################################################
+
+output_directory_reg_readability <- paste(output_directory,"reg_readability","\\",sep="")
+create_directory(output_directory_reg_readability,remove=1)
+
+#Regression equations
+regression_equations1_1 <- list(dep_var=c("pflow"),
+                                models=c("avg_grade_level_XXX",
+                                         "ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX",
+                                         "avg_grade_level_XXX + mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee",
+                                         "avg_grade_level_XXX + mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                                         "ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX + mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee",
+                                         "ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX + mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                                         "coleman_liau_XXX + mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                                         "avg_grade_level_XXX + mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                                         "coleman_liau_XXX + mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + performance_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin"),
+                                model_type=c("pooling"),
+                                note=c("readability"))
+
+regression_equations1_2 <- list(dep_var=c("mktadjret","exret","int_nonloading_ff_24","int_loading_ff_24","int_nonloading_ffm_24","int_loading_ffm_24","int_nonloading_ffml_24","int_loading_ffml_24","int_nonloading_hf7_24","int_loading_hf7_24","int_nonloading_hf8_24","int_loading_hf8_24"),
+                                models=c("avg_grade_level_XXX",
+                                         "ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX",
+                                         "avg_grade_level_XXX + mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee",
+                                         "avg_grade_level_XXX + mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                                         "ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX + mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee",
+                                         "ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX + mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                                         "coleman_liau_XXX + mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                                         "avg_grade_level_XXX + mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                                         "coleman_liau_XXX + mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + performance_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin"),
+                                model_type=c("pooling"),
+                                note=c("readability"))
+
+regression_equations1 <- list(regression_equations1_1,regression_equations1_2)
+
+rm(regression_equations1_1,regression_equations1_2)
+
+regression_temp_comb <-  ldply(regression_equations1, function(x){
+  
+  #x <- regression_equations1[[1]]
+  #x <- regression_equations1[[2]]
+  
+  regression_dep_var_temp <- x["dep_var"]
+  regression_dep_var_temp2 <- as.vector(unlist(regression_dep_var_temp))
+  
+  regression_models_temp <- x["models"]
+  regression_models_temp2 <- as.vector(unlist(regression_models_temp))
+  
+  regression_model_type_temp <- x["model_type"]
+  regression_model_type_temp2 <- as.vector(unlist(regression_model_type_temp))
+  
+  regression_note_temp <- x["note"]
+  regression_note_temp2 <- as.vector(unlist(regression_note_temp))
+  
+  regression_temp_comb0 <- expand.grid(regression_dep_var_temp2,regression_models_temp2,regression_model_type_temp2,regression_note_temp2)
+  colnames(regression_temp_comb0) <- c("dep_var","indep_var","model_type","note")
+  
+  regression_temp_comb0 <- regression_temp_comb0[do.call(order,regression_temp_comb0[c("dep_var")]),]
+  row.names(regression_temp_comb0) <- seq(nrow(regression_temp_comb0))
+  
+  regression_temp_comb0 <- data.frame(lapply(regression_temp_comb0, as.character), stringsAsFactors=FALSE)
+  
+  return(regression_temp_comb0)})
+
+
+
+# #Find correlation of model variables
+# corr_decimals <- 3
+# regression1_correlation1 <- c(na.omit(as.character(unlist(regression_equations1[,"full_independent_vars"], use.names=FALSE))))
+# regression1_correlation2 <- paste(regression1_correlation1, sep="", collapse="+") 
+# regression1_correlation3 <- unique(strsplit(gsub("\\+", "\\1 ", regression1_correlation2), " ")[[1]])
+# regression1_correlation4 <- gsub("XXX","ios",regression1_correlation3,ignore.case = TRUE)
+# regression1_correlation5 <- regression1_correlation4[!(regression1_correlation4=="")]
+# regression1_correlation6 <- c(dep_var1,
+#                               "pflow_lag1","pflow_lag2","pflow_lag3","pflow_lag4",
+#                               regression1_correlation5[!(regression1_correlation5 %in% c("factor(yr)"))])
+# 
+# regression1_correlation7 <- corstarsl(data_all[,regression1_correlation6],round=corr_decimals)
+# 
+# regression1_correlation8 <- matrix("", ncol=nrow(regression1_correlation7), nrow=nrow(regression1_correlation7), 
+#                                    dimnames=list(rownames(regression1_correlation7), rownames(regression1_correlation7)))
+# 
+# regression1_correlation7 <- data.frame(lapply(regression1_correlation7, as.character), stringsAsFactors=FALSE)
+# 
+# for (i in 1:ncol(regression1_correlation7))
+# {
+#   
+#   temp_col_name <- colnames(regression1_correlation7)[i]
+#   regression1_correlation8[,temp_col_name] <- regression1_correlation7[,temp_col_name]
+#   rm(temp_col_name)
+# }
+# 
+# diag(regression1_correlation8) <- paste(format(1.0, digits = corr_decimals, nsmall=corr_decimals),"***",sep="")
+# 
+# regression1_correlation8 <- data.frame(var=row.names(regression1_correlation8),regression1_correlation8, stringsAsFactors=FALSE)
+# row.names(regression1_correlation8) <- seq(nrow(regression1_correlation8))
+# 
+# rm2(corr_decimals,i)
+# rm2(regression1_correlation1,regression1_correlation2,regression1_correlation3,regression1_correlation4)
+# rm2(regression1_correlation5,regression1_correlation6,regression1_correlation7,regression1_correlation8)
+
+
+
+
+
+#data_year_groups1 <- data.frame(matrix(NA, ncol=2, nrow=1, dimnames=list(c(), c("Start_yr","End_yr"))), stringsAsFactors=FALSE)
+
+#data_year_groups1[1,] <- c(start_year,end_year)
+#data_year_groups1[2,] <- c(2000,2011)
+#data_year_groups1[3,] <- c(2006,2011)
+#data_year_groups1[4,] <- c(1994,1999)
+#data_year_groups1[5,] <- c(2000,2005)
+
+data_year_groups1_1 <- list(Start_yr=start_year,End_yr=end_year)
+data_year_groups1_2 <- list(Start_yr=2000,End_yr=2011)
+#data_year_groups1_3 <- list(Start_yr=2006,End_yr=2011)
+#data_year_groups1_4 <- list(Start_yr=1994,End_yr=1999)
+#data_year_groups1_5 <- list(Start_yr=2000,End_yr=2005)
+
+#data_year_groups1 <- list(data_year_groups1_1,data_year_groups1_2,data_year_groups1_3,data_year_groups1_4,data_year_groups1_5)
+data_year_groups1 <- list(data_year_groups1_1,data_year_groups1_2)
+
+
+
+
+#data_year_groups1_Start_yr <- sapply(data_year_groups1, "[[", "Start_yr")
+#data_year_groups1_End_yr <- sapply(data_year_groups1, "[[", "End_yr")
+
+
+l_ply(data_year_groups1, function(x){
+  
+  #x <- data_year_groups1[[1]]
+  #x <- data_year_groups1[[2]]
+  
+  Start_yr_temp <- x["Start_yr"]
+  Start_yr_temp2 <- as.vector(unlist(Start_yr_temp))
+  
+  End_yr_temp <- x["End_yr"]
+  End_yr_temp2 <- as.vector(unlist(End_yr_temp))
+  
+  #cat("STR X:", str(x),"\n")
+  #cat("Start:", Start_yr_temp2,"\n")
+  #cat("End:", End_yr_temp2,"\n")
+  
+  
+  
+})
+
+
+
+
+
+
+
+
+for (k in 1:nrow(data_year_groups1))
+{
+  #k <- 1
+  #k <- 2
+  
+  cat("START YEAR:", data_year_groups1[k,1], "END YEAR:", data_year_groups1[k,2],"\n")
+  
+  data_temp <- data_all[(data_all[,"yr"]>=data_year_groups1[k,1] & data_all[,"yr"]<=data_year_groups1[k,2]),]
+  data_temp.pd <- pdata.frame(data_temp, index=c(identifier, "yr_month"), drop.index=TRUE, row.names=TRUE)
+  
+  
+  
+  ddply(.data=regression_temp_comb, .variables="dep_var", 
+        .fun = function(x,datapd,data,name_short,model){
+          
+          #x <- regression_temp_comb[regression_temp_comb[,c("dep_var")]=="pflow",]
+          #x <- regression_temp_comb[regression_temp_comb[,c("dep_var")]=="mktadjret",]
+          #datapd <- data_temp.pd
+          #data <- data_temp
+          #name_short <- paste(data_year_groups1[k,1],data_year_groups1[k,2],note1,sep="_")
+          #model <- model_type1
+          
+          out_file_name <- paste("reg_compare_plm",unique(x[,c("dep_var")]),name_short,sep="_")
+          
+          #models <- rep( list(list()), nrow(x) )
+          se <- rep( list(list()), nrow(x) )
+          pval <- rep( list(list()), nrow(x) )
+          
+          aa <- ddply(.data=x, .variables="indep_var", 
+                      .fun = function(y,datapd2,data2,model2){ 
+                        
+                        #l <- 1
+                        #l <- 2
+                        #y <- x[l,]
+                        #datapd2 <- datapd
+                        #data2 <- data
+                        #model2 <- model
+                        
+                        ind_vars_reg0 <- y[,"indep_var"]
+                        ind_vars_reg0 <- gsub("XXX","ios",ind_vars_reg0,ignore.case = TRUE)
+                        reg0 <- plm(as.formula(paste(y[,"dep_var"],ind_vars_reg0,sep="~")),data=datapd2,model=model2)
+                        #reg0 <- lm(as.formula(paste(y[,"dep_var"],ind_vars_reg0,sep="~")), data2)
+                        #reg0_rse <- coeftest(reg0, vcov=function(x) vcovHC(x, cluster="group", type="HC1"))
+                        #reg0_rse <- cl.plm(data2, reg0, data2[,identifier])
+                        #reg0_rse <- coeftest(reg0, vcov=function(x) vcovDC(x, type="HC1"))
+                        reg0_rse <- mcl.plm(data2, reg0, data2[,identifier], data2[,"month"])
+                        #reg0_rse <- mcl(data2,reg0, data2[,identifier], data2[,"month"])
+                        #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,2]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+                        #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,4]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+                        #models[[l]] <- reg0
+                        
+                        
+                        #se[[l]] <- reg0_rse[,4]
+                        #pval[[l]] <- reg0_rse[,4]
+                        
+                        #assign(paste("reg",l,sep=""), reg0, envir = .GlobalEnv)
+                        
+                        return(list(reg0,reg0_rse))
+                        
+                        
+                      }, datapd2=datapd, data2=data, model2=model, 
+                      .progress = "text", .inform = FALSE, .drop = TRUE, .parallel = FALSE, .paropts = NULL)
+          
+          aa1 <- aa[1]
+          aa11 <- aa[[1]]
+          aa2 <- aa[2]
+          aa22 <- aa[[2]]
+          
+          bb <- sapply(aa, "[[",1)
+          
+        }, datapd=data_temp.pd, data=data_temp, name_short=paste(data_year_groups1[k,1],data_year_groups1[k,2],note1,sep="_"), model=model_type1,
+        .progress = "text", .inform = FALSE, .drop = TRUE, .parallel = FALSE, .paropts = NULL)
+  
+  
+  
+  
+  
+  # }
+  
+  
+  
+  #for (i in 4:length(dep_var1))
+  #for (i in 1:length(dep_var1))
+  #{
+  #i <- 1
+  #i <- 2
+  #i <- 3
+  #i <- 4
+  
+  #out_file_name <- paste("reg_compare_plm",dep_var1[i],deparse(substitute(data_all)),note1,sep="_")
+  out_file_name <- paste("reg_compare_plm",dep_var1[i],data_year_groups1[k,1],data_year_groups1[k,2],note1,sep="_")
+  
+  #models <- rep( list(list()), nrow(regression_equations1) )
+  se <- rep( list(list()), nrow(regression_equations1) )
+  pval <- rep( list(list()), nrow(regression_equations1) )
+  
+  
+  
+  for (l in 1:nrow(regression_equations1))
+  {
+    #l <- 1
+    #l <- 2
+    #l <- 3
+    #l <- 4   
+    #l <- 5
+    #l <- 6
+    #l <- 7
+    #l <- 8     
+    
+    ind_vars_reg0 <- regression_equations1[l,"full_independent_vars"]
+    ind_vars_reg0 <- gsub("XXX","ios",ind_vars_reg0,ignore.case = TRUE)
+    reg0 <- plm(as.formula(paste(dep_var1[i],ind_vars_reg0,sep="~")),data=data_temp.pd,model=model_type1)
+    #reg0 <- lm(as.formula(paste(dep_var1[i],ind_vars_reg0,sep="~")), data_temp)
+    #reg0_rse <- coeftest(reg0, vcov=function(x) vcovHC(x, cluster="group", type="HC1"))
+    #reg0_rse <- cl.plm(data_temp, reg0, data_temp[,identifier])
+    #reg0_rse <- coeftest(reg0, vcov=function(x) vcovDC(x, type="HC1"))
+    reg0_rse <- mcl.plm(data_temp, reg0, data_temp[,identifier], data_temp[,"month"])
+    #reg0_rse <- mcl(data_temp,reg0, data_temp[,identifier], data_temp[,"month"])
+    #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,2]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+    #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,4]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+    
+    #models[[l]] <- reg0
+    se[[l]] <- reg0_rse[,4]
+    pval[[l]] <- reg0_rse[,4]
+    
+    assign(paste("reg",l,sep=""), reg0, envir = .GlobalEnv)
+    #assign(paste("reg",l,"_rse",sep=""), reg0_rse, envir = .GlobalEnv)
+    
+    rm2(ind_vars_reg0,reg0,reg0_rse)
+    
+  }
+  
+  htmlreg(l=eval(parse(text=paste("list(",paste("reg",seq(1,nrow(regression_equations1)),sep="",collapse=","),")",sep=""))), 
+          model.names=paste("(",seq(1,nrow(regression_equations1)),")",sep=""),
+          override.se=se,
+          override.pval=pval,
+          stars=c(0.01, 0.05, 0.1), digits=3, 
+          caption="Effect of Readability on Hedge Fund Flows – Multivariate",
+          file=paste(output_directory_reg_readability,out_file_name,".doc",sep=""))
+  
+  #custom.names
+  
+  progress_function(outer_loop_count=k, outer_loop_start_val=1, outer_loop_end_val=nrow(data_year_groups1), 
+                    inner_loop_count=i, inner_loop_start_val=1, inner_loop_end_val=length(dep_var1))
+  
+  rm2(se,pval,out_file_name,l)
+  eval(parse(text=paste("rm(",paste("reg",seq(1,nrow(regression_equations1)),sep="",collapse=","),")",sep="")))
+  
+} 
+
+rm2(data_temp,data_temp.pd,i)
+
+}
+
+rm2(data_year_groups1,dep_var1,model_type1,note1,temp_char_vec,regression_equations1,k)
+
+
+###############################################################################
+cat("PANEL REGRESSION - SIMILARITY", "\n")
+###############################################################################
+
+output_directory_reg_similarity <- paste(output_directory,"reg_similarity","\\",sep="")
+create_directory(output_directory_reg_similarity,remove=1)
+
+data_year_groups2 <- data.frame(matrix(NA, ncol=2, nrow=1, dimnames=list(c(), c("Start_yr","End_yr"))), 
+                                stringsAsFactors=FALSE)
+
+data_year_groups2[1,] <- c(start_year,end_year)
+#data_year_groups2[2,] <- c(2000,2011)
+#data_year_groups2[3,] <- c(2006,2011)
+#data_year_groups2[4,] <- c(1994,1999)
+#data_year_groups2[5,] <- c(2000,2005)
+
+
+#dep_var2 <- c("pflow","nflow")
+#dep_var2 <- c("pflow","mktadjret")
+dep_var2 <- c("pflow","mktadjret","exret",
+              "int_nonloading_ff_24","int_loading_ff_24","int_nonloading_ffm_24","int_loading_ffm_24","int_nonloading_ffml_24","int_loading_ffml_24",
+              "int_nonloading_hf7_24","int_loading_hf7_24","int_nonloading_hf8_24","int_loading_hf8_24")
+
+
+model_type2 <- "pooling"
+
+note2 <- "similarity"
+
+#sim_type2 <- c("050pct","100pct","250pct","500pct","750pct","900pct")
+sim_type2 <- c("050pct","900pct")
+
+#Regression equations
+regression_equations2 <- data.frame(grade=NA,
+                                    similarity=NA,
+                                    controls=NA,
+                                    quantile=NA,
+                                    fixed_effects=NA,
+                                    full_independent_vars=NA,
+                                    stringsAsFactors=FALSE)
+regression_equations2[1,] <- c(NA,
+                               "all_similarity_YYYpct_XXX",
+                               NA,NA,NA,NA)
+regression_equations2[2,] <- c(NA,
+                               "main_investment_strategy_similarity_YYYpct_XXX",
+                               NA,NA,NA,NA)
+regression_equations2[3,] <- c(NA,
+                               "all_similarity_YYYpct_XXX",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee",
+                               NA,NA,NA)
+regression_equations2[4,] <- c(NA,
+                               "main_investment_strategy_similarity_YYYpct_XXX",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee",
+                               NA,NA,NA)
+regression_equations2[5,] <- c(NA,
+                               "all_similarity_YYYpct_XXX",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                               NA,NA,NA)
+regression_equations2[6,] <- c(NA,
+                               "main_investment_strategy_similarity_YYYpct_XXX",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                               NA,NA,NA)
+regression_equations2[7,] <- c(NA,
+                               "all_similarity_YYYpct_XXX",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                               NA,
+                               NA,#"factor(yr)",
+                               NA)
+regression_equations2[8,] <- c(NA,
+                               "main_investment_strategy_similarity_YYYpct_XXX",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                               NA,
+                               NA,#"factor(yr)",
+                               NA)
+regression_equations2[9,] <- c(NA,
+                               "all_similarity_YYYpct_XXX + main_investment_strategy_similarity_YYYpct_XXX",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                               NA,
+                               NA,#"factor(yr)",
+                               NA)
+regression_equations2 <- unknown_to_NA(regression_equations2,unknowns_strings)
+
+#Create Independent Variable Equation
+for (i in 1:nrow(regression_equations2))
+{
+  
+  temp_char_vec <- c(na.omit(as.character(unlist(regression_equations2[i,1:(ncol(regression_equations2)-1)], use.names=FALSE))))
+  regression_equations2[i,"full_independent_vars"] <- paste(temp_char_vec, sep="", collapse=" + ") 
+  
+}
+
+for (k in 1:nrow(data_year_groups2))
+{
+  #k <- 1
+  
+  cat("START YEAR:", data_year_groups2[k,1], "END YEAR:", data_year_groups2[k,2],"\n")
+  
+  data_temp <- data_all[(data_all[,"yr"]>=data_year_groups2[k,1] & data_all[,"yr"]<=data_year_groups2[k,2]),]
+  data_temp.pd <- pdata.frame(data_temp, index=c(identifier, "yr_month"), drop.index=TRUE, row.names=TRUE)
+  
+  for (i in 1:length(dep_var2))
+    #for (i in 4:length(dep_var2))
+  {
+    #i <- 1
+    
+    for (j in 1:length(sim_type2))
+    {
+      #j <- 1
+      #j <- 2
+      #j <- 6
+      
+      out_file_name <- paste("reg_compare_plm",dep_var2[i],data_year_groups2[k,1],data_year_groups2[k,2],note2,sim_type2[j],sep="_")
+      
+      #models <- rep( list(list()), nrow(regression_equations2) )
+      se <- rep( list(list()), nrow(regression_equations2) )
+      pval <- rep( list(list()), nrow(regression_equations2) )
+      
+      for (l in 1:nrow(regression_equations2))
+      {
+        #l <- 1
+        
+        ind_vars_reg0 <- regression_equations2[l,"full_independent_vars"]
+        ind_vars_reg0 <- gsub("XXX","ios",ind_vars_reg0,ignore.case = TRUE)
+        ind_vars_reg0 <- gsub("YYYpct",sim_type2[j],ind_vars_reg0,ignore.case = TRUE)
+        reg0 <- plm(as.formula(paste(dep_var2[i],ind_vars_reg0,sep="~")),data=data_temp.pd,model=model_type2)
+        #reg0 <- lm(as.formula(paste(dep_var2[i],ind_vars_reg0,sep="~")), data_temp)
+        #reg0_rse <- coeftest(reg0, vcov=function(x) vcovHC(x, cluster="group", type="HC1"))
+        #reg0_rse <- cl.plm(data_temp, reg0, data_temp[,identifier])
+        #reg0_rse <- coeftest(reg0, vcov=function(x) vcovDC(x, type="HC1"))
+        reg0_rse <- mcl.plm(data_temp, reg0, data_temp[,identifier], data_temp[,"month"])
+        #reg0_rse <- mcl(data_temp,reg0, data_temp[,identifier], data_temp[,"month"])
+        #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,2]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+        #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,4]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+        
+        #models[[l]] <- reg0
+        se[[l]] <- reg0_rse[,4]
+        pval[[l]] <- reg0_rse[,4]
+        
+        assign(paste("reg",l,sep=""), reg0, envir = .GlobalEnv)
+        #assign(paste("reg",l,"_rse",sep=""), reg0_rse, envir = .GlobalEnv)
+        
+        rm2(ind_vars_reg0,reg0,reg0_rse)
+        
+      }
+      
+      htmlreg(l=eval(parse(text=paste("list(",paste("reg",seq(1,nrow(regression_equations2)),sep="",collapse=","),")",sep=""))), 
+              model.names=paste("(",seq(1,nrow(regression_equations2)),")",sep=""),
+              override.se=se,
+              override.pval=pval,
+              stars=c(0.01, 0.05, 0.1), digits=3, 
+              caption="Effect of Similarity on Hedge Fund Flows – Multivariate",
+              file=paste(output_directory_reg_similarity,out_file_name,".doc",sep=""))
+      
+      progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(dep_var2), 
+                        inner_loop_count=j, inner_loop_start_val=1, inner_loop_end_val=length(sim_type2))
+      
+      rm2(se,pval,out_file_name,l)
+      eval(parse(text=paste("rm(",paste("reg",seq(1,nrow(regression_equations2)),sep="",collapse=","),")",sep="")))
+      
+    }
+    rm2(j)
+    
+  } 
+  
+  rm2(data_temp,data_temp.pd,i)
+  
+}
+
+rm2(data_year_groups2,dep_var2,model_type2,note2,sim_type2,temp_char_vec,regression_equations2,k)
+
+
+###############################################################################
+cat("PANEL REGRESSION - READABILITY & SIMILARITY", "\n")
+###############################################################################
+
+output_directory_reg_readability_similarity <- paste(output_directory,"reg_readability_similarity","\\",sep="")
+create_directory(output_directory_reg_readability_similarity,remove=1)
+
+data_year_groups3 <- data.frame(matrix(NA, ncol=2, nrow=1, dimnames=list(c(), c("Start_yr","End_yr"))), 
+                                stringsAsFactors=FALSE)
+
+data_year_groups3[1,] <- c(start_year,end_year)
+#data_year_groups3[2,] <- c(2000,2011)
+#data_year_groups3[3,] <- c(2006,2011)
+#data_year_groups3[4,] <- c(1994,1999)
+#data_year_groups3[5,] <- c(2000,2005)
+
+#dep_var3 <- c("pflow","nflow")
+#dep_var3 <- c("pflow")
+#dep_var3 <- c("pflow","mktadjret")
+dep_var3 <- c("pflow","mktadjret","exret",
+              "int_nonloading_ff_24","int_loading_ff_24","int_nonloading_ffm_24","int_loading_ffm_24","int_nonloading_ffml_24","int_loading_ffml_24",
+              "int_nonloading_hf7_24","int_loading_hf7_24","int_nonloading_hf8_24","int_loading_hf8_24")
+
+model_type3 <- "pooling"
+
+note3 <- "readbility_similarity_year"
+
+#sim_type3 <- c("050pct","100pct","250pct","500pct","750pct","900pct")
+sim_type3 <- c("050pct","900pct")
+
+
+#Regression equations
+regression_equations3 <- data.frame(grade=NA,
+                                    similarity=NA,
+                                    controls=NA,
+                                    quantile=NA,
+                                    fixed_effects=NA,
+                                    full_independent_vars=NA,
+                                    stringsAsFactors=FALSE)
+regression_equations3[1,] <- c("all_similarity_YYYpct_XXX",
+                               "avg_grade_level_XXX",
+                               NA,NA,NA,NA)
+regression_equations3[2,] <- c("all_similarity_YYYpct_XXX",
+                               "ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX",
+                               NA,NA,NA,NA)
+regression_equations3[3,] <- c("main_investment_strategy_similarity_YYYpct_XXX",
+                               "avg_grade_level_XXX",
+                               NA,NA,NA,NA)
+regression_equations3[4,] <- c("main_investment_strategy_similarity_YYYpct_XXX",
+                               "ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX",
+                               NA,NA,NA,NA)
+regression_equations3[5,] <- c("all_similarity_YYYpct_XXX",
+                               "avg_grade_level_XXX",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                               NA,NA,NA)
+regression_equations3[6,] <- c("all_similarity_YYYpct_XXX",
+                               "ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                               NA,NA,NA)
+regression_equations3[7,] <- c("main_investment_strategy_similarity_YYYpct_XXX",
+                               "avg_grade_level_XXX",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                               NA,NA,NA)
+regression_equations3[8,] <- c("main_investment_strategy_similarity_YYYpct_XXX",
+                               "ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                               NA,NA,NA)
+regression_equations3[9,] <- c("all_similarity_YYYpct_XXX + main_investment_strategy_similarity_YYYpct_XXX",
+                               "coleman_liau_XXX",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                               NA,
+                               NA,#"factor(yr)",
+                               NA)
+
+regression_equations3 <- unknown_to_NA(regression_equations3,unknowns_strings)
+
+#Create Independent Variable Equation
+for (i in 1:nrow(regression_equations3))
+{
+  
+  temp_char_vec <- c(na.omit(as.character(unlist(regression_equations3[i,1:(ncol(regression_equations3)-1)], use.names=FALSE))))
+  regression_equations3[i,"full_independent_vars"] <- paste(temp_char_vec, sep="", collapse=" + ") 
+  
+}
+
+for (k in 1:nrow(data_year_groups3))
+{
+  #k <- 1
+  
+  cat("START YEAR:", data_year_groups3[k,1], "END YEAR:", data_year_groups3[k,2],"\n")
+  
+  data_temp <- data_all[(data_all[,"yr"]>=data_year_groups3[k,1] & data_all[,"yr"]<=data_year_groups3[k,2]),]
+  data_temp.pd <- pdata.frame(data_temp, index=c(identifier, "yr_month"), drop.index=TRUE, row.names=TRUE)
+  
+  for (i in 1:length(dep_var3))  
+    #for (i in 4:length(dep_var3))
+  {
+    #i <- 1
+    
+    for (j in 1:length(sim_type3))
+    {
+      #j <- 1
+      #j <- 2
+      
+      out_file_name <- paste("reg_compare_plm",dep_var3[i],data_year_groups3[k,1],data_year_groups3[k,2],note3,sim_type3[j],sep="_")
+      
+      #models <- rep( list(list()), nrow(regression_equations3) )
+      se <- rep( list(list()), nrow(regression_equations3) )
+      pval <- rep( list(list()), nrow(regression_equations3) )
+      
+      for (l in 1:nrow(regression_equations3))
+      {
+        #l <- 1
+        
+        ind_vars_reg0 <- regression_equations3[l,"full_independent_vars"]
+        ind_vars_reg0 <- gsub("XXX","ios",ind_vars_reg0,ignore.case = TRUE)
+        ind_vars_reg0 <- gsub("YYYpct",sim_type3[j],ind_vars_reg0,ignore.case = TRUE)
+        reg0 <- plm(as.formula(paste(dep_var3[i],ind_vars_reg0,sep="~")),data=data_temp.pd,model=model_type3)
+        #reg0 <- lm(as.formula(paste(dep_var3[i],ind_vars_reg0,sep="~")), data_temp)
+        #reg0_rse <- coeftest(reg0, vcov=function(x) vcovHC(x, cluster="group", type="HC1"))
+        #reg0_rse <- cl.plm(data_temp, reg0, data_temp[,identifier])
+        #reg0_rse <- coeftest(reg0, vcov=function(x) vcovDC(x, type="HC1"))
+        reg0_rse <- mcl.plm(data_temp, reg0, data_temp[,identifier], data_temp[,"month"])
+        #reg0_rse <- mcl(data_temp,reg0, data_temp[,identifier], data_temp[,"month"])
+        #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,2]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+        #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,4]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+        
+        #models[[l]] <- reg0
+        se[[l]] <- reg0_rse[,4]
+        pval[[l]] <- reg0_rse[,4]
+        
+        assign(paste("reg",l,sep=""), reg0, envir = .GlobalEnv)
+        #assign(paste("reg",l,"_rse",sep=""), reg0_rse, envir = .GlobalEnv)
+        
+        rm2(ind_vars_reg0,reg0,reg0_rse)
+        
+      }
+      
+      htmlreg(l=eval(parse(text=paste("list(",paste("reg",seq(1,nrow(regression_equations3)),sep="",collapse=","),")",sep=""))),
+              model.names=paste("(",seq(1,nrow(regression_equations3)),")",sep=""),
+              override.se=se,
+              override.pval=pval,
+              stars=c(0.01, 0.05, 0.1), digits=3, 
+              caption="Effect of Readability & Similarity on Hedge Fund Flows – Multivariate",
+              file=paste(output_directory_reg_readability_similarity,out_file_name,".doc",sep=""))
+      
+      #custom.names
+      
+      progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(dep_var3), 
+                        inner_loop_count=j, inner_loop_start_val=1, inner_loop_end_val=length(sim_type3))
+      
+      rm2(se,pval,out_file_name,l)
+      eval(parse(text=paste("rm(",paste("reg",seq(1,nrow(regression_equations3)),sep="",collapse=","),")",sep="")))
+      
+    }
+    rm2(j)
+    
+  } 
+  
+  rm2(data_temp,data_temp.pd,i)
+  
+}
+
+rm2(data_year_groups3,dep_var3,model_type3,note3,sim_type3,temp_char_vec,regression_equations3,k)
+
+
+###############################################################################
+cat("PANEL REGRESSION - READABILITY & SIMILARITY QUARTILES", "\n")
+###############################################################################
+
+output_directory_reg_readability_similarity_quartiles <- paste(output_directory,"reg_readability_similarity_quartiles","\\",sep="")
+create_directory(output_directory_reg_readability_similarity_quartiles,remove=1)
+
+data_year_groups4 <- data.frame(matrix(NA, ncol=2, nrow=1, dimnames=list(c(), c("Start_yr","End_yr"))), 
+                                stringsAsFactors=FALSE)
+
+data_year_groups4[1,] <- c(start_year,end_year)
+#data_year_groups4[2,] <- c(2000,2011)
+#data_year_groups4[3,] <- c(2006,2011)
+#data_year_groups4[4,] <- c(1994,1999)
+#data_year_groups4[5,] <- c(2000,2005)
+
+
+#dep_var4 <- c("pflow","nflow")
+#dep_var4 <- c("pflow")
+#dep_var4 <- c("pflow","mktadjret")
+dep_var4 <- c("pflow","mktadjret","exret",
+              "int_nonloading_ff_24","int_loading_ff_24","int_nonloading_ffm_24","int_loading_ffm_24","int_nonloading_ffml_24","int_loading_ffml_24",
+              "int_nonloading_hf7_24","int_loading_hf7_24","int_nonloading_hf8_24","int_loading_hf8_24")
+
+model_type4 <- "pooling"
+
+note4 <- "readbility_similarity_year"
+
+#sim_type4 <- c("050pct","100pct","250pct","500pct","750pct","900pct")
+sim_type4 <- c("050pct","900pct")
+
+
+#Regression equations
+regression_equations4 <- data.frame(grade=NA,
+                                    similarity=NA,
+                                    controls=NA,
+                                    quantile=NA,
+                                    fixed_effects=NA,
+                                    full_independent_vars=NA,
+                                    stringsAsFactors=FALSE)
+regression_equations4[1,] <- c("avg_grade_level_ios_below_quartile1 + avg_grade_level_ios_above_quartile3",
+                               "all_similarity_YYYpct_XXX_below_quartile1 + all_similarity_YYYpct_XXX_above_quartile3",
+                               NA,NA,NA,NA)
+regression_equations4[2,] <- c("avg_grade_level_ios_below_quartile1 + avg_grade_level_ios_above_quartile3",
+                               "main_investment_strategy_similarity_YYYpct_XXX_below_quartile1 + main_investment_strategy_similarity_YYYpct_XXX_above_quartile3",
+                               NA,NA,NA,NA)
+regression_equations4[3,] <- c("avg_grade_level_ios_below_quartile1 + avg_grade_level_ios_above_quartile3",
+                               "all_similarity_YYYpct_XXX_below_quartile1 + all_similarity_YYYpct_XXX_above_quartile3",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee",
+                               NA,NA,NA)
+regression_equations4[4,] <- c("avg_grade_level_ios_below_quartile1 + avg_grade_level_ios_above_quartile3",
+                               "main_investment_strategy_similarity_YYYpct_XXX_below_quartile1 + main_investment_strategy_similarity_YYYpct_XXX_above_quartile3",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee",
+                               NA,NA,NA)
+regression_equations4[5,] <- c("avg_grade_level_ios_below_quartile1 + avg_grade_level_ios_above_quartile3",
+                               "all_similarity_YYYpct_XXX_below_quartile1 + all_similarity_YYYpct_XXX_above_quartile3",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                               NA,NA,NA)
+regression_equations4[6,] <- c("avg_grade_level_ios_below_quartile1 + avg_grade_level_ios_above_quartile3",
+                               "main_investment_strategy_similarity_YYYpct_XXX_below_quartile1 + main_investment_strategy_similarity_YYYpct_XXX_above_quartile3",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                               NA,NA,NA)
+regression_equations4[7,] <- c("avg_grade_level_ios_below_quartile1 + avg_grade_level_ios_above_quartile3",
+                               "all_similarity_YYYpct_XXX_below_quartile1 + all_similarity_YYYpct_XXX_above_quartile3",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                               NA,
+                               NA,#"factor(yr)",
+                               NA)
+regression_equations4[8,] <- c("avg_grade_level_ios_below_quartile1 + avg_grade_level_ios_above_quartile3",
+                               "main_investment_strategy_similarity_YYYpct_XXX_below_quartile1 + main_investment_strategy_similarity_YYYpct_XXX_above_quartile3",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                               NA,
+                               NA,#"factor(yr)",
+                               NA)
+regression_equations4[9,] <- c("avg_grade_level_ios_below_quartile1 + avg_grade_level_ios_above_quartile3",
+                               "all_similarity_YYYpct_XXX_below_quartile1 + all_similarity_YYYpct_XXX_above_quartile3 + main_investment_strategy_similarity_YYYpct_XXX_below_quartile1 + main_investment_strategy_similarity_YYYpct_XXX_above_quartile3",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee + listed_on_exchange_bin + domicile_onshore_bin + flagship_bin + dead_bin",
+                               NA,
+                               NA,#"factor(yr)",
+                               NA)
+
+regression_equations4 <- unknown_to_NA(regression_equations4,unknowns_strings)
+
+#Create Independent Variable Equation
+for (i in 1:nrow(regression_equations4))
+{
+  
+  temp_char_vec <- c(na.omit(as.character(unlist(regression_equations4[i,1:(ncol(regression_equations4)-1)], use.names=FALSE))))
+  regression_equations4[i,"full_independent_vars"] <- paste(temp_char_vec, sep="", collapse=" + ") 
+  
+}
+
+for (k in 1:nrow(data_year_groups4))
+{
+  #k <- 1
+  
+  cat("START YEAR:", data_year_groups4[k,1], "END YEAR:", data_year_groups4[k,2],"\n")
+  
+  data_temp <- data_all[(data_all[,"yr"]>=data_year_groups4[k,1] & data_all[,"yr"]<=data_year_groups4[k,2]),]
+  data_temp.pd <- pdata.frame(data_temp, index=c(identifier, "yr_month"), drop.index=TRUE, row.names=TRUE)
+  
+  for (i in 1:length(dep_var4))  
+    #for (i in 4:length(dep_var4))
+  {
+    #i <- 1
+    
+    for (j in 1:length(sim_type4))
+    {
+      #j <- 1
+      #j <- 2
+      
+      out_file_name <- paste("reg_compare_plm",dep_var4[i],data_year_groups4[k,1],data_year_groups4[k,2],note4,sim_type4[j],sep="_")
+      
+      #models <- rep( list(list()), nrow(regression_equations4) )
+      se <- rep( list(list()), nrow(regression_equations4) )
+      pval <- rep( list(list()), nrow(regression_equations4) )
+      
+      for (l in 1:nrow(regression_equations4))
+      {
+        #l <- 1
+        
+        ind_vars_reg0 <- regression_equations4[l,"full_independent_vars"]
+        ind_vars_reg0 <- gsub("XXX","ios",ind_vars_reg0,ignore.case = TRUE)
+        ind_vars_reg0 <- gsub("YYYpct",sim_type4[j],ind_vars_reg0,ignore.case = TRUE)
+        reg0 <- plm(as.formula(paste(dep_var4[i],ind_vars_reg0,sep="~")),data=data_temp.pd,model=model_type4)
+        #reg0 <- lm(as.formula(paste(dep_var4[i],ind_vars_reg0,sep="~")), data_temp)
+        #reg0_rse <- coeftest(reg0, vcov=function(x) vcovHC(x, cluster="group", type="HC1"))
+        #reg0_rse <- cl.plm(data_temp, reg0, data_temp[,identifier])
+        #reg0_rse <- coeftest(reg0, vcov=function(x) vcovDC(x, type="HC1"))
+        reg0_rse <- mcl.plm(data_temp, reg0, data_temp[,identifier], data_temp[,"month"])
+        #reg0_rse <- mcl(data_temp,reg0, data_temp[,identifier], data_temp[,"month"])
+        #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,2]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+        #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,4]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+        
+        #models[[l]] <- reg0
+        se[[l]] <- reg0_rse[,4]
+        pval[[l]] <- reg0_rse[,4]
+        
+        assign(paste("reg",l,sep=""), reg0, envir = .GlobalEnv)
+        #assign(paste("reg",l,"_rse",sep=""), reg0_rse, envir = .GlobalEnv)
+        
+        rm2(ind_vars_reg0,reg0,reg0_rse)
+        
+      }
+      
+      htmlreg(l=eval(parse(text=paste("list(",paste("reg",seq(1,nrow(regression_equations4)),sep="",collapse=","),")",sep=""))),
+              model.names=paste("(",seq(1,nrow(regression_equations4)),")",sep=""),
+              override.se=se,
+              override.pval=pval,
+              stars=c(0.01, 0.05, 0.1), digits=3, 
+              caption="Effect of Readability & Similarity on Hedge Fund Flows – Multivariate",
+              file=paste(output_directory_reg_readability_similarity_quartiles,out_file_name,".doc",sep=""))
+      
+      #custom.names
+      
+      progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(dep_var4), 
+                        inner_loop_count=j, inner_loop_start_val=1, inner_loop_end_val=length(sim_type4))
+      
+      rm2(se,pval,out_file_name,l)
+      eval(parse(text=paste("rm(",paste("reg",seq(1,nrow(regression_equations4)),sep="",collapse=","),")",sep="")))
+      
+    }
+    rm2(j)
+    
+  } 
+  
+  rm2(data_temp,data_temp.pd,i)
+  
+}
+
+rm2(data_year_groups4,dep_var4,model_type4,note4,sim_type4,temp_char_vec,regression_equations4,k)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###############################################################################
+cat("YOUNG FUNDS", "\n")
+###############################################################################
+
+data_year_groups4 <- data.frame(matrix(NA, ncol=2, nrow=5, dimnames=list(c(), c("Start_yr","End_yr"))), 
+                                stringsAsFactors=FALSE)
+
+data_year_groups4[1,] <- c(start_year,end_year)
+data_year_groups4[2,] <- c(2000,2011)
+data_year_groups4[3,] <- c(1994,1999)
+data_year_groups4[4,] <- c(2000,2005)
+data_year_groups4[5,] <- c(2006,2011)
+
+#dep_var4 <- c("pflow","nflow")
+dep_var4 <- c("pflow")
+
+model_type4 <- "pooling"
+
+note4 <- "young_readbility_similarity"
+
+sim_type4 <- c("050pct","100pct","250pct","500pct","750pct","900pct")
+#sim_type4 <- c("050pct","900pct")
+
+
+#Regression equations
+regression_equations4 <- data.frame(grade=NA,
+                                    similarity=NA,
+                                    controls=NA,
+                                    quantile=NA,
+                                    fixed_effects=NA,
+                                    full_independent_vars=NA,
+                                    stringsAsFactors=FALSE)
+regression_equations4[1,] <- c("avg_grade_level_XXX",
+                               "all_similarity_YYYpct_XXX + main_investment_strategy_similarity_YYYpct_XXX",
+                               NA,NA,NA,NA)
+regression_equations4[2,] <- c("ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX",
+                               "all_similarity_YYYpct_XXX + main_investment_strategy_similarity_YYYpct_XXX",
+                               NA,NA,NA,NA)
+regression_equations4[3,] <- c("avg_grade_level_XXX",
+                               "all_similarity_YYYpct_XXX + main_investment_strategy_similarity_YYYpct_XXX",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + total_fee",
+                               NA,NA,NA)
+regression_equations4[4,] <- c("ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX",
+                               "all_similarity_YYYpct_XXX + main_investment_strategy_similarity_YYYpct_XXX",
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + total_fee",
+                               NA,NA,NA)
+regression_equations4[5,] <- c(NA,NA,
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + total_fee",
+                               "avg_grade_level_ios_below_quartile1 + avg_grade_level_ios_above_quartile3",
+                               NA,NA)
+regression_equations4[6,] <- c(NA,NA,
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + total_fee",
+                               "all_similarity_YYYpct_XXX_below_quartile1 + all_similarity_YYYpct_XXX_above_quartile3 + main_investment_strategy_similarity_YYYpct_XXX_below_quartile1 + main_investment_strategy_similarity_YYYpct_XXX_above_quartile3",
+                               NA,NA)
+regression_equations4[7,] <- c(NA,NA,
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + total_fee",
+                               "avg_grade_level_ios_below_quartile1 + avg_grade_level_ios_above_quartile3 + all_similarity_YYYpct_XXX_below_quartile1 + all_similarity_YYYpct_XXX_above_quartile3 + main_investment_strategy_similarity_YYYpct_XXX_below_quartile1 + main_investment_strategy_similarity_YYYpct_XXX_above_quartile3",
+                               NA,NA)
+regression_equations4[8,] <- c(NA,NA,
+                               "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + total_fee",
+                               "avg_grade_level_ios_below_quartile1 + avg_grade_level_ios_above_quartile3 + all_similarity_YYYpct_XXX_below_quartile1 + all_similarity_YYYpct_XXX_above_quartile3 + main_investment_strategy_similarity_YYYpct_XXX_below_quartile1 + main_investment_strategy_similarity_YYYpct_XXX_above_quartile3",
+                               "factor(yr)",
+                               NA)
+regression_equations4 <- unknown_to_NA(regression_equations4,unknowns_strings)
+
+#Create Independent Variable Equation
+for (i in 1:nrow(regression_equations4))
+{
+  
+  temp_char_vec <- c(na.omit(as.character(unlist(regression_equations4[i,1:(ncol(regression_equations4)-1)], use.names=FALSE))))
+  regression_equations4[i,"full_independent_vars"] <- paste(temp_char_vec, sep="", collapse=" + ") 
+  
+}
+
+for (k in 1:nrow(data_year_groups4))
+{
+  #k <- 1
+  
+  cat("START YEAR:", data_year_groups4[k,1], "END YEAR:", data_year_groups4[k,2],"\n")
+  
+  data_temp <- data_all[(data_all[,"yr"]>=data_year_groups4[k,1] & data_all[,"yr"]<=data_year_groups4[k,2]),]
+  data_temp <- data_temp[data_temp[,"age_m"]<=36,]
+  data_temp.pd <- pdata.frame(data_temp, index=c(identifier, "yr_month"), drop.index=TRUE, row.names=TRUE)
+  
+  for (i in 1:length(dep_var4))
+  {
+    #i <- 1
+    
+    for (j in 1:length(sim_type4))
+    {
+      #j <- 1
+      #j <- 2
+      
+      out_file_name <- paste("reg_compare_plm",dep_var4[i],data_year_groups4[k,1],data_year_groups4[k,2],note4,sim_type4[j],sep="_")
+      
+      #models <- rep( list(list()), nrow(regression_equations4) )
+      se <- rep( list(list()), nrow(regression_equations4) )
+      pval <- rep( list(list()), nrow(regression_equations4) )
+      
+      for (l in 1:nrow(regression_equations4))
+      {
+        #l <- 1
+        
+        ind_vars_reg0 <- regression_equations4[l,"full_independent_vars"]
+        ind_vars_reg0 <- gsub("XXX","ios",ind_vars_reg0,ignore.case = TRUE)
+        ind_vars_reg0 <- gsub("YYYpct",sim_type4[j],ind_vars_reg0,ignore.case = TRUE)
+        reg0 <- plm(as.formula(paste(dep_var4[i],ind_vars_reg0,sep="~")),data=data_temp.pd,model=model_type4)
+        #reg0 <- lm(as.formula(paste(dep_var4[i],ind_vars_reg0,sep="~")), data_temp)
+        #reg0_rse <- coeftest(reg0, vcov=function(x) vcovHC(x, cluster="group", type="HC1"))
+        #reg0_rse <- cl.plm(data_temp, reg0, data_temp[,identifier])
+        #reg0_rse <- coeftest(reg0, vcov=function(x) vcovDC(x, type="HC1"))
+        reg0_rse <- mcl.plm(data_temp, reg0, data_temp[,identifier], data_temp[,"month"])
+        #reg0_rse <- mcl(data_temp,reg0, data_temp[,identifier], data_temp[,"month"])
+        #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,2]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+        #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,4]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+        
+        #models[[l]] <- reg0
+        se[[l]] <- reg0_rse[,4]
+        pval[[l]] <- reg0_rse[,4]
+        
+        assign(paste("reg",l,sep=""), reg0, envir = .GlobalEnv)
+        #assign(paste("reg",l,"_rse",sep=""), reg0_rse, envir = .GlobalEnv)
+        
+        rm2(ind_vars_reg0,reg0,reg0_rse)
+        
+      }
+      
+      htmlreg(l=eval(parse(text=paste("list(",paste("reg",seq(1,nrow(regression_equations4)),sep="",collapse=","),")",sep=""))),
+              model.names=paste("(",seq(1,nrow(regression_equations4)),")",sep=""),
+              override.se=se,
+              override.pval=pval,
+              stars=c(0.01, 0.05, 0.1), digits=3, 
+              caption="Effect of Readability & Similarity on Young Hedge Fund Flows – Multivariate",
+              file=paste(output_directory,out_file_name,".doc",sep=""))
+      
+      #custom.names
+      
+      progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(dep_var4), 
+                        inner_loop_count=j, inner_loop_start_val=1, inner_loop_end_val=length(sim_type4))
+      
+      rm2(se,pval,out_file_name,l)
+      eval(parse(text=paste("rm(",paste("reg",seq(1,nrow(regression_equations4)),sep="",collapse=","),")",sep="")))
+      
+    }
+    rm2(j)
+    
+  } 
+  
+  rm2(data_temp,data_temp.pd,i)
+  
+}
+
+rm2(data_year_groups4,dep_var4,model_type4,note4,sim_type4,temp_char_vec,regression_equations4,k)
+
+
+###############################################################################
+cat("FLOW VOLATILITY DATA", "\n")
+###############################################################################
+
+data_vol_other0 <- data_all[,c(identifier,"yr","sdpct_flow",
+                               "age_y","total_fee","performance_fee","management_fee","other_fee",
+                               "ari_ios","coleman_liau_ios","flesch_kincaid_ios","fog_ios","smog_ios",
+                               "avg_grade_level_ios","avg_grade_level_acf_ios","avg_grade_level_ac_ios",
+                               "all_similarity_050pct_ios","all_similarity_100pct_ios","all_similarity_250pct_ios","all_similarity_500pct_ios","all_similarity_750pct_ios","all_similarity_900pct_ios",
+                               "main_investment_strategy_similarity_050pct_ios","main_investment_strategy_similarity_100pct_ios","main_investment_strategy_similarity_250pct_ios",
+                               "main_investment_strategy_similarity_500pct_ios","main_investment_strategy_similarity_750pct_ios","main_investment_strategy_similarity_900pct_ios",
+                               "ari_ios_below_quartile1","ari_ios_above_quartile3",
+                               "coleman_liau_ios_below_quartile1","coleman_liau_ios_above_quartile3",
+                               "flesch_kincaid_ios_below_quartile1","flesch_kincaid_ios_above_quartile3",
+                               "fog_ios_below_quartile1","fog_ios_above_quartile3",
+                               "smog_ios_below_quartile1","smog_ios_above_quartile3",
+                               "avg_grade_level_ios_below_quartile1","avg_grade_level_ios_above_quartile3",
+                               "avg_grade_level_acf_ios_below_quartile1","avg_grade_level_acf_ios_above_quartile3",
+                               "avg_grade_level_ac_ios_below_quartile1","avg_grade_level_ac_ios_above_quartile3",
+                               "all_similarity_050pct_ios_below_quartile1","all_similarity_100pct_ios_below_quartile1","all_similarity_250pct_ios_below_quartile1",
+                               "all_similarity_500pct_ios_below_quartile1","all_similarity_750pct_ios_below_quartile1","all_similarity_900pct_ios_below_quartile1",
+                               "all_similarity_050pct_ios_above_quartile3","all_similarity_100pct_ios_above_quartile3","all_similarity_250pct_ios_above_quartile3",
+                               "all_similarity_500pct_ios_above_quartile3","all_similarity_750pct_ios_above_quartile3","all_similarity_900pct_ios_above_quartile3",
+                               "main_investment_strategy_similarity_050pct_ios_below_quartile1","main_investment_strategy_similarity_100pct_ios_below_quartile1",
+                               "main_investment_strategy_similarity_250pct_ios_below_quartile1","main_investment_strategy_similarity_500pct_ios_below_quartile1",
+                               "main_investment_strategy_similarity_750pct_ios_below_quartile1","main_investment_strategy_similarity_900pct_ios_below_quartile1",
+                               "main_investment_strategy_similarity_050pct_ios_above_quartile3","main_investment_strategy_similarity_100pct_ios_above_quartile3",
+                               "main_investment_strategy_similarity_250pct_ios_above_quartile3","main_investment_strategy_similarity_500pct_ios_above_quartile3",
+                               "main_investment_strategy_similarity_750pct_ios_above_quartile3","main_investment_strategy_similarity_900pct_ios_above_quartile3")]
+
+data_vol_other_dt0 <- data.table(data_vol_other0, key = "fund_id,yr")
+#data_vol_other_dt <- data_vol_other_dt0[, tail(.SD, 1), by = key(data_vol_other_dt0)]
+data_vol_other_dt <- data_vol_other_dt0[unique(data_vol_other_dt0[,key(data_vol_other_dt0), with = FALSE]), mult = 'last']
+data_vol_other <- data.frame(data_vol_other_dt,stringsAsFactors=FALSE)
+data_vol_other <- unique(data_vol_other)
+
+rm2(data_vol_other0,data_vol_other_dt0,data_vol_other_dt)
+
+data_vol_dt <- data.table(data_all[c(identifier,"yr","aum","monthly_ret")])
+setkeyv(data_vol_dt,c(identifier,"yr"))
+
+ret_annualized1 <- data_vol_dt[, list(aret1=monthly_ret+1),by="fund_id,yr"]
+ret_annualized2 <- ret_annualized1[, list(aret2=prod(aret1, na.rm=FALSE)),by="fund_id,yr"]
+ret_annualized3 <- ret_annualized2[, list(aret=aret2-1),by="fund_id,yr"]
+ret_annualized3 <- as.data.frame(ret_annualized3,stringsAsFactors=FALSE)
+ret_annualized <- data.frame(ret_annualized3,
+                             aret_lag1=NA,
+                             stringsAsFactors=FALSE)
+ret_annualized[,"aret_lag1"] <- create_lags2(ret_annualized,"aret",identifier,1)
+
+rm2(ret_annualized1,ret_annualized2,ret_annualized3)
+
+data_averaged0 <- data_vol_dt[, list(a_aum=mean(aum,na.rm=TRUE)),by="fund_id,yr"]
+data_averaged0 <- as.data.frame(data_averaged0,stringsAsFactors=FALSE)
+data_averaged <- data.frame(data_averaged0,
+                            a_aum_log=suppressWarnings(log(data_averaged0[,"a_aum"])),
+                            stringsAsFactors=FALSE)
+
+rm2(data_averaged0)
+
+data_vol0 <- merge(data_averaged, ret_annualized, 
+                   by.x=c(identifier,"yr"),by.y=c(identifier,"yr"),
+                   all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables = NA)
+
+rm2(data_averaged,ret_annualized)
+
+data_vol <- merge(data_vol0, data_vol_other, 
+                  by.x=c(identifier,"yr"),by.y=c(identifier,"yr"),
+                  all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables = NA)
+
+data_vol <- unknown_to_NA(data_vol,unknowns_strings)
+
+rm2(data_vol0,data_vol_other,data_vol_dt)
+
+
+###############################################################################
+cat("FLOW VOLATILITY REGRESSION", "\n")
+###############################################################################
+
+
+data_year_groups5 <- data.frame(matrix(NA, ncol=2, nrow=5, dimnames=list(c(), c("Start_yr","End_yr"))), 
+                                stringsAsFactors=FALSE)
+
+data_year_groups5[1,] <- c(start_year,end_year)
+data_year_groups5[2,] <- c(2000,2011)
+data_year_groups5[3,] <- c(1994,1999)
+data_year_groups5[4,] <- c(2000,2005)
+data_year_groups5[5,] <- c(2006,2011)
+
+
+dep_var5 <- c("sdpct_flow")
+
+model_type5 <- "pooling"
+
+note5 <- "vol_readability_similarity"
+
+sim_type5 <- c("050pct","100pct","250pct","500pct","750pct","900pct")
+
+#Regression equations
+regression_equations5 <- data.frame(grade=NA,
+                                    similarity=NA,
+                                    controls=NA,
+                                    quantile=NA,
+                                    fixed_effects=NA,
+                                    full_independent_vars=NA,
+                                    stringsAsFactors=FALSE)
+regression_equations5[1,] <- c("avg_grade_level_XXX",
+                               "all_similarity_YYYpct_XXX + main_investment_strategy_similarity_YYYpct_XXX",
+                               NA,NA,NA,NA)
+regression_equations5[2,] <- c("ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX",
+                               "all_similarity_YYYpct_XXX + main_investment_strategy_similarity_YYYpct_XXX",
+                               NA,NA,NA,NA)
+regression_equations5[3,] <- c("avg_grade_level_XXX",
+                               "all_similarity_YYYpct_XXX + main_investment_strategy_similarity_YYYpct_XXX",
+                               "aret_lag1 + a_aum_log + age_y + total_fee",
+                               NA,NA,NA)
+regression_equations5[4,] <- c("ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX",
+                               "all_similarity_YYYpct_XXX + main_investment_strategy_similarity_YYYpct_XXX",
+                               "aret_lag1 + a_aum_log + age_y + total_fee",
+                               NA,NA,NA)
+regression_equations5[5,] <- c(NA,NA,
+                               "aret_lag1 + a_aum_log + age_y + total_fee",
+                               "ari_ios_below_quartile1 + ari_ios_above_quartile3 + coleman_liau_ios_below_quartile1 + coleman_liau_ios_above_quartile3 + flesch_kincaid_ios_below_quartile1 + flesch_kincaid_ios_above_quartile3 + fog_ios_below_quartile1 + fog_ios_above_quartile3 + smog_ios_below_quartile1 + smog_ios_above_quartile3",
+                               NA,NA)
+regression_equations5[6,] <- c(NA,NA,
+                               "aret_lag1 + a_aum_log + age_y + total_fee",
+                               "avg_grade_level_ios_below_quartile1 + avg_grade_level_ios_above_quartile3",
+                               NA,NA)
+regression_equations5[7,] <- c(NA,NA,
+                               "aret_lag1 + a_aum_log + age_y + total_fee",
+                               "all_similarity_YYYpct_XXX_below_quartile1 + all_similarity_YYYpct_XXX_above_quartile3 + main_investment_strategy_similarity_YYYpct_XXX_below_quartile1 + main_investment_strategy_similarity_YYYpct_XXX_above_quartile3",
+                               NA,NA)
+regression_equations5[7,] <- c(NA,NA,
+                               "aret_lag1 + a_aum_log + age_y + total_fee",
+                               "all_similarity_YYYpct_XXX_below_quartile1 + all_similarity_YYYpct_XXX_above_quartile3 + main_investment_strategy_similarity_YYYpct_XXX_below_quartile1 + main_investment_strategy_similarity_YYYpct_XXX_above_quartile3",
+                               "factor(yr)",
+                               NA)
+regression_equations5 <- unknown_to_NA(regression_equations5,unknowns_strings)
+
+#Create Independent Variable Equation
+for (i in 1:nrow(regression_equations5))
+{
+  
+  temp_char_vec <- c(na.omit(as.character(unlist(regression_equations5[i,1:(ncol(regression_equations5)-1)], use.names=FALSE))))
+  regression_equations5[i,"full_independent_vars"] <- paste(temp_char_vec, sep="", collapse=" + ") 
+  
+}
+
+
+for (k in 1:nrow(data_year_groups5))
+{
+  #k <- 1
+  
+  cat("START YEAR:", data_year_groups5[k,1], "END YEAR:", data_year_groups5[k,2],"\n")
+  
+  data_temp <- data_vol[(data_vol[,"yr"]>=data_year_groups5[k,1] & data_vol[,"yr"]<=data_year_groups5[k,2]),]
+  data_temp.pd <- pdata.frame(data_temp, index=c(identifier, "yr"), drop.index=TRUE, row.names=TRUE)
+  
+  for (i in 1:length(dep_var5))
+  {
+    #i <- 1
+    
+    for (j in 1:length(sim_type5))
+    {
+      #j <- 1
+      #j <- 2
+      
+      out_file_name <- paste("reg_compare_plm",dep_var5[i],data_year_groups5[k,1],data_year_groups5[k,2],note5,sim_type5[j],sep="_")
+      
+      #models <- rep( list(list()), nrow(regression_equations5) )
+      se <- rep( list(list()), nrow(regression_equations5) )
+      pval <- rep( list(list()), nrow(regression_equations5) )
+      
+      for (l in 1:nrow(regression_equations5))
+      {
+        #l <- 1
+        
+        ind_vars_reg0 <- regression_equations5[l,"full_independent_vars"]
+        ind_vars_reg0 <- gsub("XXX","ios",ind_vars_reg0,ignore.case = TRUE)
+        ind_vars_reg0 <- gsub("YYYpct",sim_type5[j],ind_vars_reg0,ignore.case = TRUE)
+        reg0 <- plm(as.formula(paste(dep_var5[i],ind_vars_reg0,sep="~")),data=data_temp.pd,model=model_type5)
+        #reg0 <- lm(as.formula(paste(dep_var5[i],ind_vars_reg0,sep="~")), data_temp)
+        #reg0_rse <- coeftest(reg0, vcov=function(x) vcovHC(x, cluster="group", type="HC1"))
+        #reg0_rse <- cl.plm(data_temp, reg0, data_temp[,identifier])
+        #reg0_rse <- coeftest(reg0, vcov=function(x) vcovDC(x, type="HC1"))
+        reg0_rse <- mcl.plm(data_temp, reg0, data_temp[,identifier], data_temp[,"yr"])
+        #reg0_rse <- mcl(data_temp,reg0, data_temp[,identifier], data_temp[,"yr"])
+        #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,2]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+        #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,4]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+        
+        #models[[l]] <- reg0
+        se[[l]] <- reg0_rse[,4]
+        pval[[l]] <- reg0_rse[,4]
+        
+        assign(paste("reg",l,sep=""), reg0, envir = .GlobalEnv)
+        #assign(paste("reg",l,"_rse",sep=""), reg0_rse, envir = .GlobalEnv)
+        
+        rm2(ind_vars_reg0,reg0,reg0_rse)
+        
+      }
+      
+      htmlreg(l=eval(parse(text=paste("list(",paste("reg",seq(1,nrow(regression_equations5)),sep="",collapse=","),")",sep=""))), 
+              model.names=paste("(",seq(1,nrow(regression_equations5)),")",sep=""),
+              override.se=se,
+              override.pval=pval,
+              stars=c(0.01, 0.05, 0.1), digits=3, 
+              caption="Effect of Readability Similarity on Hedge Fund Flow Volatility – Multivariate",
+              file=paste(output_directory,out_file_name,".doc",sep=""))
+      
+      progress_function(outer_loop_count=i, outer_loop_start_val=1, outer_loop_end_val=length(dep_var5), 
+                        inner_loop_count=j, inner_loop_start_val=1, inner_loop_end_val=length(sim_type5))
+      
+      rm2(se,pval,out_file_name,l)
+      
+    }
+    rm2(j)
+    
+  } 
+  
+  rm2(data_temp,data_temp.pd,i)
+  
+}
+
+rm2(data_year_groups5,dep_var5,model_type5,note5,sim_type5,temp_char_vec,regression_equations5,k)
+
+
+
+
+
+
+
+###############################################################################
+cat("PRINCIPAL COMPONENT - READABILITY", "\n")
+###############################################################################
+
+pc_scores_loadings <- function(data_in,variables,suffix,note,tol){
+  
+  #data_in <- data_all
+  #variables <- c("ari_ios","coleman_liau_ios","flesch_kincaid_ios","fog_ios","smog_ios")
+  #suffix <- "ios"
+  #note <- "Readability"
+  #tol=NULL
+  #tol=0.3
+  
+  title_full <- ifelse(is.null(tol), paste(note," (Tol = Null)",sep=""), paste(note," (Tol = ",tol,")",sep=""))
+  
+  pc_temp <- prcomp(~ ., data=data_in[,variables], na.action=na.omit, scale=TRUE)
+  
+  #Plotting the variances
+  plot(pc_temp, main = title_full)
+  barplot(pc_temp$sdev/pc_temp$sdev[1], main = title_full)
+  
+  pc_sum <- summary(pc_temp) 
+  
+  #Importance (NOT SURE IF AVERAGE IS MAKES SINCE... just using it for sign)
+  pc_importance <- pc_sum$importance
+  pc_importance <- as.matrix(pc_importance)
+  pc_importance <- data.frame(type="Importance",
+                              var=row.names(pc_importance),
+                              pc_importance,
+                              PC_avg=rowMeans(pc_importance),
+                              stringsAsFactors=FALSE)
+  row.names(pc_importance)  <- seq(nrow(pc_importance))
+  
+  #Loadings (NOT SURE IF AVERAGE IS MAKES SINCE... just using it for sign)
+  pc_loadings <- pc_sum$rotation
+  pc_loadings <- as.matrix(pc_loadings)
+  pc_loadings <- data.frame(type="Loadings",
+                            var=row.names(pc_loadings),
+                            pc_loadings,
+                            PC_avg=rowMeans(pc_loadings),
+                            stringsAsFactors=FALSE)
+  row.names(pc_loadings)  <- seq(nrow(pc_loadings))
+  
+  #Importance and Loadings
+  pc_importance_loadings <- rbind(pc_importance,pc_loadings)
+  row.names(pc_importance_loadings)  <- seq(nrow(pc_importance_loadings))
+  rm(pc_importance,pc_loadings)
+  
+  #Center
+  pc_center <- pc_sum$center
+  pc_center <- as.matrix(pc_center)
+  pc_center <- data.frame(var=row.names(pc_center),
+                          pc_center,
+                          stringsAsFactors=FALSE)
+  row.names(pc_center)  <- seq(nrow(pc_center))
+  
+  #Scale
+  pc_scale <- pc_sum$scale
+  pc_scale <- as.matrix(pc_scale)
+  pc_scale <- data.frame(var=row.names(pc_scale),
+                         pc_scale,
+                         stringsAsFactors=FALSE)
+  row.names(pc_scale)  <- seq(nrow(pc_scale))
+  
+  #Center and Scale
+  pc_center_scale <- merge(pc_center, pc_scale, 
+                           by.x="var", by.y="var", 
+                           all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables = NA)
+  row.names(pc_center_scale) <- seq(nrow(pc_center_scale))
+  rm(pc_center,pc_scale)
+  
+  #Scores
+  pc_scores <- pc_sum$x
+  pc_scores <- as.matrix(pc_scores)
+  colnames(pc_scores) <- paste(colnames(pc_scores),suffix,sep="_")
+  pc_scores <- data.frame(pc_scores,
+                          stringsAsFactors=FALSE)
+  row.names(pc_scores)  <- seq(nrow(pc_scores))
+  
+  #Combine data
+  comb_list <- list("Importance_and_Loadings" = pc_importance_loadings, "Center_and_Scale" = pc_center_scale, "Scores" = pc_scores)
+  
+  rm(pc_importance_loadings,pc_center_scale,pc_scores)
+  
+  return(comb_list)
+  
+}
+
+pca_text_read_vars_ios <- c("ari_ios","coleman_liau_ios","flesch_kincaid_ios","fog_ios","smog_ios")
+
+#pc_read_ios <- pc_scores_loadings(data_all,pca_text_read_vars_ios,"ios","Readability", NULL)
+pc_read_ios <- pc_scores_loadings(data_all,pca_text_read_vars_ios,"ios","Readability", 0.2)
+
+pc_read_ios_loadings <- pc_read_ios$Importance_and_Loadings
+pc_read_ios_center <- pc_read_ios$Center_and_Scale
+pc_read_ios_scores <- pc_read_ios$Scores
+
+rm2(pca_text_read_vars_ios,pc_read_ios,pc_read_ios_loadings,pc_read_ios_center)
+
+
+###############################################################################
+cat("PRINCIPAL COMPONENT - SIMILARITY", "\n")
+###############################################################################
+
+#pca_text_sim_vars_ios <- c("all_similarity_050pct_ios","all_similarity_100pct_ios","all_similarity_250pct_ios","all_similarity_500pct_ios","all_similarity_750pct_ios","all_similarity_900pct_ios",
+#                           "main_investment_strategy_similarity_050pct_ios","main_investment_strategy_similarity_100pct_ios","main_investment_strategy_similarity_250pct_ios",
+#                           "main_investment_strategy_similarity_500pct_ios","main_investment_strategy_similarity_750pct_ios","main_investment_strategy_similarity_900pct_ios")
+pca_text_sim_vars_ios <- c("all_similarity_050pct_ios","main_investment_strategy_similarity_050pct_ios")
+
+#pc_sim_ios <- pc_scores_loadings(data_all,pca_text_sim_vars_ios,"ios","Similarity", NULL)
+pc_sim_ios <- pc_scores_loadings(data_all,pca_text_sim_vars_ios,"ios","Similarity", 0.4 )
+
+pc_sim_ios_loadings <- pc_sim_ios$Importance_and_Loadings
+pc_sim_ios_center <- pc_sim_ios$Center_and_Scale
+pc_sim_ios_scores <- pc_sim_ios$Scores
+
+rm2(pca_text_sim_vars_ios,pc_sim_ios,pc_sim_ios_loadings,pc_sim_ios_center)
+
+
+###############################################################################
+cat("PRINCIPAL COMPONENT - READABILITY & SIMILARITY", "\n")
+###############################################################################
+
+# pca_text_both_vars_ios <- c("ari_ios","coleman_liau_ios","flesch_kincaid_ios","fog_ios","smog_ios",
+#                             "all_similarity_050pct_ios","all_similarity_100pct_ios","all_similarity_250pct_ios","all_similarity_500pct_ios","all_similarity_750pct_ios","all_similarity_900pct_ios",
+#                             "main_investment_strategy_similarity_050pct_ios","main_investment_strategy_similarity_100pct_ios","main_investment_strategy_similarity_250pct_ios",
+#                             "main_investment_strategy_similarity_500pct_ios","main_investment_strategy_similarity_750pct_ios","main_investment_strategy_similarity_900pct_ios")
+pca_text_both_vars_ios <- c("ari_ios","coleman_liau_ios","flesch_kincaid_ios","fog_ios","smog_ios",
+                            "all_similarity_050pct_ios","main_investment_strategy_similarity_050pct_ios")
+
+#pc_both_ios <- pc_scores_loadings(data_all,pca_text_both_vars_ios,"ios","Readability and Similarity", NULL)
+pc_both_ios <- pc_scores_loadings(data_all,pca_text_both_vars_ios,"ios","Readability and Similarity", 0.2)
+
+pc_both_ios_loadings <- pc_both_ios$Importance_and_Loadings
+pc_both_ios_center <- pc_both_ios$Center_and_Scale
+pc_both_ios_scores <- pc_both_ios$Scores
+
+rm2(pca_text_both_vars_ios,pc_both_ios,pc_both_ios_loadings,pc_both_ios_center)
+
+
+###############################################################################
+cat("PRINCIPAL COMPONENT DATA - MERGE", "\n")
+###############################################################################
+
+data_all_pc_rn <- data.frame(rn=as.integer(row.names(data_all)),
+                             data_all,
+                             stringsAsFactors=FALSE)
+
+ios_scores_rn <- data.frame(rn=as.integer(row.names(pc_both_ios_scores)),
+                            pc_both_ios_scores,
+                            stringsAsFactors=FALSE)
+
+data_all_pc <- merge(data_all_pc_rn, ios_scores_rn, 
+                     by.x="rn", by.y="rn", 
+                     all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
+
+data_all_pc <- data_all_pc[order(data_all_pc[,"rn"]),]
+data_all_pc <- data_all_pc[,!(colnames(data_all_pc) %in% "rn")]
+data_all_pc <- data_all_pc[order(data_all_pc[,identifier],
+                                 data_all_pc[,"yr"],
+                                 data_all_pc[,"month"]),]
+row.names(data_all_pc) <- seq(nrow(data_all_pc))
+
+rm2(data_all_pc_rn,ios_scores_rn)
+rm2(pc_read_ios_scores,pc_sim_ios_scores,pc_both_ios_scores)
+
+
+###############################################################################
+cat("PRINCIPAL COMPONENT REGRESSION", "\n")
+###############################################################################
+
+
+# data_pc.pd <- pdata.frame(data_all_pc, index=c(identifier, "yr_month"), drop.index=TRUE, row.names=TRUE)
+# dep_var_pc <- c("pflow")
+# 
+# index_vars_pc <- c(identifier, "yr_month")
+# controls_pc <- "mktadjret_agglag1 + mktadjret_agglag2 + mktadjret_agglag3 + sddret_agglag1 + age_y + log_mtna_agg"
+# #fe_pc <- "factor(yr)"
+# fe_pc <- "factor(branding_name) + factor(yr)"
+# 
+# model_type_pc <- "pooling"
+# note <- "pca_sep_sim_good"
+# 
+# 
+# for (i in 1:length(dep_var_pc))
+# {
+#   #i <- 1
+#   
+#   out_file_name <- paste("reg_compare_plm",dep_var_pc[i],deparse(substitute(data_all_pc)),note,sep="_")
+#   
+#   if (dep_var_pc[i]=="pflow")
+#   {
+#     #vars_ext <- "pflow_lag1 + pflow_lag2 + pflow_lag3"
+#     vars_ext <- ""
+#     
+#   } else if (dep_var_pc[i]=="nflow")
+#   {
+#     #vars_ext <- "nflow_lag1 + nflow_lag2 + nflow_lag3"
+#     vars_ext <- ""
+#     
+#   } else
+#   {
+#     cat("ERROR", "\n")
+#   }
+#   
+#   
+#   ind_vars_reg0_pc <- "PC1_ios + PC2_ios + PC3_ios + PC4_ios"
+#   reg0_pc <- plm(as.formula(paste(dep_var_pc[i],ind_vars_reg0_pc,sep="~")), data_pc.pd,model=model_type_pc)
+#   #reg0_rse_pc <- coeftest(reg0, vcov=function(x) vcovDC(x, type="HC1"))
+#   reg0_rse_pc <- mcl.plm(data_all_pc,reg0_pc, data_all_pc[,identifier], data_all_pc[,"month"])
+#   #screenreg(list(reg0_pc),digits=3,model.names=c("(1)"),override.se=list(reg0_rse_pc[,2]),override.pval=list(reg0_rse_pc[,4]),stars=c(0.01,0.05,0.1))
+#   
+#   ind_vars_reg2_pc <- "PC1_pr + PC2_pr + PC3_pr + PC4_pr"
+#   reg2_pc <- plm(as.formula(paste(dep_var_pc[i],ind_vars_reg2_pc,sep="~")), data_pc.pd,model=model_type_pc)
+#   #reg2_rse_pc <- coeftest(reg2, vcov=function(x) vcovDC(x, type="HC1"))
+#   reg2_rse_pc <- mcl.plm(data_all_pc,reg2_pc, data_all_pc[,identifier], data_all_pc[,"month"])
+#   #screenreg(list(reg2_pc),digits=3,model.names=c("(1)"),override.se=list(reg2_rse_pc[,2]),override.pval=list(reg2_rse_pc[,4]),stars=c(0.01,0.05,0.1))
+#   
+#   ind_vars_reg3_pc <- "PC1_ios + PC2_ios + PC3_ios + PC4_ios + PC1_pr + PC2_pr + PC3_pr + PC4_pr"
+#   reg3_pc <- plm(as.formula(paste(dep_var_pc[i],ind_vars_reg3_pc,sep="~")), data_pc.pd,model=model_type_pc)
+#   #reg3_rse_pc <- coeftest(reg3, vcov=function(x) vcovDC(x, type="HC1"))
+#   reg3_rse_pc <- mcl.plm(data_all_pc,reg3_pc, data_all_pc[,identifier], data_all_pc[,"month"])
+#   #screenreg(list(reg3_pc),digits=3,model.names=c("(1)"),override.se=list(reg3_rse_pc[,2]),override.pval=list(reg3_rse_pc[,4]),stars=c(0.01,0.05,0.1))
+#   
+#   ind_vars_reg4_pc <- paste(ind_vars_reg3_pc,controls_pc,sep="+")
+#   reg4_pc <- plm(as.formula(paste(dep_var_pc[i],ind_vars_reg4_pc,sep="~")), data_pc.pd,model=model_type_pc)
+#   reg4_rse_pc <- mcl.plm(data_all_pc,reg4_pc, data_all_pc[,identifier], data_all_pc[,"month"])
+#   #screenreg(list(reg4_pc),digits=3,model.names=c("(1)"),override.se=list(reg4_rse_pc[,2]),override.pval=list(reg4_rse_pc[,4]),stars=c(0.01,0.05,0.1))
+#   
+#   ind_vars_reg5_pc <- paste(ind_vars_reg3_pc,controls_pc,fe_pc,sep="+")
+#   #ind_vars_reg5_pc <- paste(ind_vars_reg3_pc,controls_pc,sep="+")
+#   #reg5_pc <- plm(as.formula(paste(dep_var_pc[i],ind_vars_reg5_pc,sep="~")), data_pc.pd,model=model_type_pc)
+#   #reg5_rse_pc <- mcl.plm(data_all_pc,reg5_pc, data_all_pc[,identifier], data_all_pc[,"month"])
+#   reg5_pc <- lm(as.formula(paste(dep_var_pc[i],ind_vars_reg5_pc,sep="~")), data_all_pc)
+#   reg5_rse_pc <- mcl(data_all_pc,reg5_pc, data_all_pc[,identifier], data_all_pc[,"month"])
+#   #screenreg(list(reg5_pc),digits=3,model.names=c("(1)"),override.se=list(reg5_rse_pc[,2]),override.pval=list(reg5_rse_pc[,4]),stars=c(0.01,0.05,0.1))
+#   
+#   htmlreg(list(reg0_pc,reg2_pc,reg3_pc,reg4_pc,reg5_pc), 
+#           caption="The Importance of Clustering Standard Errors", digits=3, 
+#           model.names=c("(1)","(2)","(3)","(4)","(5)"),
+#           override.se=list(reg0_rse_pc[,2],reg2_rse_pc[,2],reg3_rse_pc[,2],reg4_rse_pc[,2],reg5_rse_pc[,2]),
+#           override.pval=list(reg0_rse_pc[,4],reg2_rse_pc[,4],reg3_rse_pc[,4],reg4_rse_pc[,4],reg5_rse_pc[,4]),
+#           stars=c(0.01, 0.05, 0.1),
+#           file=paste(output_directory,out_file_name,".doc",sep=""))
+#   
+#   rm2(ind_vars_reg0_pc,ind_vars_reg2_pc,ind_vars_reg3_pc,ind_vars_reg4_pc,ind_vars_reg5_pc,out_file_name)
+#   rm2(reg0_pc,reg2_pc,reg3_pc,reg4_pc,reg5_pc,reg0_rse_pc,reg2_rse_pc,reg3_rse_pc,reg4_rse_pc,reg5_rse_pc)
+#   
+# } 
+
+
+
+
+# 
+# data_year_groups4 <- data.frame(matrix(NA, ncol=2, nrow=5, dimnames=list(c(), c("Start_yr","End_yr"))), 
+#                                 stringsAsFactors=FALSE)
+# data_year_groups4[1,] <- c(1992,2012)
+# data_year_groups4[2,] <- c(2000,2011)
+# data_year_groups4[3,] <- c(1992,1998)
+# data_year_groups4[4,] <- c(1999,2005)
+# data_year_groups4[5,] <- c(2006,2012)
+# 
+# #dep_var4 <- c("pflow","nflow")
+# dep_var4 <- c("pflow")
+# 
+# model_type4 <- "pooling"
+# 
+# note4 <- "pc"
+# 
+# #Regression equations
+# regression_equations4 <- data.frame(grade=NA,
+#                                     similarity=NA,
+#                                     controls=NA,
+#                                     quantile=NA,
+#                                     fixed_effects=NA,
+#                                     full_independent_vars=NA,
+#                                     stringsAsFactors=FALSE)
+# regression_equations4[1,] <- c("avg_grade_level_XXX",
+#                                NA,NA,NA,NA,NA)
+# regression_equations4[2,] <- c("ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX",
+#                                NA,NA,NA,NA,NA)
+# regression_equations4[3,] <- c("avg_grade_level_XXX",
+#                                NA,
+#                                "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + total_fee",
+#                                NA,NA,NA)
+# regression_equations4[4,] <- c("ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX",
+#                                NA,
+#                                "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + total_fee",
+#                                NA,NA,NA)
+# regression_equations4[5,] <- c("avg_grade_level_XXX",
+#                                NA,
+#                                "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + management_fee + performance_fee + other_fee",
+#                                NA,NA,NA)
+# regression_equations4[6,] <- c("ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX",
+#                                NA,
+#                                "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + management_fee + performance_fee + other_fee",
+#                                NA,NA,NA)
+# regression_equations4[7,] <- c("ari_XXX + coleman_liau_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX",
+#                                NA,
+#                                "mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + management_fee + performance_fee + other_fee + flagship_bin + closed_bin + dead_bin",
+#                                NA,NA,NA)
+# 
+# regression_equations4 <- unknown_to_NA(regression_equations4,unknowns_strings)
+# #Create Independent Variable Equation
+# for (i in 1:nrow(regression_equations4))
+# {
+#   
+#   temp_char_vec <- c(na.omit(as.character(unlist(regression_equations4[i,1:(ncol(regression_equations4)-1)], use.names=FALSE))))
+#   regression_equations4[i,"full_independent_vars"] <- paste(temp_char_vec, sep="", collapse=" + ") 
+#   
+# }
+# 
+# for (k in 1:nrow(data_year_groups4))
+# {
+#   #k <- 1
+#   #k <- 2
+#   
+#   cat("START YEAR:", data_year_groups4[k,1], "END YEAR:", data_year_groups4[k,2],"\n")
+#   
+#   data_temp <- data_all[(data_all[,"yr"]>=data_year_groups4[k,1] & data_all[,"yr"]<=data_year_groups4[k,2]),]
+#   data_temp.pd <- pdata.frame(data_temp, index=c(identifier, "yr_month"), drop.index=TRUE, row.names=TRUE)
+#   
+#   for (i in 1:length(dep_var4))
+#   {
+#     #i <- 1
+#     
+#     #out_file_name <- paste("reg_compare_plm",dep_var4[i],deparse(substitute(data_all)),note4,sep="_")
+#     out_file_name <- paste("reg_compare_plm",dep_var4[i],data_year_groups4[k,1],data_year_groups4[k,2],note4,sep="_")
+#     
+#     #models <- rep( list(list()), nrow(regression_equations4) )
+#     se <- rep( list(list()), nrow(regression_equations4) )
+#     pval <- rep( list(list()), nrow(regression_equations4) )
+#     
+#     for (l in 1:nrow(regression_equations4))
+#     {
+#       #l <- 1
+#       
+#       ind_vars_reg0 <- regression_equations4[l,"full_independent_vars"]
+#       ind_vars_reg0 <- gsub("XXX","ios",ind_vars_reg0,ignore.case = TRUE)
+#       reg0 <- plm(as.formula(paste(dep_var4[i],ind_vars_reg0,sep="~")),data=data_temp.pd,model=model_type4)
+#       #reg0 <- lm(as.formula(paste(dep_var4[i],ind_vars_reg0,sep="~")), data_temp)
+#       #reg0_rse <- coeftest(reg0, vcov=function(x) vcovHC(x, cluster="group", type="HC1"))
+#       #reg0_rse <- cl.plm(data_temp, reg0, data_temp[,identifier])
+#       #reg0_rse <- coeftest(reg0, vcov=function(x) vcovDC(x, type="HC1"))
+#       reg0_rse <- mcl.plm(data_temp, reg0, data_temp[,identifier], data_temp[,"month"])
+#       #reg0_rse <- mcl(data_temp,reg0, data_temp[,identifier], data_temp[,"month"])
+#       #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,2]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+#       #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,4]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+#       
+#       #models[[l]] <- reg0
+#       se[[l]] <- reg0_rse[,4]
+#       pval[[l]] <- reg0_rse[,4]
+#       
+#       assign(paste("reg",l,sep=""), reg0, envir = .GlobalEnv)
+#       #assign(paste("reg",l,"_rse",sep=""), reg0_rse, envir = .GlobalEnv)
+#       
+#       rm2(ind_vars_reg0,reg0,reg0_rse)
+#       
+#     }
+#     
+#     htmlreg(l=eval(parse(text=paste("list(",paste("reg",seq(1,nrow(regression_equations4)),sep="",collapse=","),")",sep=""))), 
+#             model.names=paste("(",seq(1,nrow(regression_equations4)),")",sep=""),
+#             override.se=se,
+#             override.pval=pval,
+#             stars=c(0.01, 0.05, 0.1), digits=3, 
+#             caption="Effect of Readability on Hedge Fund Flows – Multivariate",
+#             file=paste(output_directory,out_file_name,".doc",sep=""))
+#     
+#     #custom.names
+#     
+#     progress_function(outer_loop_count=k, outer_loop_start_val=1, outer_loop_end_val=nrow(data_year_groups4), 
+#                       inner_loop_count=i, inner_loop_start_val=1, inner_loop_end_val=length(dep_var4))
+#     
+#     rm2(se,pval,out_file_name,l)
+#     eval(parse(text=paste("rm(",paste("reg",seq(1,nrow(regression_equations4)),sep="",collapse=","),")",sep="")))
+#     
+#   } 
+#   
+#   rm2(data_temp,data_temp.pd,i)
+#   
+# }
+# 
+# rm2(data_year_groups4,dep_var4,model_type4,note4,temp_char_vec,regression_equations4,k)
+# 
+# 
