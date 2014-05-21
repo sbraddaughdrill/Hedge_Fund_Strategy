@@ -134,7 +134,7 @@ cat("IMPORT DATA", "\n")
 
 identifier <- "fund_id"
 
-start_year <- 1994
+beg_year <- 1994
 end_year <- 2011
 
 descriptive_stats_tables <- ListTables(descriptive_stats_db)
@@ -223,7 +223,7 @@ EurekahedgeHF_Excel_aca_full2[,"fund_ret_mkt_neg"] <- ifelse(is.na(EurekahedgeHF
 EurekahedgeHF_Excel_aca_full2[,"yr_month"] <- paste(EurekahedgeHF_Excel_aca_full2[,"yr"],sprintf("%02d", EurekahedgeHF_Excel_aca_full2[,"month"]),sep="_")
 
 #Trim Years
-monthly_data_all_yr_trim <- EurekahedgeHF_Excel_aca_full2[(EurekahedgeHF_Excel_aca_full2[,"yr"]>=start_year & EurekahedgeHF_Excel_aca_full2[,"yr"]<=end_year),]
+monthly_data_all_yr_trim <- EurekahedgeHF_Excel_aca_full2[(EurekahedgeHF_Excel_aca_full2[,"yr"]>=beg_year & EurekahedgeHF_Excel_aca_full2[,"yr"]<=end_year),]
 
 rm2(EurekahedgeHF_Excel_aca_full2)
 
@@ -548,7 +548,7 @@ text_stats_ios_full1 <- text_stats_ios_full[!(text_stats_ios_full[,identifier] %
 
 rm2(text_stats_ios_full)
 
-text_stats_ios_yr_trim <- text_stats_ios_full1[(text_stats_ios_full1[,"yr"]>=start_year & text_stats_ios_full1[,"yr"]<=end_year),]
+text_stats_ios_yr_trim <- text_stats_ios_full1[(text_stats_ios_full1[,"yr"]>=beg_year & text_stats_ios_full1[,"yr"]<=end_year),]
 
 rm2(text_stats_ios_full1)
 
