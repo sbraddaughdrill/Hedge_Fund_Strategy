@@ -332,8 +332,8 @@ regression_equations1_1 <- list(time_frame=list(c(beg_year,2000,2000,2006),
 regression_equations1_2 <- list(time_frame=list(c(beg_year,2000,2000,2006),
                                                 c(end_year,2011,2005,2011)),
                                 #time_frame=list(c(beg_year),c(end_year)),
-                                dep_var=c("mktadjret","exret"),
-                                #dep_var=c("mktadjret","exret","int_nonloading_ff_24","int_loading_ff_24","int_nonloading_ffm_24","int_loading_ffm_24","int_nonloading_ffml_24","int_loading_ffml_24","int_nonloading_hf7_24","int_loading_hf7_24","int_nonloading_hf8_24","int_loading_hf8_24"),
+                                dep_var=c("mktadjret","exret","int_nonloading_ff_24","int_loading_ff_24","int_nonloading_ffm_24","int_loading_ffm_24","int_nonloading_ffml_24","int_loading_ffml_24","int_nonloading_hf7_24","int_loading_hf7_24","int_nonloading_hf8_24","int_loading_hf8_24"),
+                                #dep_var=c("mktadjret","exret"),
                                 models=c("                                                 avg_grade_level_XXX",
                                          "ari_XXX + flesch_kincaid_XXX + fog_XXX + smog_XXX + coleman_liau_XXX",
                                          "                                                 avg_grade_level_XXX + mktadjret_lag1 + mktadjret_lag2 + mktadjret_lag3 + mktadjret_lag1_sq + age_y + log_aum_lag1 + management_fee + other_fee",
@@ -357,7 +357,110 @@ regression_correlation1 <- regression_correlation(x=regression_equations_expand1
                                                                     "mktadjret_lag1","mktadjret_lag2","mktadjret_lag3","mktadjret_lag4",
                                                                     "exret_lag1","exret_lag2","exret_lag3","exret_lag4"))
 
-rm2(output_directory_reg_readability,regression_equations_comb1,data_year_groups1)
+
+d_ply(.data=regression_equations_expand1, .variables=c("date_index"),
+      .fun = function(x,data_all,id,output_dir){
+        
+        #x <- regression_equations_expand1[regression_equations_expand1[,"date_index"]==1,]
+        #x <- regression_equations_expand1[regression_equations_expand1[,"date_index"]==2,]
+        #data_all <- data_all
+        #id <- identifier
+        #output_dir <- output_directory_reg_readability
+        
+        Start_yr_temp <- as.integer(unique(x["beg_years"]))
+        End_yr_temp <- as.integer(unique(x["end_years"]))
+        
+        cat("\n","START YEAR:", Start_yr_temp, "END YEAR:", End_yr_temp,"\n")
+        
+        data_temp <- data_all
+        data_temp.pd <- pdata.frame(data_all, index=c(id, "yr_month"), drop.index=TRUE, row.names=TRUE)
+        
+        data_temp <- data_temp[(data_temp[,"yr"]>=Start_yr_temp & data_temp[,"yr"]<=End_yr_temp),]
+        row.names(data_temp) <- seq(nrow(data_temp))
+        
+        data_temp.pd <- pdata.frame(data_temp, index=c(id, "yr_month"), drop.index=TRUE, row.names=TRUE)
+        
+        d_ply(.data=x, .variables=c("list_index","dep_index"), 
+              .fun = function(y,data_temp.pd,data_temp,name_short,id,output_dir){
+                
+                #y <- x[(x[,"list_index"]==1 & x[,"dep_index"]==1),]
+                #name_short <- paste(Start_yr_temp,End_yr_temp,sep="_")
+                
+                dep_var_temp <- unique(y[,c("dep_var")])
+                note_temp <- unique(y[,c("note")])
+                
+                model_type_temp <- unique(y[,c("model_type")])
+                
+                out_file_name <- paste("reg_compare_plm",dep_var_temp,name_short,note_temp,sep="_")
+                
+                note_temp_clean1 <- gsub("_", " ", note_temp, perl=TRUE)
+                note_temp_clean2 <- gsub("(^|[[:space:]])([[:alpha:]])", "\\1\\U\\2", note_temp_clean1, perl=TRUE)
+                
+                regressions_temp <- dlply(.data=y, .variables="model_index", 
+                                          .fun = function(z,data_temp.pd,data_temp,model_type_temp,id){ 
+                                            
+                                            #l <- 1
+                                            #l <- 2
+                                            #z <- y[l,]
+                                            
+                                            model_count <- as.integer(unique(z[,c("model_index")]))
+                                            
+                                            ind_vars_reg0 <- z[,"indep_var"]
+                                            ind_vars_reg0 <- gsub("XXX","ios",ind_vars_reg0,ignore.case = TRUE)
+                                            reg0 <- plm(as.formula(paste(z[,"dep_var"],ind_vars_reg0,sep="~")),data=data_temp.pd,model=model_type_temp)
+                                            #reg0 <- lm(as.formula(paste(z[,"dep_var"],ind_vars_reg0,sep="~")), data_temp)
+                                            #reg0_rse <- coeftest(reg0, vcov=function(x) vcovHC(x, cluster="group", type="HC1"))
+                                            #reg0_rse <- cl.plm(data_temp, reg0, data_temp[,id])
+                                            #reg0_rse <- coeftest(reg0, vcov=function(x) vcovDC(x, type="HC1"))
+                                            reg0_rse <- mcl.plm(data_temp, reg0, data_temp[,id], data_temp[,"month"])
+                                            #reg0_rse <- mcl(data_temp,reg0, data_temp[,id], data_temp[,"month"])
+                                            #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,2]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+                                            #screenreg(list(reg0),digits=3,model.names=c("(1)"),override.se=list(reg0_rse[,4]),override.pval=list(reg0_rse[,4]),stars=c(0.01,0.05,0.1))
+                                            
+                                            rm(model_count,ind_vars_reg0)
+                                            
+                                            return(list(reg0,reg0_rse))
+                                            
+                                          }, 
+                                          data_temp.pd=data_temp.pd, data_temp=data_temp, model_type_temp=model_type_temp, id=id,
+                                          .progress = "none", .inform = FALSE, .drop = TRUE, .parallel = FALSE, .paropts = NULL)
+                
+                
+                reg <- sapply(regressions_temp, "[",1)
+                
+                rse <- sapply(regressions_temp, "[[",2)
+                
+                se <- llply(.data=rse, .fun = function(w){w[,4]}, 
+                            .progress = "none", .inform = FALSE,.parallel = FALSE, .paropts = NULL)
+                
+                pval <- llply(.data=rse, .fun = function(w){w[,4]}, 
+                              .progress = "none", .inform = FALSE,.parallel = FALSE, .paropts = NULL)
+                
+                cat("\n")
+                
+                htmlreg(l=reg, 
+                        model.names=paste("(",seq(1,nrow(y)),")",sep=""),
+                        override.se=se,
+                        override.pval=pval,
+                        stars=c(0.01, 0.05, 0.1), digits=3, 
+                        caption=paste("Effect Of",note_temp_clean2,"On Hedge Fund Flows – Multivariate",sep=" "),
+                        file=paste(output_dir,out_file_name,".doc",sep=""))
+                
+                rm(dep_var_temp,note_temp,model_type_temp,out_file_name,note_temp_clean1,note_temp_clean2)
+                rm(regressions_temp,reg,rse,se,pval)
+                
+              }, 
+              data_temp.pd=data_temp.pd, data_temp=data_temp, name_short=paste(Start_yr_temp,End_yr_temp,sep="_"),id=id,output_dir=output_dir,
+              .progress = "text", .inform = FALSE, .drop = TRUE, .parallel = FALSE, .paropts = NULL)
+        
+        rm(Start_yr_temp,End_yr_temp,data_temp,data_temp.pd)
+        
+      },
+      data_all=data_all,id=identifier,output_dir=output_directory_reg_readability,
+      .progress = "text", .inform = FALSE,.print = FALSE, .parallel = FALSE, .paropts = NULL)
+
+
+rm2(output_directory_reg_readability,regression_equations_comb1)
 
 
 ###############################################################################

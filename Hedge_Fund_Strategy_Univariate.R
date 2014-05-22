@@ -137,8 +137,8 @@ identifier <- "fund_id"
 start_year <- 1994
 end_year <- 2011
 
-descriptive_stats_tables <- ListTables(descriptive_stats_db)
-descriptive_stats_fields <- ListFields(descriptive_stats_db)
+#descriptive_stats_tables <- ListTables(descriptive_stats_db)
+#descriptive_stats_fields <- ListFields(descriptive_stats_db)
 
 data_all <- read.csv(file=paste(output_directory,"data_all",".csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
 
@@ -571,3 +571,4 @@ for (l in 1:length(univariate_vars_dep))
 }
 rm2(l,quantile_type_binary,quantile_nums_binary,data_all_univariate_binary,univariate_data_year_groups_binary)
 rm2(output_directory_univariate_binary,quantile_nums_binary_group_var)
+

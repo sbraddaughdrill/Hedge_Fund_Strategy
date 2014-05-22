@@ -822,6 +822,41 @@ rm2(data2_no_na,winsorize_vars,i)
 
 
 ###############################################################################
+cat("COMPUTE QUANTILES - IOS", "\n")
+###############################################################################
+
+descriptive_stats_by_var_year <- "yr"
+
+fund_count_yr1 <- ddply(data2, descriptive_stats_by_var_year, function(x) {data.frame(var="number_of_funds", 
+                                                                                          count=as.numeric(length(unique(x[,identifier],comparables=FALSE))),
+                                                                                          stringsAsFactors=FALSE)})
+fund_count_yr2 <- data.frame(temp_var="ZZZ",
+                             var="number_of_funds", 
+                             count=as.numeric(length(unique(data2[,identifier],comparables=FALSE))),
+                             stringsAsFactors=FALSE)
+colnames(fund_count_yr2)[match("temp_var",names(fund_count_yr2))] <- descriptive_stats_by_var_year
+
+fund_count_yr <- rbind(fund_count_yr1,fund_count_yr2)
+
+rm(fund_count_yr1,fund_count_yr2)
+
+data_temp_no_id1 <- data2[,!(colnames(data2) %in% identifier)]
+data_temp_no_id2 <- data_temp_no_id1[,!(colnames(data_temp_no_id1) %in% c("month","yr_month","chgdt","date","date_added","dead_date","inception_date"))]
+
+rm(data_temp_no_id1)
+
+data_temp_no_id3 <- data_temp_no_id2[,!(sapply(data_temp_no_id2, is.character))]
+row.names(data_temp_no_id3) <- seq(nrow(data_temp_no_id3))
+
+rm(data_temp_no_id2)
+
+#descriptive_stats_temp_full_all_var_year <- describeBy2(descrip_stats_fund2,"yr")
+#descriptive_stats_temp_full_all_var_year <- describeBy2(data_temp_no_id[,c(descriptive_stats_by_var_year,descriptive_overall_vars_model_vars_all[,c("var")])],descriptive_stats_by_var_year)
+
+descriptive_stats_temp_full_all_var_year <- describeBy2(data_temp_no_id3, descriptive_stats_by_var_year)
+
+
+###############################################################################
 cat("COMPUTE DV FOR ABOVE AND BELOW SIMILARITY/READABILITY QUANTILE - IOS", "\n")
 ###############################################################################
 
@@ -852,7 +887,6 @@ row.names(quantile_vars_dv_temp2_ios) <- seq(nrow(quantile_vars_dv_temp2_ios))
 quantile_vars_dv_temp2_ios <- quantile_vars_dv_temp2_ios[,unique(colnames(quantile_vars_dv_temp2_ios))]
 
 rm2(quantile_vars_ios,quantile_vars_data_ios,quantile_vars_dv_temp_ios)
-rm2(descriptive_stats_temp_full_all_var_strategy,descriptive_stats_temp_full_all_var_year)
 
 
 ###############################################################################

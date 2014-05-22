@@ -158,13 +158,14 @@ descrip_stats_fund_vars_remove <- c("month",
                                     "sdnet_flow_lag1","sdpct_flow_lag1")
 
 descrip_stats_data0 <- descrip_stats_data0[,!(colnames(descrip_stats_data0) %in% descrip_stats_fund_vars_remove)]
+row.names(descrip_stats_data0) <- seq(nrow(descrip_stats_data0))
 
 descrip_stats_ios_vars_remove <- c("month",
                                    "punct_ios","conjunctions_ios","prepositions_ios","normalized_space_ios", 
                                    "pronouns_ios","ttr_ios")
 
 descrip_stats_data0 <- descrip_stats_data0[,!(colnames(descrip_stats_data0) %in% descrip_stats_ios_vars_remove)]
-
+row.names(descrip_stats_data0) <- seq(nrow(descrip_stats_data0))
 
 descrip_stats_data <- data.frame(descrip_stats_data0,
                                  year_group_id=NA,
@@ -276,9 +277,10 @@ for (k in 1:nrow(descriptive_overall_groups))
   
   fund_count <- as.numeric(length(unique(data_temp[,identifier],comparables=FALSE)))
   
-  data_temp_no_id <- data_temp[,!(colnames(data_temp) %in% identifier)]
+  data_temp_no_id1 <- data_temp[,!(colnames(data_temp) %in% identifier)]
+  row.names(data_temp_no_id1) <- seq(nrow(data_temp_no_id1))
   
-  descriptive_stats_temp_full_all_var <- describe2(data_temp_no_id[,descriptive_overall_vars_model_vars_all[,c("var")]])
+  descriptive_stats_temp_full_all_var <- describe2(data_temp_no_id1[,descriptive_overall_vars_model_vars_all[,c("var")]])
   
   for (l in 1:length(descriptive_overall_vars_model))
   {
@@ -306,6 +308,7 @@ for (k in 1:nrow(descriptive_overall_groups))
     descriptive_stats_temp_full <- descriptive_stats_temp_full_all_var[descriptive_stats_temp_full_all_var[,"var"] %in% descriptive_overall_vars_model_vars_temp[,c("var")],]
     descriptive_stats_temp_full[,2:ncol(descriptive_stats_temp_full)] <- format(round(descriptive_stats_temp_full[,2:ncol(descriptive_stats_temp_full)],  digits = 8))
     descriptive_stats_temp_full <- rbind(descriptive_stats_temp_full,c("number_of_funds",fund_count,matrix("", ncol=(ncol(descriptive_stats_temp_full)-2), nrow=1)))
+    row.names(descriptive_stats_temp_full) <- seq(nrow(descriptive_stats_temp_full))
     
     write.csv(descriptive_stats_temp_full,file=paste(output_directory_descrip_stats_overall,out_file_name,"_full.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
     
@@ -317,7 +320,7 @@ for (k in 1:nrow(descriptive_overall_groups))
     rm2(descriptive_stats_temp_full,descriptive_stats_temp)
     
   }
-  rm2(data_temp,fund_count,data_temp_no_id,descriptive_stats_temp_full_all_var,l)
+  rm2(data_temp,fund_count,data_temp_no_id1,descriptive_stats_temp_full_all_var,l)
   
 }
 rm2(descriptive_overall_groups,output_directory_descrip_stats_overall,k)
@@ -358,11 +361,14 @@ for (k in 1:nrow(descriptive_overall_groups_by_year))
   
   fund_count_yr <- rbind(fund_count_yr1,fund_count_yr2)
   
-  data_temp_no_id <- data_temp[,!(colnames(data_temp) %in% identifier)]
+  rm(fund_count_yr1,fund_count_yr2)
+  
+  data_temp_no_id1 <- data_temp[,!(colnames(data_temp) %in% identifier)]
+  row.names(data_temp_no_id1) <- seq(nrow(data_temp_no_id1))
   
   #descriptive_stats_temp_full_all_var_year <- describeBy2(descrip_stats_fund2,"yr")
   
-  descriptive_stats_temp_full_all_var_year <- describeBy2(data_temp_no_id[,c(descriptive_stats_by_var_year,descriptive_overall_vars_model_vars_all[,c("var")])],descriptive_stats_by_var_year)
+  descriptive_stats_temp_full_all_var_year <- describeBy2(data_temp_no_id1[,c(descriptive_stats_by_var_year,descriptive_overall_vars_model_vars_all[,c("var")])],descriptive_stats_by_var_year)
   
   assign("descriptive_stats_temp_full_all_var_year", descriptive_stats_temp_full_all_var_year, envir = .GlobalEnv)
   
@@ -386,6 +392,7 @@ for (k in 1:nrow(descriptive_overall_groups_by_year))
     out_file_name1 <- paste("descriptive_stats",descriptive_overall_groups_by_year[k,1],descriptive_overall_groups_by_year[k,2],descriptive_overall_vars_model_note_temp,"year",sep="_")
     
     descriptive_stats_yr_temp_full_trim <- descriptive_stats_temp_full_all_var_year[descriptive_stats_temp_full_all_var_year[,"var"] %in% descriptive_overall_vars_model_vars_temp[,c("var")],]
+    row.names(descriptive_stats_yr_temp_full_trim) <- seq(nrow(descriptive_stats_yr_temp_full_trim))
     
     for (m in 1:length(descriptive_stats_by_year))
     {
@@ -412,6 +419,7 @@ for (k in 1:nrow(descriptive_overall_groups_by_year))
       colnames(descriptive_stats_yr_temp2)[match("ZZZ",names(descriptive_stats_yr_temp2))] <- "Full"
       
       descriptive_stats_yr_temp2 <- descriptive_stats_yr_temp2[,!(colnames(descriptive_stats_yr_temp2) %in% c("id"))]
+      row.names(descriptive_stats_yr_temp2) <- seq(nrow(descriptive_stats_yr_temp2))
       
       #Remove digits on number_of_funds
       descriptive_stats_yr_temp3 <- descriptive_stats_yr_temp2
@@ -438,7 +446,8 @@ for (k in 1:nrow(descriptive_overall_groups_by_year))
     rm2(descriptive_stats_yr_temp_full_trim)
     
   }
-  rm2(data_temp,fund_count_yr1,fund_count_yr2,fund_count_yr,data_temp_no_id,l)
+  rm2(data_temp,fund_count_yr,data_temp_no_id1,l)
+  rm2(descriptive_stats_temp_full_all_var_year)
   
 }
 rm2(descriptive_stats_by_var_year,descriptive_overall_groups_by_year,descriptive_stats_by_year,output_directory_descrip_stats_by_year,k)
@@ -479,7 +488,10 @@ for (k in 1:nrow(descriptive_overall_groups_by_year_group))
   
   fund_count_yr_group <- rbind(fund_count_yr_group1,fund_count_yr_group2)
   
+  rm(fund_count_yr_group1,fund_count_yr_group2)
+  
   data_temp_year_group_no_id <- data_temp_year_group[,!(colnames(data_temp_year_group) %in% identifier)]
+  row.names(data_temp_year_group_no_id) <- seq(nrow(data_temp_year_group_no_id))
   
   #descriptive_stats_temp_full_all_var_year_group <- describeBy2(descrip_stats_fund2,"yr")
   
@@ -507,6 +519,7 @@ for (k in 1:nrow(descriptive_overall_groups_by_year_group))
     out_file_name1 <- paste("descriptive_stats",descriptive_overall_groups_by_year_group[k,1],descriptive_overall_groups_by_year_group[k,2],descriptive_overall_vars_model_note_temp,"year",sep="_")
     
     descriptive_stats_yr_temp_full_trim <- descriptive_stats_temp_full_all_var_year_group[descriptive_stats_temp_full_all_var_year_group[,"var"] %in% descriptive_overall_vars_model_vars_temp[,c("var")],]
+    row.names(descriptive_stats_yr_temp_full_trim) <- seq(nrow(descriptive_stats_yr_temp_full_trim))
     
     for (m in 1:length(descriptive_stats_by_year_group))
     {
@@ -533,6 +546,7 @@ for (k in 1:nrow(descriptive_overall_groups_by_year_group))
       colnames(descriptive_stats_yr_temp2)[match("ZZZ",names(descriptive_stats_yr_temp2))] <- "Full"
       
       descriptive_stats_yr_temp2 <- descriptive_stats_yr_temp2[,!(colnames(descriptive_stats_yr_temp2) %in% c("id"))]
+      row.names(descriptive_stats_yr_temp2) <- seq(nrow(descriptive_stats_yr_temp2))
       
       #Remove digits on number_of_funds
       descriptive_stats_yr_temp3 <- descriptive_stats_yr_temp2
@@ -559,8 +573,8 @@ for (k in 1:nrow(descriptive_overall_groups_by_year_group))
     rm2(descriptive_stats_yr_temp_full_trim)
     
   }
-  rm2(data_temp_year_group,fund_count_yr_group1,fund_count_yr_group2,fund_count_yr_group,data_temp_year_group_no_id,l)
-  
+  rm2(data_temp_year_group,fund_count_yr_group,data_temp_year_group_no_id,l)
+  rm2(descriptive_stats_temp_full_all_var_year_group)
 }
 rm2(descriptive_stats_by_var_year,descriptive_overall_groups_by_year_group,descriptive_stats_by_year_group,output_directory_descrip_stats_by_year_group,k)
 
@@ -604,10 +618,13 @@ for (k in 1:nrow(descriptive_overall_groups_by_strategy))
   
   fund_count_yr <- rbind(fund_count_yr1,fund_count_yr2)
   
-  data_temp_no_id <- data_temp[,!(colnames(data_temp) %in% identifier)]
+  rm(fund_count_yr1,fund_count_yr2)
+  
+  data_temp_no_id1 <- data_temp[,!(colnames(data_temp) %in% identifier)]
+  row.names(data_temp_no_id1) <- seq(nrow(data_temp_no_id1))
   
   #descriptive_stats_temp_full_all_var_strategy <- describeBy2(descrip_stats_fund2,"yr")
-  descriptive_stats_temp_full_all_var_strategy <- describeBy2(data_temp_no_id[,c(descriptive_stats_by_var_strategy,descriptive_overall_vars_model_vars_all[,c("var")])],descriptive_stats_by_var_strategy)
+  descriptive_stats_temp_full_all_var_strategy <- describeBy2(data_temp_no_id1[,c(descriptive_stats_by_var_strategy,descriptive_overall_vars_model_vars_all[,c("var")])],descriptive_stats_by_var_strategy)
   
   assign("descriptive_stats_temp_full_all_var_strategy", descriptive_stats_temp_full_all_var_strategy, envir = .GlobalEnv)
   
@@ -631,6 +648,7 @@ for (k in 1:nrow(descriptive_overall_groups_by_strategy))
     out_file_name1 <- paste("descriptive_stats",descriptive_overall_groups_by_strategy[k,1],descriptive_overall_groups_by_strategy[k,2],descriptive_overall_vars_model_note_temp,"strategy",sep="_")
     
     descriptive_stats_strategy_temp_full_trim <- descriptive_stats_temp_full_all_var_strategy[descriptive_stats_temp_full_all_var_strategy[,"var"] %in% descriptive_overall_vars_model_vars_temp[,c("var")],]
+    row.names(descriptive_stats_strategy_temp_full_trim) <- seq(nrow(descriptive_stats_strategy_temp_full_trim))
     
     for (m in 1:length(descriptive_stats_by_strategy))
     {
@@ -657,6 +675,7 @@ for (k in 1:nrow(descriptive_overall_groups_by_strategy))
       colnames(descriptive_stats_strategy_temp2)[match("ZZZ",names(descriptive_stats_strategy_temp2))] <- "Full"
       
       descriptive_stats_strategy_temp2 <- descriptive_stats_strategy_temp2[,!(colnames(descriptive_stats_strategy_temp2) %in% c("id"))]
+      row.names(descriptive_stats_strategy_temp2) <- seq(nrow(descriptive_stats_strategy_temp2))
       
       #Remove digits on number_of_funds
       descriptive_stats_strategy_temp3 <- descriptive_stats_strategy_temp2
@@ -677,6 +696,7 @@ for (k in 1:nrow(descriptive_overall_groups_by_strategy))
       descriptive_stats_strategy_temp5 <- descriptive_stats_strategy_temp4[,c(colnames(descriptive_stats_strategy_temp4[,!(colnames(descriptive_stats_strategy_temp4) %in% c("Others","Full"))]),
                                                                               "Others",
                                                                               "Full")]
+      row.names(descriptive_stats_strategy_temp5) <- seq(nrow(descriptive_stats_strategy_temp5))
       
       write.csv(descriptive_stats_strategy_temp5,file=paste(output_directory_descrip_stats_by_strategy,out_file_name2,".csv",sep=""),na="",quote=TRUE,row.names=FALSE)
       
@@ -689,8 +709,8 @@ for (k in 1:nrow(descriptive_overall_groups_by_strategy))
     rm2(descriptive_stats_strategy_temp_full_trim)
     
   }
-  rm2(data_temp,fund_count_yr1,fund_count_yr2,fund_count_yr,data_temp_no_id,l)
-  
+  rm2(data_temp,fund_count_yr,data_temp_no_id1,l)
+  rm2(descriptive_stats_temp_full_all_var_strategy)
   
 }
 rm2(descriptive_stats_by_var_strategy,descriptive_overall_groups_by_strategy,descriptive_stats_by_strategy,output_directory_descrip_stats_by_strategy,k)
