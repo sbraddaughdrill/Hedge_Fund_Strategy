@@ -756,7 +756,7 @@ output_directory_reg_similarity <- paste(output_directory,"reg_similarity","\\",
 create_directory(output_directory_reg_similarity,remove=1)
 
 #sim_type2 <- c("050pct","100pct","250pct","500pct","750pct","900pct")
-sim_type2 <- c("050pct","900pct")
+sim_type2 <- c("050pct","750pct","900pct")
 
 #Regression equations
 regression_equations2_1 <- list(time_frame=list(c(beg_year,2000,2000,2006),
@@ -940,7 +940,7 @@ output_directory_reg_readability_similarity <- paste(output_directory,"reg_reada
 create_directory(output_directory_reg_readability_similarity,remove=1)
 
 #sim_type3 <- c("050pct","100pct","250pct","500pct","750pct","900pct")
-sim_type3 <- c("050pct","900pct")
+sim_type3 <- c("050pct","750pct","900pct")
 
 #Regression equations
 regression_equations3_1 <- list(time_frame=list(c(beg_year,2000,2000,2006),
