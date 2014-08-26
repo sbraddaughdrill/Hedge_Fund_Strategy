@@ -1,7 +1,7 @@
 # TODO: Add comment
 # 
 # Author:  Brad
-# File:    Analysis.R
+# File:    Hedge_Fund_Strategy_Analysis.R
 # Version: 1.0
 # Date:    04.28.2013
 # Purpose: Analyze Hedge fund data
@@ -32,42 +32,47 @@ options(max.print = 500)
 # Memory limit
 #memory.limit(size = 8183)
 
-# Set location (1=HOME,2=WORK,3=CORALSEA FROM HOME,4=CORALSEA FROM WORK,5=CORALSEA FROM LAPTOP) 
-Location <- 3
-
+# Set location (1=HOME,2=WORK,3=LAPTOP,4=CORALSEA FROM HOME,5=CORALSEA FROM WORK,6=CORALSEA FROM LAPTOP)
+Location <- 4
 
 if (Location == 1) {
-  #setwd("C:/Research_temp2/")
-  input_directory <- normalizePath("C:/Users/Brad/Dropbox/Research/Fund_Strategies/Data/",winslash="\\", mustWork=TRUE)
-  output_directory <- normalizePath("C:/Research_temp2/",winslash="\\", mustWork=TRUE)
-  function_directory <- normalizePath("C:/Users/Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
-  treetag_directory <- normalizePath("C:/TreeTagger",winslash="\\", mustWork=TRUE)    
+  
+  input_directory <- normalizePath("C:/Users/S.Brad/Dropbox/Research/Fund_Strategies/Data/",winslash="\\", mustWork=TRUE)
+  output_directory <- normalizePath("F:/Research_temp2/",winslash="\\", mustWork=TRUE)
+  function_directory <- normalizePath("C:/Users/S.Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
+  treetag_directory <- normalizePath("C:/TreeTagger",winslash="\\", mustWork=TRUE)       
   
 } else if (Location == 2) {
-  #setwd("C:/Research_temp2/")
+  
   input_directory <- normalizePath("C:/Users/bdaughdr/Dropbox/Research/Fund_Strategies/Data/",winslash="\\", mustWork=TRUE)
   output_directory <- normalizePath("C:/Research_temp2/",winslash="\\", mustWork=TRUE)
   function_directory <- normalizePath("C:/Users/bdaughdr/Dropbox/Research_Methods/R/",winslash="\\", mustWork=TRUE) 
   treetag_directory <- normalizePath("C:/TreeTagger",winslash="\\", mustWork=TRUE)    
   
 } else if (Location == 3) {
-  #setwd("//tsclient/C/Research_temp2/")
-  input_directory <- normalizePath("//tsclient/C/Users/Brad/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
-  #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
-  output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
-  function_directory <- normalizePath("//tsclient/C/Users/Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
-  treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE)    
+  
+  input_directory <- normalizePath("C:/Users/S.Brad/Dropbox/Research/Fund_Strategies/Data",winslash="\\", mustWork=TRUE)
+  output_directory <- normalizePath("C:/Research_temp2",winslash="\\", mustWork=TRUE)
+  function_directory <- normalizePath("C:/Users/S.Brad/Dropbox/Research_Methods/R", winslash = "\\", mustWork = TRUE)
   
 } else if (Location == 4) {
-  #setwd("//tsclient/C/Research_temp2/")
+  
+  input_directory <- normalizePath("//tsclient/C/Users/S.Brad/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
+  #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
+  output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
+  function_directory <- normalizePath("//tsclient/C/Users/S.Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
+  treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE) 
+  
+} else if (Location == 5) {
+  
   input_directory <- normalizePath("//tsclient/C/Users/bdaughdr/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
   #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
   output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
   function_directory <- normalizePath("//tsclient/C/Users/bdaughdr/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
   treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE)       
   
-} else if (Location == 5) {
-  #setwd("//tsclient/C/Research_temp2/")
+} else if (Location == 6) {
+  
   input_directory <- normalizePath("//tsclient/C/Users/S. Brad Daughdrill/Documents/My Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
   #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
   output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
@@ -75,6 +80,7 @@ if (Location == 1) {
   treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE)       
   
 } else {
+  
   cat("ERROR ASSIGNING DIRECTORIES", "\n")
   
 }
@@ -98,11 +104,17 @@ cat("SECTION: LIBRARIES", "\n")
 ###############################################################################
 
 #Load External Packages
-external_packages <- c("compare","cwhmisc","data.table","fastmatch","foreign","formatR","funprog","gdata","gtools",
+#external_packages <- c("compare","cwhmisc","data.table","fastmatch","foreign","formatR","funprog","gdata","gtools",
+#                       "Hmisc","koRpus","mitools","pbapply","plyr","R.oo","reshape2","rJava","RWeka","RWekajars",
+#                       "Snowball","SnowballC","sqldf","stringr","tcltk","tm")
+external_packages <- c("compare","cwhmisc","data.table","fastmatch","foreign","formatR","gdata","gtools",
                        "Hmisc","koRpus","mitools","pbapply","plyr","R.oo","reshape2","rJava","RWeka","RWekajars",
-                       "Snowball","SnowballC","sqldf","stringr","tcltk","tm")
+                       "sqldf","stringr","tcltk","tm")
 invisible(unlist(sapply(external_packages,load_external_packages, repo_str=repo, simplify=FALSE, USE.NAMES=FALSE)))
 installed_packages <- list_installed_packages(external_packages)
+
+rm(external_packages,installed_packages,repo)
+
 
 ###############################################################################
 # PREALLOCATE DATA;
@@ -371,7 +383,7 @@ EurekahedgeHF_Excel_aca_NAV_melt <- data.frame(EurekahedgeHF_Excel_aca_NAV_melt[
 
 EurekahedgeHF_Excel_aca_NAV_AUM_melt <- merge(EurekahedgeHF_Excel_aca_NAV_melt, EurekahedgeHF_Excel_aca_AUM_melt, 
                                               by.x=c("Fund.ID","date","yr","month"), by.y=c("Fund.ID","date","yr","month"), 
-                                              all.x=TRUE, all.y=TRUE, sort=FALSE,suffixes=c(".x",".y"),incomparables=NA)
+                                              all.x=TRUE, all.y=TRUE, sort=FALSE,suffixes=c(".x",".y"))
 
 EurekahedgeHF_Excel_aca_NAV_AUM_melt <- EurekahedgeHF_Excel_aca_NAV_AUM_melt[rowSums(is.na(EurekahedgeHF_Excel_aca_NAV_AUM_melt[,1:ncol(EurekahedgeHF_Excel_aca_NAV_AUM_melt)]))<ncol(EurekahedgeHF_Excel_aca_NAV_AUM_melt),]
 
