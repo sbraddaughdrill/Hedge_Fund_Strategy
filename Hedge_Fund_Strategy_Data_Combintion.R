@@ -107,8 +107,6 @@ source(file=paste(function_directory,"functions_utilities.R",sep=""),echo=FALSE)
 cat("SECTION: LIBRARIES", "\n")
 ###############################################################################
 
-update.packages(ask=FALSE, checkBuilt=TRUE)
-
 #Load External Packages
 external_packages <- c("compare","cwhmisc","data.table","DataCombine","fastmatch","foreign","formatR","gdata",
                        "gtools","Hmisc","installr","knitr","koRpus","lmtest","lubridate","markdown","memisc","mitools",
