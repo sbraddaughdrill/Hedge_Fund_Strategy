@@ -47,9 +47,9 @@ Location <- 3
 
 if (Location == 1) {
   #setwd("C:/Research_temp2/")
-  input_directory <- normalizePath("C:/Users/S.Brad/Dropbox/Research/Fund_Strategies/Data/",winslash="\\", mustWork=TRUE)
+  input_directory <- normalizePath("F:/Dropbox/Research/Fund_Strategies/Data/",winslash="\\", mustWork=TRUE)
   output_directory <- normalizePath("F:/Research_temp2/",winslash="\\", mustWork=TRUE)
-  function_directory <- normalizePath("C:/Users/S.Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
+  function_directory <- normalizePath("F:/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
   treetag_directory <- normalizePath("F:/TreeTagger",winslash="\\", mustWork=TRUE) 
   
 } else if (Location == 2) {
@@ -61,10 +61,10 @@ if (Location == 1) {
   
 } else if (Location == 3) {
   #setwd("//tsclient/C/Research_temp2/")
-  input_directory <- normalizePath("//tsclient/C/Users/S.Brad/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
+  input_directory <- normalizePath("//tsclient/F/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
   #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
   output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
-  function_directory <- normalizePath("//tsclient/C/Users/S.Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
+  function_directory <- normalizePath("//tsclient/F/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
   treetag_directory <- normalizePath("//tsclient/F/TreeTagger",winslash="\\", mustWork=TRUE) 
   
 } else if (Location == 4) {
@@ -392,7 +392,7 @@ rm2(monthly_data_all14)
 #Make sure funds have atleast 12 months of returns
 firm <- count(monthly_data_all15, c(identifier))
 firm_keep <- firm[firm[,"freq"]>=12,]
-firm_keep <- firm[!is.na(firm[,c(identifier)]),]
+firm_keep <- firm_keep[!is.na(firm_keep[,c(identifier)]),]
 row.names(firm_keep) <- seq(nrow(firm_keep))
 
 monthly_data_all16 <- monthly_data_all15[(monthly_data_all15[,c(identifier)] %in% firm_keep[,c(identifier)]),]
@@ -576,7 +576,7 @@ cat("MERGE FUND AND TEXT DATA", "\n")
 
 data0 <- merge(monthly_data_all20[,!(colnames(monthly_data_all20) %in% c("main_investment_strategy"))], text_stats_ios_trim, 
                by.x=c(identifier,"yr","month","yr_month"), by.y=c(identifier,"yr","month","yr_month"), 
-               all.x=FALSE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables = NA)
+               all.x=FALSE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"))
 
 data0 <- data0[order(data0[,identifier],
                      data0[,"yr"],
@@ -630,11 +630,11 @@ hedge_fund_risk_factors <- hedge_fund_risk_factors0[,!(colnames(hedge_fund_risk_
 
 factors_merge1 <- merge(ffm_factors,liquidity_factors,
                         by.x=c("yr","month"), by.y=c("yr","month"), 
-                        all.x=TRUE, all.y=TRUE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+                        all.x=TRUE, all.y=TRUE, sort=FALSE, suffixes=c(".x",".y"))
 
 factors_merge2 <- merge(factors_merge1,hedge_fund_risk_factors,
                         by.x=c("yr","month"), by.y=c("yr","month"), 
-                        all.x=TRUE, all.y=TRUE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+                        all.x=TRUE, all.y=TRUE, sort=FALSE, suffixes=c(".x",".y"))
 
 factors_merge <- factors_merge2[order(factors_merge2[,"yr"],
                                       factors_merge2[,"month"]),] 
@@ -657,7 +657,7 @@ data1_nofactors <- data0[,!(colnames(data0) %in% fund_return_var)]
 
 data1_factors0 <- merge(data0[,c(identifier,"yr","month",fund_return_var)], factors_merge, 
                         by.x=c("yr","month"), by.y=c("yr","month"), 
-                        all.x=FALSE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
+                        all.x=FALSE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
 
 data1_factors0  <- data.frame(data1_factors0, 
                               exret=data1_factors0[,"monthly_ret"] - data1_factors0[,"rf"],
@@ -758,14 +758,14 @@ rm2(data_alphas_period_trim0)
 #row.names(data_alphas) <- seq(nrow(data_alphas))
 data_alphas_full <- merge(data_alphas, data_alphas_period_trim[,c("yr","month",identifier,names(data_alphas_period_trim)[grep("int_", names(data_alphas_period_trim))])],
                           by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
-                          all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
+                          all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
 
 rm2(data_alphas,data_alphas_period_trim)
 
 
 data2_full <- merge(data1_nofactors, data_alphas_full, 
                     by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"), 
-                    all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
+                    all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
 
 #rm2(data1_nofactors,data_alphas_full)
 
@@ -899,7 +899,7 @@ row.names(quantile_vars_dv) <- seq(nrow(quantile_vars_dv))
 
 data_all <- merge(data2, quantile_vars_dv, 
                   by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"),
-                  all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"),incomparables = NA)
+                  all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
 
 data_all <- data_all[order(data_all[,identifier],
                            data_all[,"yr"],
