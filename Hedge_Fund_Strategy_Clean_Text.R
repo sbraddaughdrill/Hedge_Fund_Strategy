@@ -1,10 +1,10 @@
 # TODO: Add comment
 # 
 # Author:  Brad
-# File:    Hedge_Fund_Strategy_Analysis.R
+# File:    Hedge_Fund_Strategy_Clean_Text.R
 # Version: 1.0
 # Date:    04.28.2013
-# Purpose: Analyze Hedge fund data
+# Purpose: Clean Hedge fund data
 #
 ###############################################################################
 
@@ -32,8 +32,19 @@ options(max.print = 500)
 # Memory limit
 #memory.limit(size = 8183)
 
+#Remove scientific notation if digits less than 100
+options("scipen"=100)
+
+#Uknown Strings
+#unknowns_strings <- c("",".",NA,"na","n/a","n\a","NA","N/A","N\\A","<NA>","null","NULL",NULL,"nan","NaN",NaN,
+#                      NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",NA_character_,
+#                      "NA_character_",NA_real_,"NA_real_")
+unknowns_strings <- c(" ","\n","",".","n/a","na","NA",NA,"<NA>","null","NULL",NULL,"nan","NaN",NaN,Inf,
+                      NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
+                      NA_character_,"NA_character_",NA_real_,"NA_real_")
+
 # Set location (1=HOME,2=WORK,3=LAPTOP,4=CORALSEA FROM HOME,5=CORALSEA FROM WORK,6=CORALSEA FROM LAPTOP)
-Location <- 4
+Location <- 1
 
 if (Location == 1) {
   
@@ -130,7 +141,7 @@ cat("SECTION: PREALLOCATE DATA", "\n")
 temp_data_cols <- data.frame(matrix(NA, ncol=7, nrow=200, 
                                     dimnames=list(c(), c("order","isnum","ischar","isdate","isfactor","colnames","desc"))), 
                              stringsAsFactors=FALSE)
-							 
+
 temp_data_cols[,1] <- as.numeric(temp_data_cols[,1])
 temp_data_cols[,2] <- as.numeric(temp_data_cols[,2])
 temp_data_cols[,3] <- as.numeric(temp_data_cols[,3])
@@ -140,7 +151,8 @@ temp_data_cols[,6] <- as.character(temp_data_cols[,6])
 temp_data_cols[,7] <- as.character(temp_data_cols[,7])
 
 #Files table
-file_list <- c("EurekahedgeHF_Excel_aca.csv","EurekahedgeHF_Excel_aca_NAV_AUM.csv","EurekahedgeHF_Excel_aca_Instruments_Traded.csv")
+#file_list <- c("EurekahedgeHF_Excel_aca.csv","EurekahedgeHF_Excel_aca_NAV_AUM.csv","EurekahedgeHF_Excel_aca_Instruments_Traded.csv")
+file_list <- c("EurekahedgeHF_Profile_Strategy_part3.csv")
 files_cols_count <- 2
 files_cols <- temp_data_cols[1:files_cols_count,]
 files_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="filename",stringsAsFactors=FALSE)
@@ -150,787 +162,88 @@ colnames(files) <- files_cols[,6]
 files <- format_function(files,files_cols)
 
 
-#Populate Percentiles table
-
-#Note: If Confidence_Level is 0.900, 
-#          word_grand  -  this means that if the word is the 10% most common occuring or higher overall word, it is removed (90% removed/10% kept)
-#          word_unique -  this means that if the word is the 10% most common occuring or higher unique word, it is removed (90% removed/10% kept)
-#          id_unique -  this means that if a word is in 10% of the ids or higher, it is removed  (90% removed/10% kept)
-#Note: If Confidence_Level is 0.050, 
-#          word_grand  -  this means that if the word is the 95% most common occuring or higher overall word, it is removed (5% removed/95% kept)
-#          word_unique -  this means that if the word is the 95% most common occuring or higher unique word, it is removed (5% removed/95% kept)
-#          id_unique -  this means that if a word is in 95% of the ids or higher, it is removed  (5% removed/95% kept)
-# As confidence level increases, the words in the dictionary should decrease.
-# A smaller dicitonary means that that smilarity will be less because there are fewer possible words that could be common between two texts 
-# Thus, as confidence level increases, the smilarity scores will decrease
-
-#Percentiles table
-percentiles_cols_count <- 8
-percentiles_cols <- temp_data_cols[1:percentiles_cols_count,]
-percentiles_cols[1,] <- data.frame(order=1,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Confidence_Level",stringsAsFactors=FALSE)
-percentiles_cols[2,] <- data.frame(order=2,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Confidence_Pct",stringsAsFactors=FALSE)
-percentiles_cols[3,] <- data.frame(order=3,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="Confidence_lbl",stringsAsFactors=FALSE)
-percentiles_cols[4,] <- data.frame(order=4,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Significance_Level",stringsAsFactors=FALSE)
-percentiles_cols[5,] <- data.frame(order=5,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Significance_Pct",stringsAsFactors=FALSE)
-percentiles_cols[6,] <- data.frame(order=6,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="Significance_lbl",stringsAsFactors=FALSE)
-percentiles_cols[7,] <- data.frame(order=7,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="Column_lbl",stringsAsFactors=FALSE)
-percentiles_cols[8,] <- data.frame(order=8,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="Column_DV",stringsAsFactors=FALSE)
-
-#percentile_vals <- c(0.990,0.950,0.900)
-percentile_vals <- c(0.900,0.750,0.500,0.250,0.100,0.050)
-#percentile_vals <- c(0.900)
-
-percentiles <- as.data.frame(matrix(NA, ncol=percentiles_cols_count, nrow=length(percentile_vals)),stringsAsFactors=FALSE)
-colnames(percentiles) <- percentiles_cols[,6]
-
-percentiles[,"Confidence_Level"] <- format(as.double(percentile_vals), digits=3)
-percentiles[,"Confidence_Pct"] <- as.double(percentiles[,"Confidence_Level"])*100
-percentiles[,"Confidence_lbl"] <- formatC(percentiles[,"Confidence_Pct"],format="f", digits=1,width=4,  flag="0")
-percentiles[,"Significance_Level"] <- 1-as.double(percentiles[,"Confidence_Level"])
-percentiles[,"Significance_Pct"] <- as.double(percentiles[,"Significance_Level"])*100
-percentiles[,"Significance_lbl"] <- formatC(percentiles[,"Significance_Pct"], format="f",digits=1, width=5,  flag="0")
-percentiles[,"Confidence_lbl"] <-  paste(gsub(pattern="\\.", replacement="", x=percentiles[,"Confidence_lbl"]),"pct",sep="")
-percentiles[,"Significance_lbl"] <- paste(gsub(pattern="\\.", replacement="", x=percentiles[,"Significance_lbl"]),"pct",sep="")
-percentiles[,"Column_lbl"] <- paste("Word_Cutoff_",percentiles[,"Confidence_lbl"],sep="")
-percentiles[,"Column_DV"] <- paste("Word_DV_",percentiles[,"Confidence_lbl"],sep="")
-percentiles <- format_function(percentiles,percentiles_cols)
-percentiles <- percentiles[order(percentiles[,"Confidence_Level"]),]
-
-#Readability columns table
-readbl_vars_cols_count <- 4
-readbl_vars_cols <- temp_data_cols[1:readbl_vars_cols_count,]
-readbl_vars_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="column",stringsAsFactors=FALSE)
-readbl_vars_cols[2,] <- data.frame(order=2,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="suffix",stringsAsFactors=FALSE)
-readbl_vars_cols[3,] <- data.frame(order=3,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="readabilitystats_table",stringsAsFactors=FALSE)
-readbl_vars_cols[4,] <- data.frame(order=4,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="token_table",stringsAsFactors=FALSE)
-readbl_vars <- as.data.frame(matrix(NA, ncol=readbl_vars_cols_count, nrow=1),stringsAsFactors=FALSE)
-colnames(readbl_vars) <- readbl_vars_cols[,6]
-
-#Readability statistics table
-readbl_all_df_cols_count <- 5
-readbl_all_df_cols <- temp_data_cols[1:readbl_all_df_cols_count,]
-readbl_all_df_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="index",stringsAsFactors=FALSE)
-readbl_all_df_cols[2,] <- data.frame(order=2,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="flavour",stringsAsFactors=FALSE)
-readbl_all_df_cols[3,] <- data.frame(order=3,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="raw",stringsAsFactors=FALSE)
-readbl_all_df_cols[4,] <- data.frame(order=4,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="grade",stringsAsFactors=FALSE)
-readbl_all_df_cols[5,] <- data.frame(order=5,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="age",stringsAsFactors=FALSE)
-readbl_all_df <- as.data.frame(matrix(NA, ncol=readbl_all_df_cols_count, nrow=44),stringsAsFactors=FALSE)
-colnames(readbl_all_df) <- readbl_all_df_cols[,6]
-readbl_all_df <- format_function(readbl_all_df,readbl_all_df_cols)
-
-#Sample data input columns
-#sample_data_input_cols_count <- 8
-#sample_data_input_cols <- temp_data_cols[1:sample_data_input_cols_count,]
-#sample_data_input_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="ID",desc="input",stringsAsFactors=FALSE)
-#sample_data_input_cols[2,] <- data.frame(order=2,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="yr",desc="input",stringsAsFactors=FALSE)
-#sample_data_input_cols[3,] <- data.frame(order=3,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="crsp_fundno",desc="input",stringsAsFactors=FALSE)
-#sample_data_input_cols[4,] <- data.frame(order=4,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="investment_objective_f",desc="input",stringsAsFactors=FALSE)
-#sample_data_input_cols[5,] <- data.frame(order=5,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="investment_strategy_f",desc="input",stringsAsFactors=FALSE)
-#sample_data_input_cols[6,] <- data.frame(order=6,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="investment_objective_strategy_f",desc="input",stringsAsFactors=FALSE)
-#sample_data_input_cols[7,] <- data.frame(order=7,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="principal_risks_f",desc="input",stringsAsFactors=FALSE)
-#sample_data_input_cols[8,] <- data.frame(order=8,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="File",desc="input",stringsAsFactors=FALSE)
-
-#Tokens table
-tokens_all_cols_count <- 5
-tokens_all_cols <- temp_data_cols[1:tokens_all_cols_count,]
-tokens_all_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="ID",stringsAsFactors=FALSE)
-tokens_all_cols[2,] <- data.frame(order=2,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="yr",stringsAsFactors=FALSE)
-tokens_all_cols[3,] <- data.frame(order=3,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="token",stringsAsFactors=FALSE)
-tokens_all_cols[4,] <- data.frame(order=4,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="desc",stringsAsFactors=FALSE)
-tokens_all_cols[5,] <- data.frame(order=5,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Remove",stringsAsFactors=FALSE)
-
-
-###############################################################################
-cat("SECTION: POPULATE DATA", "\n")
-###############################################################################
-
-#List variables to compute readability statistics and the suffixes used for each in the sample_data_statistics_cols table
-readbl_vars[,1] <- c("Strategy")
-readbl_vars[,2] <- c("_ios")
-readbl_vars[,3] <- c("read_stats_ios_f")
-readbl_vars[,4] <- c("tokens_all_ios_f")
-
-#measures <- c("word_grand","word_unique","id_unique")
-measures <- c("id_unique")
-
-# remove stopwords
-myStopwords <- c(stopwords('english'),stopwords('SMART'),"available", "via")
-myStopwords_no_punct <- gsub(pattern="[^[[:alnum:][:space:]]", replacement="", x=myStopwords)
-myStopwords_all <- c(myStopwords,myStopwords_no_punct)
-myStopwords_all <- sort(myStopwords_all)
-myStopwords_all <- unique(myStopwords_all, incomparables=FALSE)
-myStopwords_all <- toupper(myStopwords_all)
-
-#idx <- which(myStopwords_all %in% c("R",keep_one_letter_tokens,keep_two_letter_tokens))
-idx <- which(myStopwords_all %in% c("R"))
-myStopwords_all <- myStopwords_all[-idx]
-
-keep_one_letter_words <- c("I")
-keep_one_letter_ratings <- c("A","B","C","D","P")
-keep_one_letter_tokens <- sort(c(keep_one_letter_words,keep_one_letter_ratings))
-
-keep_two_letter_words <- c("AM","AN","AS","AT","BE","BY","DO","EG","EX","HA","ID","IE","IF","IN","IS",
-                           "IT","MY","NO","OF","ON","OR","QA","RD","SO","SP","TM","TO","TV","UM","UN",
-                           "UP","US","VP","WE")
-keep_state_abbreviations <- c("AK","AL","AR","AZ","CA","CF","CL","CO","CT","DC","DE","DL","FL","GA","HA",
-                              "HI","IA","ID","IL","IN","KA","KS","KY","LA","MA","MC","MD","ME","MI","MN",
-                              "MO","MS","MT","NB","NC","ND","NE","NH","NJ","NM","NV","NY","OH","OK","OR",
-                              "PA","RI","SC","SD","TN","TX","UT","VA","VT","WA","WI","WN","WS","WV","WY")
-keep_two_letter_ratings <- c("AA","BA","BB","CA","CC")
-keep_two_letter_tokens <- sort(c(keep_two_letter_words,keep_state_abbreviations,keep_two_letter_ratings))
-
-
 ###############################################################################
 cat("SECTION: IMPORT DATA", "\n")
 ###############################################################################
 
-#files[,1] <-  file_list
-#files[,2] <-  unlist(mapply(merge_cols_function,col_one=input_directory,col_two=files[,1],separator="", SIMPLIFY=FALSE,USE.NAMES=FALSE))
-
-files[,1] <-  gsub(".csv","_org.csv",file_list)
-files[,2] <-  unlist(mapply(merge_cols_function,col_one=output_directory,col_two=files[,1],separator="", SIMPLIFY=FALSE,USE.NAMES=FALSE))
-
-for (j in 1:nrow(files))
-{
-  #j <- 1
-  #j <- 2
-  
-  sample_data <- read.csv(file=files[j,2],header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
-  for(i in which(sapply(sample_data,class)=="character"))
-  {
-    sample_data[[i]] = trim(sample_data[[i]])
-  }
-  for (i in 1:ncol(sample_data))
-  {
-    sample_data[,i] <- unknownToNA(sample_data[,i], unknown=c("",".","n/a","na","NA",NA,"null","NULL",NULL,"nan","NaN",NaN,
-                                                              NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
-                                                              NA_character_,"NA_character_",NA_real_,"NA_real_"),force=TRUE)
-    sample_data[,i] <- ifelse(is.na(sample_data[,i]),NA, sample_data[,i])
-  } 
-  
-  sample_data <- sample_data[rowSums(is.na(sample_data[,1:ncol(sample_data)]))<ncol(sample_data),]
-  
-  row.names(sample_data) <- seq(nrow(sample_data))
-  
-  
-  ###############################################################################
-  # OUTPUT DATA;
-  ###############################################################################
-  
-  #write.csv(sample_data, file=paste(output_directory,file=files[j,1],sep=""),row.names=FALSE)
-  write.csv(sample_data, file=paste(output_directory,file=gsub("_org","",files[j,1]),sep=""),row.names=FALSE)
-  
-  ###############################################################################
-  # CREATE PROGRESS OUTPUTS;
-  ###############################################################################
-  
-  progress_function(outer_loop_count=j, outer_loop_start_val=1, outer_loop_end_val=nrow(files), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
-  
-}
-
-files[,1] <-  gsub("_org","",files[,1])
-files[,2] <-  gsub("_org","",files[,2])
-
-
-###############################################################################
-cat("SECTION: CLEAN EurekahedgeHF_Excel_aca_NAV_AUM", "\n")
-###############################################################################
-
-# Seperate NAV and AUM
-
-EurekahedgeHF_Excel_aca_NAV_AUM <- read.csv(file=paste(output_directory,files[2,1],sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
-for(i in which(sapply(EurekahedgeHF_Excel_aca_NAV_AUM,class)=="character"))
-{
-  EurekahedgeHF_Excel_aca_NAV_AUM[[i]] = trim(EurekahedgeHF_Excel_aca_NAV_AUM[[i]])
-}
-for (i in 1:ncol(EurekahedgeHF_Excel_aca_NAV_AUM))
-{
-  EurekahedgeHF_Excel_aca_NAV_AUM[,i] <- unknownToNA(EurekahedgeHF_Excel_aca_NAV_AUM[,i], unknown=c("",".","n/a","na","NA",NA,"null","NULL",NULL,"nan","NaN",NaN,
-                                                                                                    NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
-                                                                                                    NA_character_,"NA_character_",NA_real_,"NA_real_"),force=TRUE)
-  EurekahedgeHF_Excel_aca_NAV_AUM[,i] <- ifelse(is.na(EurekahedgeHF_Excel_aca_NAV_AUM[,i]), NA, EurekahedgeHF_Excel_aca_NAV_AUM[,i])
-} 
-
-EurekahedgeHF_Excel_aca_AUM <- EurekahedgeHF_Excel_aca_NAV_AUM[EurekahedgeHF_Excel_aca_NAV_AUM[,"Type"]=="AUM",]
-EurekahedgeHF_Excel_aca_AUM <- EurekahedgeHF_Excel_aca_AUM[order(EurekahedgeHF_Excel_aca_AUM[,"Type"],
-                                                                 EurekahedgeHF_Excel_aca_AUM[,"Fund.ID"]),]
-row.names(EurekahedgeHF_Excel_aca_AUM) <- seq(nrow(EurekahedgeHF_Excel_aca_AUM))
-
-EurekahedgeHF_Excel_aca_NAV <- EurekahedgeHF_Excel_aca_NAV_AUM[EurekahedgeHF_Excel_aca_NAV_AUM[,"Type"]=="Return",]
-EurekahedgeHF_Excel_aca_NAV <- EurekahedgeHF_Excel_aca_NAV[order(EurekahedgeHF_Excel_aca_NAV[,"Type"],
-                                                                 EurekahedgeHF_Excel_aca_NAV[,"Fund.ID"]),]
-row.names(EurekahedgeHF_Excel_aca_NAV) <- seq(nrow(EurekahedgeHF_Excel_aca_NAV))
-
-rm2(EurekahedgeHF_Excel_aca_NAV_AUM)
-
-# Melt AUM
-
-EurekahedgeHF_Excel_aca_AUM_melt <- melt(EurekahedgeHF_Excel_aca_AUM, id=c("Type","Fund.ID","Fund.Name"), na.rm=FALSE)
-EurekahedgeHF_Excel_aca_AUM_melt[,"variable"] <- gsub(pattern="X", replacement="", x=EurekahedgeHF_Excel_aca_AUM_melt[,"variable"])
-EurekahedgeHF_Excel_aca_AUM_melt[,"variable"] <- gsub(pattern="\\.", replacement="-", x=EurekahedgeHF_Excel_aca_AUM_melt[,"variable"])
-EurekahedgeHF_Excel_aca_AUM_melt[,"variable"] <- as.Date(EurekahedgeHF_Excel_aca_AUM_melt[,"variable"],format="%m-%d-%Y")
-
-rm2(EurekahedgeHF_Excel_aca_AUM)
-
-colnames(EurekahedgeHF_Excel_aca_AUM_melt)[match("variable",names(EurekahedgeHF_Excel_aca_AUM_melt))] <- "date"
-colnames(EurekahedgeHF_Excel_aca_AUM_melt)[match("value",names(EurekahedgeHF_Excel_aca_AUM_melt))] <- "AUM"
-
-EurekahedgeHF_Excel_aca_AUM_melt[,"AUM"] <- ifelse(is.na(EurekahedgeHF_Excel_aca_AUM_melt[,"AUM"]), 
-                                                   NA, EurekahedgeHF_Excel_aca_AUM_melt[,"AUM"])
-
-EurekahedgeHF_Excel_aca_AUM_melt[,"AUM"] <- as.integer(EurekahedgeHF_Excel_aca_AUM_melt[,"AUM"])
-
-EurekahedgeHF_Excel_aca_AUM_melt <- data.frame(EurekahedgeHF_Excel_aca_AUM_melt[,!names(EurekahedgeHF_Excel_aca_AUM_melt) %in% c("Type","Fund.Name")],
-                                               yr=year(EurekahedgeHF_Excel_aca_AUM_melt[,"date"]),
-                                               month=month(EurekahedgeHF_Excel_aca_AUM_melt[,"date"]),
-                                               stringsAsFactors=FALSE)
-
-# Melt NAV
-
-EurekahedgeHF_Excel_aca_NAV_melt <- melt(EurekahedgeHF_Excel_aca_NAV, id=c("Type","Fund.ID","Fund.Name"), na.rm=FALSE)
-EurekahedgeHF_Excel_aca_NAV_melt[,"variable"] <- gsub(pattern="X", replacement="", x=EurekahedgeHF_Excel_aca_NAV_melt[,"variable"])
-EurekahedgeHF_Excel_aca_NAV_melt[,"variable"] <- gsub(pattern="\\.", replacement="-", x=EurekahedgeHF_Excel_aca_NAV_melt[,"variable"])
-EurekahedgeHF_Excel_aca_NAV_melt[,"variable"] <- as.Date(EurekahedgeHF_Excel_aca_NAV_melt[,"variable"],format="%m-%d-%Y")
-
-rm2(EurekahedgeHF_Excel_aca_NAV)
-
-colnames(EurekahedgeHF_Excel_aca_NAV_melt)[match("variable",names(EurekahedgeHF_Excel_aca_NAV_melt))] <- "date"
-colnames(EurekahedgeHF_Excel_aca_NAV_melt)[match("value",names(EurekahedgeHF_Excel_aca_NAV_melt))] <- "Monthly_Ret"
-
-EurekahedgeHF_Excel_aca_NAV_melt[,"Monthly_Ret"] <- 
-  ifelse(is.na(EurekahedgeHF_Excel_aca_NAV_melt[,"Monthly_Ret"]), NA, EurekahedgeHF_Excel_aca_NAV_melt[,"Monthly_Ret"])
-
-EurekahedgeHF_Excel_aca_NAV_melt[,"Monthly_Ret"] <- as.numeric(EurekahedgeHF_Excel_aca_NAV_melt[,"Monthly_Ret"])
-
-EurekahedgeHF_Excel_aca_NAV_melt <- data.frame(EurekahedgeHF_Excel_aca_NAV_melt[,!names(EurekahedgeHF_Excel_aca_NAV_melt) %in% c("Type","Fund.Name")],
-                                               yr=year(EurekahedgeHF_Excel_aca_NAV_melt[,"date"]),
-                                               month=month(EurekahedgeHF_Excel_aca_NAV_melt[,"date"]),
-                                               stringsAsFactors=FALSE)
-
-EurekahedgeHF_Excel_aca_NAV_AUM_melt <- merge(EurekahedgeHF_Excel_aca_NAV_melt, EurekahedgeHF_Excel_aca_AUM_melt, 
-                                              by.x=c("Fund.ID","date","yr","month"), by.y=c("Fund.ID","date","yr","month"), 
-                                              all.x=TRUE, all.y=TRUE, sort=FALSE,suffixes=c(".x",".y"))
-
-rm2(EurekahedgeHF_Excel_aca_NAV_melt,EurekahedgeHF_Excel_aca_AUM_melt)
-
-EurekahedgeHF_Excel_aca_NAV_AUM_melt <- EurekahedgeHF_Excel_aca_NAV_AUM_melt[rowSums(is.na(EurekahedgeHF_Excel_aca_NAV_AUM_melt[,1:ncol(EurekahedgeHF_Excel_aca_NAV_AUM_melt)]))<ncol(EurekahedgeHF_Excel_aca_NAV_AUM_melt),]
-
-EurekahedgeHF_Excel_aca_NAV_AUM_melt <- EurekahedgeHF_Excel_aca_NAV_AUM_melt[order(EurekahedgeHF_Excel_aca_NAV_AUM_melt[,"Fund.ID"],
-                                                                                   EurekahedgeHF_Excel_aca_NAV_AUM_melt[,"date"],
-                                                                                   EurekahedgeHF_Excel_aca_NAV_AUM_melt[,"yr"],
-                                                                                   EurekahedgeHF_Excel_aca_NAV_AUM_melt[,"month"]),]
-
-row.names(EurekahedgeHF_Excel_aca_NAV_AUM_melt) <- seq(nrow(EurekahedgeHF_Excel_aca_NAV_AUM_melt))
-
-write.csv(EurekahedgeHF_Excel_aca_NAV_AUM_melt, file=paste(output_directory,file="EurekahedgeHF_Excel_aca_NAV_AUM_melt",".csv",sep=""),row.names=FALSE)
-
-
-###############################################################################
-cat("SECTION: CLEAN EurekahedgeHF_Excel_aca_Instruments_Traded", "\n")
-###############################################################################
-
-EurekahedgeHF_Excel_aca_Instruments_Traded <- read.csv(file=paste(output_directory,files[3,1],sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
-for(i in which(sapply(EurekahedgeHF_Excel_aca_Instruments_Traded,class)=="character"))
-{
-  EurekahedgeHF_Excel_aca_Instruments_Traded[[i]] = trim(EurekahedgeHF_Excel_aca_Instruments_Traded[[i]])
-}
-for (i in 1:ncol(EurekahedgeHF_Excel_aca_Instruments_Traded))
-{
-  EurekahedgeHF_Excel_aca_Instruments_Traded[,i] <- unknownToNA(EurekahedgeHF_Excel_aca_Instruments_Traded[,i], unknown=c("",".","n/a","na","NA",NA,"null","NULL",NULL,"nan","NaN",NaN,
-                                                                                                                          NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
-                                                                                                                          NA_character_,"NA_character_",NA_real_,"NA_real_"),force=TRUE)
-  EurekahedgeHF_Excel_aca_Instruments_Traded[,i] <- ifelse(is.na(EurekahedgeHF_Excel_aca_Instruments_Traded[,i]),NA, EurekahedgeHF_Excel_aca_Instruments_Traded[,i])
-} 
-
-EurekahedgeHF_Excel_aca_Instruments_Traded  <- EurekahedgeHF_Excel_aca_Instruments_Traded[order(EurekahedgeHF_Excel_aca_Instruments_Traded[,"Fund.ID"],
-                                                                                                EurekahedgeHF_Excel_aca_Instruments_Traded[,"Fund.Name"],
-                                                                                                EurekahedgeHF_Excel_aca_Instruments_Traded[,"Instrument.Traded"]),]
-
-row.names(EurekahedgeHF_Excel_aca_Instruments_Traded) <- seq(nrow(EurekahedgeHF_Excel_aca_Instruments_Traded))
-
-EurekahedgeHF_Excel_aca_Instruments_Traded[,"Instrument.Traded"] <-  gsub(pattern=" ", replacement=".", x=EurekahedgeHF_Excel_aca_Instruments_Traded[,"Instrument.Traded"])
-EurekahedgeHF_Excel_aca_Instruments_Traded[,"Instrument.Traded"] <-  gsub(pattern="\\.{2,}", replacement="\\.", x=EurekahedgeHF_Excel_aca_Instruments_Traded[,"Instrument.Traded"])
-EurekahedgeHF_Excel_aca_Instruments_Traded[,"Instrument.Traded"] <-  gsub(pattern="-", replacement="_", x=EurekahedgeHF_Excel_aca_Instruments_Traded[,"Instrument.Traded"])
-
-unique_instruments <-  unique(EurekahedgeHF_Excel_aca_Instruments_Traded[,"Instrument.Traded"])
-
-#Instruments Traded
-Instruments_Traded <- data.frame(EurekahedgeHF_Excel_aca_Instruments_Traded, 
-                                 matrix(0, ncol=length(unique_instruments), nrow=nrow(EurekahedgeHF_Excel_aca_Instruments_Traded), dimnames=list(c(), paste("Instrument.Traded",unique_instruments,sep="_"))), 
-                                 stringsAsFactors=FALSE)
-
-for (i in 1:length(unique_instruments))
-{
-  
-  Instruments_Traded[,paste("Instrument.Traded",unique_instruments[i],sep="_")] <- 
-    ifelse(Instruments_Traded[,"Instrument.Traded"]==unique_instruments[i], 1, Instruments_Traded[,paste("Instrument.Traded",unique_instruments[i],sep="_")])
-  
-} 
-
-Instruments_Traded_comb <- aggregate(Instruments_Traded[,(ncol(Instruments_Traded)-length(unique_instruments)+1):ncol(Instruments_Traded)], by=list(Instruments_Traded[,"Fund.ID"]), FUN=sum, na.rm=TRUE)
-colnames(Instruments_Traded_comb)[1] <- "Fund.ID"
-
-rm2(Instruments_Traded)
-
-Instruments_Traded_comb <- Instruments_Traded_comb[,sort(colnames(Instruments_Traded_comb))]
-Instruments_Traded_comb <- Instruments_Traded_comb[,c("Fund.ID",colnames(Instruments_Traded_comb)[-which(colnames(Instruments_Traded_comb) %in% "Fund.ID")])]
-
-#Exposure
-Exposure <- data.frame(EurekahedgeHF_Excel_aca_Instruments_Traded, 
-                       matrix(NA, ncol=length(unique_instruments), nrow=nrow(EurekahedgeHF_Excel_aca_Instruments_Traded), dimnames=list(c(), paste("Exposure",unique_instruments,sep="_"))), 
-                       stringsAsFactors=FALSE)
-
-rm2(EurekahedgeHF_Excel_aca_Instruments_Traded)
-
-for (i in 1:length(unique_instruments))
-{
-  
-  Exposure[,paste("Exposure",unique_instruments[i],sep="_")] <- 
-    ifelse(Exposure[,"Instrument.Traded"]==unique_instruments[i], Exposure[,"Exposure"], Exposure[,paste("Exposure",unique_instruments[i],sep="_")])
-  
-} 
-
-Exposure_comb <- dcast(Exposure, Fund.ID ~ Instrument.Traded, value.var = 'Exposure')
-colnames(Exposure_comb)[2:ncol(Exposure_comb)] <- paste("Exposure",colnames(Exposure_comb)[2:ncol(Exposure_comb)],sep="_")
-colnames(Exposure_comb)[1] <- "Fund.ID"
-
-rm2(Exposure)
-
-Exposure_comb <- Exposure_comb[,sort(colnames(Exposure_comb))]
-Exposure_comb <- Exposure_comb[,c("Fund.ID",colnames(Exposure_comb)[-which(colnames(Exposure_comb) %in% "Fund.ID")])]
-
-
-EurekahedgeHF_Excel_aca_Instruments_Traded_merge <- merge(Instruments_Traded_comb, Exposure_comb, by.x=c("Fund.ID"), by.y=c("Fund.ID"), 
-                                                          all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
-
-rm(Instruments_Traded_comb,Exposure_comb)
-
-EurekahedgeHF_Excel_aca_Instruments_Traded_merge <- EurekahedgeHF_Excel_aca_Instruments_Traded_merge[rowSums(is.na(EurekahedgeHF_Excel_aca_Instruments_Traded_merge[,1:ncol(EurekahedgeHF_Excel_aca_Instruments_Traded_merge)]))<ncol(EurekahedgeHF_Excel_aca_Instruments_Traded_merge),]
-
-EurekahedgeHF_Excel_aca_Instruments_Traded_merge <- EurekahedgeHF_Excel_aca_Instruments_Traded_merge[order(EurekahedgeHF_Excel_aca_Instruments_Traded_merge[,"Fund.ID"]),]
-
-row.names(EurekahedgeHF_Excel_aca_Instruments_Traded_merge) <- seq(nrow(EurekahedgeHF_Excel_aca_Instruments_Traded_merge))
-
-
-###############################################################################
-cat("SECTION: CLEAN EurekahedgeHF_Excel_aca", "\n")
-###############################################################################
-
-EurekahedgeHF_Excel_aca <- read.csv(file=paste(output_directory,files[1,1],sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
-for(i in which(sapply(EurekahedgeHF_Excel_aca,class)=="character"))
-{
-  EurekahedgeHF_Excel_aca[[i]] = trim(EurekahedgeHF_Excel_aca[[i]])
-}
-for (i in 1:ncol(EurekahedgeHF_Excel_aca))
-{
-  EurekahedgeHF_Excel_aca[,i] <- unknownToNA(EurekahedgeHF_Excel_aca[,i], unknown=c("",".","n/a","na","NA",NA,"null","NULL",NULL,"nan","NaN",NaN,
-                                                                                    NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
-                                                                                    NA_character_,"NA_character_",NA_real_,"NA_real_"),force=TRUE)
-  EurekahedgeHF_Excel_aca[,i] <- ifelse(is.na(EurekahedgeHF_Excel_aca[,i]),NA, EurekahedgeHF_Excel_aca[,i])
-} 
-
-EurekahedgeHF_Excel_aca_cols <- colnames(EurekahedgeHF_Excel_aca)
-EurekahedgeHF_Excel_aca_cols <- gsub(pattern="\\.{2,}", replacement="\\.", x=EurekahedgeHF_Excel_aca_cols)
-EurekahedgeHF_Excel_aca_cols <- gsub(pattern="\\.{2,}", replacement="\\.", x=EurekahedgeHF_Excel_aca_cols)
-EurekahedgeHF_Excel_aca_cols <- gsub(pattern="\\.{2,}", replacement="\\.", x=EurekahedgeHF_Excel_aca_cols)
-EurekahedgeHF_Excel_aca_cols <- gsub(pattern="\\.{2,}", replacement="\\.", x=EurekahedgeHF_Excel_aca_cols)
-EurekahedgeHF_Excel_aca_cols <- gsub(pattern="[[:punct:]]?$", replacement="", x=EurekahedgeHF_Excel_aca_cols)
-EurekahedgeHF_Excel_aca_cols <- gsub(pattern="X2011.Returns", replacement="Returns.2011", x=EurekahedgeHF_Excel_aca_cols)
-EurekahedgeHF_Excel_aca_cols <- gsub(pattern="X2012.Returns", replacement="Returns.2012", x=EurekahedgeHF_Excel_aca_cols)
-EurekahedgeHF_Excel_aca_cols <- gsub(pattern="VaR.90", replacement="VaR.90pct", x=EurekahedgeHF_Excel_aca_cols)
-EurekahedgeHF_Excel_aca_cols <- gsub(pattern="VaR.95", replacement="VaR.95pct", x=EurekahedgeHF_Excel_aca_cols)
-EurekahedgeHF_Excel_aca_cols <- gsub(pattern="VaR.99", replacement="VaR.99pct", x=EurekahedgeHF_Excel_aca_cols)
-colnames(EurekahedgeHF_Excel_aca) <- EurekahedgeHF_Excel_aca_cols
-
-EurekahedgeHF_Excel_aca[,"Date.Added"] <- gsub(pattern="/", replacement="-", x=EurekahedgeHF_Excel_aca[,"Date.Added"])
-EurekahedgeHF_Excel_aca[,"Date.Added"] <- as.Date(EurekahedgeHF_Excel_aca[,"Date.Added"],format="%m-%d-%Y")
-
-EurekahedgeHF_Excel_aca[,"Dead.Date"] <- gsub(pattern="/", replacement="-", x=EurekahedgeHF_Excel_aca[,"Dead.Date"])
-EurekahedgeHF_Excel_aca[,"Dead.Date"] <- as.Date(EurekahedgeHF_Excel_aca[,"Dead.Date"],format="%m-%d-%Y")
-
-EurekahedgeHF_Excel_aca[,"Inception.Date"] <- gsub(pattern="/", replacement="-", x=EurekahedgeHF_Excel_aca[,"Inception.Date"])
-EurekahedgeHF_Excel_aca[,"Inception.Date"] <- as.Date(EurekahedgeHF_Excel_aca[,"Inception.Date"],format="%m-%d-%Y")
-
-EurekahedgeHF_Excel_aca <- EurekahedgeHF_Excel_aca[rowSums(is.na(EurekahedgeHF_Excel_aca[,1:ncol(EurekahedgeHF_Excel_aca)]))<ncol(EurekahedgeHF_Excel_aca),]
-
-EurekahedgeHF_Excel_aca <- EurekahedgeHF_Excel_aca[order(EurekahedgeHF_Excel_aca[,"Fund.ID"]),]
-
-row.names(EurekahedgeHF_Excel_aca) <- seq(nrow(EurekahedgeHF_Excel_aca))
-
-write.csv(EurekahedgeHF_Excel_aca, file=paste(output_directory,file="EurekahedgeHF_Excel_aca",".csv",sep=""),row.names=FALSE)
-
-rm2(EurekahedgeHF_Excel_aca_cols)
-
-
-###############################################################################
-cat("SECTION: REMOVE MONTHLY RETURNS FROM EurekahedgeHF_Excel_aca", "\n")
-###############################################################################
-
-monthly_ret_cols <- c("Jun.12.Returns","May.12.Returns","Apr.12.Returns")
-
-EurekahedgeHF_Excel_aca_monthly_ret_temp <- EurekahedgeHF_Excel_aca[,c("Fund.ID",monthly_ret_cols)]
-
-EurekahedgeHF_Excel_aca_monthly_ret_temp  <- EurekahedgeHF_Excel_aca_monthly_ret_temp[order(EurekahedgeHF_Excel_aca_monthly_ret_temp[,"Fund.ID"]),]
-
-row.names(EurekahedgeHF_Excel_aca_monthly_ret_temp) <- seq(nrow(EurekahedgeHF_Excel_aca_monthly_ret_temp))
-
-# for(i in 1:length(monthly_ret_cols))
-# {
-#   #i <- 1
-#   #i <- 2
-#   #i <- 3
-#   
-#   #temp <-  melt(EurekahedgeHF_Excel_aca_monthly_ret_temp[,c("Fund.ID",monthly_ret_cols[i])], id=c("Fund.ID"), na.rm=FALSE)
-#   temp <- data.frame(melt(EurekahedgeHF_Excel_aca_monthly_ret_temp[,c("Fund.ID",monthly_ret_cols[i])], id=c("Fund.ID"), na.rm=FALSE), 
-#                      yr=NA, 
-#                      month=NA, stringsAsFactors=FALSE)
-#   
-#   for(j in 1:ncol(temp))
-#   {
-#     #j <- 1
-#     
-#     temp[,j] = trim(temp[,j])
-#     
-#   }
-#   
-#   temp[,"Fund.ID"] <- as.integer(temp[,"Fund.ID"])
-#   
-#   colnames(temp)[match("variable",names(temp))] <- "date"
-#   colnames(temp)[match("value",names(temp))] <- "Monthly_Ret2"
-#   
-#   temp[,"date"] <- gsub(pattern="X", replacement="", x=temp[,"date"])
-#   temp[,"date"] <- gsub(pattern="\\.", replacement="-", x=temp[,"date"])
-#   temp[,"date"] <- gsub(pattern=" ", replacement="", x=temp[,"date"])
-#   temp[,"date"] <- gsub(pattern=" ", replacement="", x=temp[,"date"])
-#   temp[,"date"] <- gsub(pattern="-Returns", replacement="", x=temp[,"date"])
-#   
-#   for(j in 1:ncol(temp))
-#   {
-#     #j <- 1
-#     
-#     temp[,j] = trim(temp[,j])
-#     
-#   }
-#   
-#   temp_month <- temp[,"date"]
-#   temp_month <- substr(temp_month, 1, 3)
-#   temp_month <- match(tolower(temp_month), tolower(month.abb))
-#   
-#   temp_yr <- temp[,"date"]
-#   temp_yr <- substr(temp_yr, 5, 6)
-#   temp_yr <- as.integer(temp_yr)
-#   
-#   temp_dt <- format(as.Date(paste(temp_yr,temp_month,"01",sep="-"),format="%y-%m-%d"),"%Y-%m-%d")
-#   temp_dt <- as.Date(temp_dt,format="%Y-%m-%d")
-#   
-#   temp[,"date"] <- temp_dt
-#   
-#   temp[,"Monthly_Ret2"] <- as.numeric(temp[,"Monthly_Ret2"])
-#   
-#   cat("LOOP: ",i, "\n")
-#   
-#   if(i==1)
-#   {
-#     EurekahedgeHF_Excel_aca_monthly_ret <- temp
-#     
-#   } else
-#   {
-#     EurekahedgeHF_Excel_aca_monthly_ret <- rbind(EurekahedgeHF_Excel_aca_monthly_ret,temp)
-#   }
-#   
-# }
-# 
-# EurekahedgeHF_Excel_aca_monthly_ret[,"yr"] <- year(EurekahedgeHF_Excel_aca_monthly_ret[,"date"])
-# EurekahedgeHF_Excel_aca_monthly_ret[,"month"] <- month(EurekahedgeHF_Excel_aca_monthly_ret[,"date"])
-
-EurekahedgeHF_Excel_aca_monthly_ret <- ldply(.data=monthly_ret_cols, .fun = function(x,data){
-  
-  temp <- data.frame(melt(data[,c("Fund.ID",x)], id=c("Fund.ID"), na.rm=FALSE),  yr=NA, month=NA, stringsAsFactors=FALSE)
-  
-  return(temp)
-  
-}, data=EurekahedgeHF_Excel_aca_monthly_ret_temp, 
-.progress = "none", .inform = FALSE,.parallel = FALSE, .paropts = NULL, .id = NA)
-
-rm(EurekahedgeHF_Excel_aca_monthly_ret_temp)
-
-for(j in 1:ncol(EurekahedgeHF_Excel_aca_monthly_ret))
-{
-  #j <- 1
-  
-  EurekahedgeHF_Excel_aca_monthly_ret[,j] = trim(EurekahedgeHF_Excel_aca_monthly_ret[,j])
-  
-}
-
-EurekahedgeHF_Excel_aca_monthly_ret[,"Fund.ID"] <- as.integer(EurekahedgeHF_Excel_aca_monthly_ret[,"Fund.ID"])
-
-colnames(EurekahedgeHF_Excel_aca_monthly_ret)[match("variable",names(EurekahedgeHF_Excel_aca_monthly_ret))] <- "date"
-colnames(EurekahedgeHF_Excel_aca_monthly_ret)[match("value",names(EurekahedgeHF_Excel_aca_monthly_ret))] <- "Monthly_Ret2"
-
-EurekahedgeHF_Excel_aca_monthly_ret[,"date"] <- gsub(pattern="X", replacement="", x=EurekahedgeHF_Excel_aca_monthly_ret[,"date"])
-EurekahedgeHF_Excel_aca_monthly_ret[,"date"] <- gsub(pattern="\\.", replacement="-", x=EurekahedgeHF_Excel_aca_monthly_ret[,"date"])
-EurekahedgeHF_Excel_aca_monthly_ret[,"date"] <- gsub(pattern=" ", replacement="", x=EurekahedgeHF_Excel_aca_monthly_ret[,"date"])
-EurekahedgeHF_Excel_aca_monthly_ret[,"date"] <- gsub(pattern=" ", replacement="", x=EurekahedgeHF_Excel_aca_monthly_ret[,"date"])
-EurekahedgeHF_Excel_aca_monthly_ret[,"date"] <- gsub(pattern="-Returns", replacement="", x=EurekahedgeHF_Excel_aca_monthly_ret[,"date"])
-
-for(j in 1:ncol(EurekahedgeHF_Excel_aca_monthly_ret))
-{
-  #j <- 1
-  
-  EurekahedgeHF_Excel_aca_monthly_ret[,j] = trim(EurekahedgeHF_Excel_aca_monthly_ret[,j])
-  
-}
-
-EurekahedgeHF_Excel_aca_monthly_ret[,"month"] <- EurekahedgeHF_Excel_aca_monthly_ret[,"date"]
-EurekahedgeHF_Excel_aca_monthly_ret[,"month"] <- substr(EurekahedgeHF_Excel_aca_monthly_ret[,"month"], 1, 3)
-EurekahedgeHF_Excel_aca_monthly_ret[,"month"] <- match(tolower(EurekahedgeHF_Excel_aca_monthly_ret[,"month"]), tolower(month.abb))
-
-EurekahedgeHF_Excel_aca_monthly_ret[,"yr"] <- EurekahedgeHF_Excel_aca_monthly_ret[,"date"]
-EurekahedgeHF_Excel_aca_monthly_ret[,"yr"] <- substr(EurekahedgeHF_Excel_aca_monthly_ret[,"yr"], 5, 6)
-EurekahedgeHF_Excel_aca_monthly_ret[,"yr"] <- as.integer(EurekahedgeHF_Excel_aca_monthly_ret[,"yr"])
-
-EurekahedgeHF_Excel_aca_monthly_ret[,"date"] <- format(as.Date(paste(EurekahedgeHF_Excel_aca_monthly_ret[,"yr"],
-                                                                         EurekahedgeHF_Excel_aca_monthly_ret[,"month"],
-                                                                         "01",sep="-"),
-                                                                   format="%y-%m-%d"),"%Y-%m-%d")
-EurekahedgeHF_Excel_aca_monthly_ret[,"date"] <- as.Date(EurekahedgeHF_Excel_aca_monthly_ret[,"date"],format="%Y-%m-%d")
-
-EurekahedgeHF_Excel_aca_monthly_ret[,"Monthly_Ret2"] <- as.numeric(EurekahedgeHF_Excel_aca_monthly_ret[,"Monthly_Ret2"])
-
-EurekahedgeHF_Excel_aca_monthly_ret[,"yr"] <- year(EurekahedgeHF_Excel_aca_monthly_ret[,"date"])
-EurekahedgeHF_Excel_aca_monthly_ret[,"month"] <- month(EurekahedgeHF_Excel_aca_monthly_ret[,"date"])
-
-EurekahedgeHF_Excel_aca_monthly_ret <- EurekahedgeHF_Excel_aca_monthly_ret[rowSums(is.na(EurekahedgeHF_Excel_aca_monthly_ret[,1:ncol(EurekahedgeHF_Excel_aca_monthly_ret)]))<ncol(EurekahedgeHF_Excel_aca_monthly_ret),]
-
-EurekahedgeHF_Excel_aca_monthly_ret <- EurekahedgeHF_Excel_aca_monthly_ret[order(EurekahedgeHF_Excel_aca_monthly_ret[,"Fund.ID"],
-                                                                                 EurekahedgeHF_Excel_aca_monthly_ret[,"date"],
-                                                                                 EurekahedgeHF_Excel_aca_monthly_ret[,"yr"],
-                                                                                 EurekahedgeHF_Excel_aca_monthly_ret[,"month"]),]
-
-row.names(EurekahedgeHF_Excel_aca_monthly_ret) <- seq(nrow(EurekahedgeHF_Excel_aca_monthly_ret))
-
-
-###############################################################################
-cat("SECTION: REMOVE YEARLY RETURNS FROM EurekahedgeHF_Excel_aca", "\n")
-###############################################################################
-
-yearly_ret_cols <- c("Returns.2011","Returns.2012")
-
-EurekahedgeHF_Excel_aca_yearly_ret_temp <- EurekahedgeHF_Excel_aca[,c("Fund.ID",yearly_ret_cols)]
-
-EurekahedgeHF_Excel_aca_yearly_ret_temp  <- EurekahedgeHF_Excel_aca_yearly_ret_temp[order(EurekahedgeHF_Excel_aca_yearly_ret_temp[,"Fund.ID"]),]
-
-row.names(EurekahedgeHF_Excel_aca_yearly_ret_temp) <- seq(nrow(EurekahedgeHF_Excel_aca_yearly_ret_temp))
-
-# for(i in 1:length(yearly_ret_cols))
-# {
-#   #i <- 1
-#   #i <- 2
-#   #i <- 3
-#   
-#   temp <-  melt(EurekahedgeHF_Excel_aca_yearly_ret_temp[,c("Fund.ID",yearly_ret_cols[i])], id=c("Fund.ID"), na.rm=FALSE)
-#   
-#   for(j in 1:ncol(temp))
-#   {
-#     #j <- 1
-#     
-#     temp[,j] = trim(temp[,j])
-#     
-#   }
-#   
-#   temp[,"Fund.ID"] <- as.integer(temp[,"Fund.ID"])
-#   
-#   colnames(temp)[match("variable",names(temp))] <- "yr"
-#   colnames(temp)[match("value",names(temp))] <- "Yearly_Ret"
-#   
-#   temp[,"yr"] <- gsub(pattern="X", replacement="", x=temp[,"yr"])
-#   temp[,"yr"] <- gsub(pattern="\\.", replacement="-", x=temp[,"yr"])
-#   temp[,"yr"] <- gsub(pattern=" ", replacement="", x=temp[,"yr"])
-#   temp[,"yr"] <- gsub(pattern=" ", replacement="", x=temp[,"yr"])
-#   temp[,"yr"] <- gsub(pattern="Returns-", replacement="", x=temp[,"yr"])
-#   
-#   for(j in 1:ncol(temp))
-#   {
-#     #j <- 1
-#     
-#     temp[,j] = trim(temp[,j])
-#     
-#   }
-#   
-#   temp[,"yr"] <- as.integer(temp[,"yr"])
-#   temp[,"Yearly_Ret"] <- as.numeric(temp[,"Yearly_Ret"])
-#   
-#   cat("LOOP: ",i, "\n")
-#   
-#   if(i==1)
-#   {
-#     EurekahedgeHF_Excel_aca_yearly_ret <- temp
-#     
-#   } else
-#   {
-#     EurekahedgeHF_Excel_aca_yearly_ret <- rbind(EurekahedgeHF_Excel_aca_yearly_ret,temp)
-#   }
-#   
-# }
-
-EurekahedgeHF_Excel_aca_yearly_ret <- ldply(.data=yearly_ret_cols, .fun = function(x,data){
-  
-  temp <- data.frame(melt(data[,c("Fund.ID",x)], id=c("Fund.ID"), na.rm=FALSE), stringsAsFactors=FALSE)
-  
-  return(temp)
-  
-}, data=EurekahedgeHF_Excel_aca_yearly_ret_temp, 
-.progress = "none", .inform = FALSE,.parallel = FALSE, .paropts = NULL, .id = NA)
-
-rm(EurekahedgeHF_Excel_aca_yearly_ret_temp)
-
-for(j in 1:ncol(EurekahedgeHF_Excel_aca_yearly_ret))
-{
-  #j <- 1
-  
-  EurekahedgeHF_Excel_aca_yearly_ret[,j] = trim(EurekahedgeHF_Excel_aca_yearly_ret[,j])
-  
-}
-
-EurekahedgeHF_Excel_aca_yearly_ret[,"Fund.ID"] <- as.integer(EurekahedgeHF_Excel_aca_yearly_ret[,"Fund.ID"])
-
-colnames(EurekahedgeHF_Excel_aca_yearly_ret)[match("variable",names(EurekahedgeHF_Excel_aca_yearly_ret))] <- "yr"
-colnames(EurekahedgeHF_Excel_aca_yearly_ret)[match("value",names(EurekahedgeHF_Excel_aca_yearly_ret))] <- "Yearly_Ret"
-
-EurekahedgeHF_Excel_aca_yearly_ret[,"yr"] <- gsub(pattern="X", replacement="", x=EurekahedgeHF_Excel_aca_yearly_ret[,"yr"])
-EurekahedgeHF_Excel_aca_yearly_ret[,"yr"] <- gsub(pattern="\\.", replacement="-", x=EurekahedgeHF_Excel_aca_yearly_ret[,"yr"])
-EurekahedgeHF_Excel_aca_yearly_ret[,"yr"] <- gsub(pattern=" ", replacement="", x=EurekahedgeHF_Excel_aca_yearly_ret[,"yr"])
-EurekahedgeHF_Excel_aca_yearly_ret[,"yr"] <- gsub(pattern=" ", replacement="", x=EurekahedgeHF_Excel_aca_yearly_ret[,"yr"])
-EurekahedgeHF_Excel_aca_yearly_ret[,"yr"] <- gsub(pattern="Returns-", replacement="", x=EurekahedgeHF_Excel_aca_yearly_ret[,"yr"])
-
-for(j in 1:ncol(EurekahedgeHF_Excel_aca_yearly_ret))
-{
-  #j <- 1
-  
-  EurekahedgeHF_Excel_aca_yearly_ret[,j] = trim(EurekahedgeHF_Excel_aca_yearly_ret[,j])
-  
-}
-
-EurekahedgeHF_Excel_aca_yearly_ret[,"yr"] <- as.integer(EurekahedgeHF_Excel_aca_yearly_ret[,"yr"])
-EurekahedgeHF_Excel_aca_yearly_ret[,"Yearly_Ret"] <- as.numeric(EurekahedgeHF_Excel_aca_yearly_ret[,"Yearly_Ret"])
-
-EurekahedgeHF_Excel_aca_yearly_ret <- EurekahedgeHF_Excel_aca_yearly_ret[rowSums(is.na(EurekahedgeHF_Excel_aca_yearly_ret[,1:ncol(EurekahedgeHF_Excel_aca_yearly_ret)]))<ncol(EurekahedgeHF_Excel_aca_yearly_ret),]
-
-EurekahedgeHF_Excel_aca_yearly_ret <- EurekahedgeHF_Excel_aca_yearly_ret[order(EurekahedgeHF_Excel_aca_yearly_ret[,"Fund.ID"],
-                                                                               EurekahedgeHF_Excel_aca_yearly_ret[,"yr"]),]
-
-row.names(EurekahedgeHF_Excel_aca_yearly_ret) <- seq(nrow(EurekahedgeHF_Excel_aca_yearly_ret))
-
-
-###############################################################################
-cat("SECTION: MERGE DATA", "\n")
-###############################################################################
-
-#EurekahedgeHF_Excel_aca_NAV_AUM_melt[,!names(EurekahedgeHF_Excel_aca_NAV_AUM_melt) %in% c("date")]
-EurekahedgeHF_Excel_aca_full0 <- merge(EurekahedgeHF_Excel_aca_NAV_AUM_melt,
-                                       EurekahedgeHF_Excel_aca_monthly_ret[,!names(EurekahedgeHF_Excel_aca_monthly_ret) %in% c("date")], 
-                                       by.x=c("Fund.ID","yr","month"), by.y=c("Fund.ID","yr","month"), 
-                                       all.x=TRUE, all.y=FALSE, sort=FALSE,suffixes=c(".x",".y"))
-
-rm2(EurekahedgeHF_Excel_aca_NAV_AUM_melt,EurekahedgeHF_Excel_aca_monthly_ret)
-
-EurekahedgeHF_Excel_aca_full1 <- merge(EurekahedgeHF_Excel_aca_full0, 
-                                       EurekahedgeHF_Excel_aca_yearly_ret, 
-                                       by.x=c("Fund.ID","yr"), by.y=c("Fund.ID","yr"), 
-                                       all.x=TRUE, all.y=FALSE, sort=FALSE,suffixes=c(".x",".y"))
-
-rm2(EurekahedgeHF_Excel_aca_full0,EurekahedgeHF_Excel_aca_yearly_ret)
-
-EurekahedgeHF_Excel_aca_full2 <- merge(EurekahedgeHF_Excel_aca[,!names(EurekahedgeHF_Excel_aca) %in% c(monthly_ret_cols,yearly_ret_cols)],
-                                       EurekahedgeHF_Excel_aca_full1, 
-                                       by.x=c("Fund.ID"), by.y=c("Fund.ID"), 
-                                       all.x=TRUE, all.y=FALSE, sort=FALSE,suffixes=c(".x",".y"))
-
-rm2(EurekahedgeHF_Excel_aca,EurekahedgeHF_Excel_aca_full1)
-
-EurekahedgeHF_Excel_aca_full3 <- merge(EurekahedgeHF_Excel_aca_full2, EurekahedgeHF_Excel_aca_Instruments_Traded_merge, 
-                                       by.x=c("Fund.ID"), by.y=c("Fund.ID"), 
-                                       all.x=TRUE, all.y=FALSE, sort=FALSE,suffixes=c(".x",".y"))
-
-rm2(EurekahedgeHF_Excel_aca_full2,EurekahedgeHF_Excel_aca_Instruments_Traded_merge)
-
-EurekahedgeHF_Excel_aca_merge <- EurekahedgeHF_Excel_aca_full3[!is.na(EurekahedgeHF_Excel_aca_full3[,"Strategy"]),]
-EurekahedgeHF_Excel_aca_merge <- EurekahedgeHF_Excel_aca_merge[EurekahedgeHF_Excel_aca_merge[,"Base.Currency"]=="USD",]
-EurekahedgeHF_Excel_aca_merge <- EurekahedgeHF_Excel_aca_merge[EurekahedgeHF_Excel_aca_merge[,"Minimum.Investment.Currency"]=="USD",]
-
-rm2(EurekahedgeHF_Excel_aca_full3)
-
-EurekahedgeHF_Excel_aca_merge <- EurekahedgeHF_Excel_aca_merge[rowSums(is.na(EurekahedgeHF_Excel_aca_merge[,1:ncol(EurekahedgeHF_Excel_aca_merge)]))<ncol(EurekahedgeHF_Excel_aca_merge),]
-
-EurekahedgeHF_Excel_aca_merge <- EurekahedgeHF_Excel_aca_merge[order(EurekahedgeHF_Excel_aca_merge[,"Fund.ID"],
-                                                                     EurekahedgeHF_Excel_aca_merge[,"Fund.Name"],
-                                                                     EurekahedgeHF_Excel_aca_merge[,"date"],
-                                                                     EurekahedgeHF_Excel_aca_merge[,"yr"],                                                                  
-                                                                     EurekahedgeHF_Excel_aca_merge[,"month"]),]
-
-row.names(EurekahedgeHF_Excel_aca_merge) <- seq(nrow(EurekahedgeHF_Excel_aca_merge))
-
-
-###############################################################################
-cat("REORDER COLUMNS", "\n")
-###############################################################################
-
-#EurekahedgeHF_Excel_aca_merge <- EurekahedgeHF_Excel_aca_merge[!is.na(EurekahedgeHF_Excel_aca_merge[,"Strategy"]),]
-#EurekahedgeHF_Excel_aca_merge <- EurekahedgeHF_Excel_aca_merge[EurekahedgeHF_Excel_aca_merge[,"Base.Currency"]=="USD",]
-
-starting_cols <- c("Fund.ID","Fund.Name","Date.Added","Flagship","Closed","Limited","Dead","Dead.Date","Dead.Reason",
-                   "Eurekahedge.ID","ISIN","SEDOL","Valoren","CUSIP","Bloomberg","Reuters",
-                   "date","yr","month","AUM","Yearly_Ret","Monthly_Ret","Monthly_Ret2")
-
-all_cols <- colnames(EurekahedgeHF_Excel_aca_merge)
-
-other_cols <- all_cols[-which(all_cols %in% starting_cols)]
-
-EurekahedgeHF_Excel_aca_merge <- EurekahedgeHF_Excel_aca_merge[,c(starting_cols,other_cols)]
-
-write.csv(EurekahedgeHF_Excel_aca_merge, file=paste(output_directory,file="EurekahedgeHF_Excel_aca_merge",".csv",sep=""),row.names=FALSE)
-
-EurekahedgeHF_Excel_aca_merge_trim <- data.frame(EurekahedgeHF_Excel_aca_merge[,c("Fund.ID","Fund.Name","date","yr","month","Strategy")],
-                                            stringsAsFactors=FALSE)
-
-rm2(EurekahedgeHF_Excel_aca_merge)
-											
-EurekahedgeHF_Excel_aca_merge_trim <- unique(EurekahedgeHF_Excel_aca_merge_trim[,c("Fund.ID","Fund.Name","yr","Strategy")])
-
-write.csv(EurekahedgeHF_Excel_aca_merge_trim, file=paste(output_directory,file="EurekahedgeHF_Excel_aca_merge_trim",".csv",sep=""),row.names=FALSE)
-
-rm2(EurekahedgeHF_Excel_aca_merge_trim)
+#Check to see if final folder exists.  If not, create it.
+final_folder_expand3_path <- paste(normalizePath("F:/Import_Data/Data/Eurekahedge",winslash="\\", mustWork=TRUE), "Final_Expand3", sep = "//", collapse = "//")  
+create_directory(final_folder_expand3_path,remove=1)
+
+#files[,"filename"] <-  gsub(".csv","_org.csv",file_list)
+files[,"filename"] <-  file_list
+files[,"filepath"] <-  unlist(mapply(merge_cols_function,col_one=paste(final_folder_expand3_path,"//",sep=""),col_two=files[,"filename"],separator="", SIMPLIFY=FALSE,USE.NAMES=FALSE))
 
 
 ###############################################################################
 cat("SECTION: FORMAT TEXT", "\n")
 ###############################################################################
 
-sample_data_all <- read.csv(file=paste(output_directory,"EurekahedgeHF_Excel_aca_merge_trim",".csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
-colnames(sample_data_all)[match("Fund.ID",names(sample_data_all))] <- "Fund_ID"
-colnames(sample_data_all)[match("Fund.Name",names(sample_data_all))] <- "Fund_Name"
-sample_data_all  <- sample_data_all[order(sample_data_all[,"Fund_ID"],sample_data_all[,"Fund_Name"],sample_data_all[,"yr"]),]
+sample_data_all <- data.table(read.csv(file=files[1,"filepath"],header=TRUE,na.strings="NA",stringsAsFactors=FALSE))
+setkeyv(sample_data_all,NULL)
 
-for(i in which(sapply(sample_data_all,class)=="character"))
+setorderv(sample_data_all, c("Fund_ID","pull_trim","pull_trim2","yr","month"),c(1,1,1,1,1))
+
+sample_data_all_trim1 <- sample_data_all
+
+rm2(sample_data_all)
+invisible(gc(verbose = FALSE, reset = TRUE))
+
+set(sample_data_all_trim1, j=which(colnames(sample_data_all_trim1) %in% "date"), value=NULL)
+set(sample_data_all_trim1, j=which(colnames(sample_data_all_trim1) %in% "month"), value=NULL)
+sample_data_all_trim1 <- unique(sample_data_all_trim1)
+
+setorderv(sample_data_all_trim1, c("Fund_ID","pull_trim","pull_trim2","yr"),c(1,1,1,1))
+
+
+sample_data_all_trim2 <- sample_data_all_trim1
+
+rm2(sample_data_all_trim1)
+invisible(gc(verbose = FALSE, reset = TRUE))
+
+sample_data_all_trim2[,droprow := is.na(Fund_Name)]
+sample_data_all_trim2 <- sample_data_all_trim2[!(droprow)][,droprow:=NULL][]
+
+
+sample_data_all_trim3 <- sample_data_all_trim2
+
+rm2(sample_data_all_trim2)
+invisible(gc(verbose = FALSE, reset = TRUE))
+
+sample_data_all_trim3[,droprow := bad_max==1]
+sample_data_all_trim3 <- sample_data_all_trim3[!(droprow)][,droprow:=NULL][]
+
+sample_data_all_trim4 <- sample_data_all_trim3
+
+rm2(sample_data_all_trim3)
+invisible(gc(verbose = FALSE, reset = TRUE))
+
+set(sample_data_all_trim4, j=which(colnames(sample_data_all_trim4) %in% "bad_min"), value=NULL)
+set(sample_data_all_trim4, j=which(colnames(sample_data_all_trim4) %in% "bad_max"), value=NULL)
+set(sample_data_all_trim4, j=which(colnames(sample_data_all_trim4) %in% "Manager_Profile"), value=NULL)
+
+setkeyv(sample_data_all_trim4, c("Fund_ID","yr"))
+sample_data_all_trim4 <- sample_data_all_trim4[, tail(.SD, 1), by=c("Fund_ID","yr")]
+
+for (k in which(sapply(sample_data_all_trim4,class)=="character")) 
 {
-  sample_data_all[[i]] = trim(sample_data_all[[i]])
+  set(sample_data_all_trim4, i=NULL, j=k, value=gsub("^\\s+|\\s+$", "", sample_data_all_trim4[[k]], perl=TRUE))
 }
-for (i in 1:ncol(sample_data_all))
+rm(k)
+for (k in colnames(sample_data_all_trim4)) 
 {
-  sample_data_all[,i] <- unknownToNA(sample_data_all[,i], unknown=c("",".","n/a","na","NA",NA,"null","NULL",NULL,"nan","NaN",NaN,
-                                                                    NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
-                                                                    NA_character_,"NA_character_",NA_real_,"NA_real_"),force=TRUE)
-  sample_data_all[,i] <- ifelse(is.na(sample_data_all[,i]),NA, sample_data_all[,i])
-} 
+  #k <- 1
+  set(sample_data_all_trim4, i=NULL, j=k, value=unknownToNA(sample_data_all_trim4[[k]], unknown=unknowns_strings,force=TRUE))
+  set(sample_data_all_trim4, i=NULL, j=k, value=ifelse(is.na(sample_data_all_trim4[[k]]),NA,sample_data_all_trim4[[k]]))
+}
+rm(k)
 
-#Trim strings
-sample_data_all[,"Strategy"] <- trim(sample_data_all[,"Strategy"])
 
 #Remove multiple spaces (run a couple times)
 for (a in 1:5)
 {
   #a <- 1
-  sample_data_all[,"Strategy"] <- gsub(pattern=" {2,}", replacement=" ", x=sample_data_all[,"Strategy"])
+  set(sample_data_all, i=NULL, j=which(colnames(sample_data_all)==c("Strategy")), value=gsub(" {2,}", " ", sample_data_all[[which(colnames(sample_data_all)==c("Strategy"))]], perl=TRUE))
   
 }
 
@@ -938,31 +251,80 @@ for (a in 1:5)
 for (a in 1:5)
 {
   #a <- 1
-  sample_data_all[,"Strategy"] <- gsub(pattern="--", replacement="-", x=sample_data_all[,"Strategy"])
-  
+  set(sample_data_all, i=NULL, j=which(colnames(sample_data_all)==c("Strategy")), value=gsub("--", "-", sample_data_all[[which(colnames(sample_data_all)==c("Strategy"))]], perl=TRUE))
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #Remove sections that have less than 100 words
-sample_data_all_ios_len  <- pbsapply(sample_data_all[,"Strategy"],
-                                     function(x) {return(length(strsplit(x,' ')[[1]]))}, 
-                                     simplify=FALSE, USE.NAMES=FALSE)
-sample_data_all_trim  <- data.frame(sample_data_all,ios_word_count=unlist(sample_data_all_ios_len),stringsAsFactors=FALSE)
 
-rm2(sample_data_all,sample_data_all_ios_len)
+sample_data_all[,temp_text:=Strategy] 
+for (a in 1:5)
+{
+  #a <- 1
+  set(sample_data_all, i=NULL, j=which(colnames(sample_data_all)==c("temp_text")), value=gsub(" ", "", sample_data_all[[which(colnames(sample_data_all)==c("temp_text"))]], perl=TRUE))
+}
+sample_data_all[,temp_count:=NA_integer_] 
 
-sample_data_all_trim2 <- sample_data_all_trim[sample_data_all_trim[,"ios_word_count"]>=100,]
+set(sample_data_all, i=NULL, j=which(colnames(sample_data_all)==c("temp_count")), value=nchar(sample_data_all[[which(colnames(sample_data_all)==c("Strategy"))]])-nchar(sample_data_all[[which(colnames(sample_data_all)==c("temp_text"))]]))
 
-rm2(sample_data_all_trim)
+# #sample_data_all <- as.data.table(sample_data_all)
+# #sample_data_all <- as.data.frame(sample_data_all,stringsAsFactors=FALSE)
+# 
+# countCharOccurrences <- function(char, s) {
+#   s2 <- gsub(char,"",s)
+#   return (nchar(s) - nchar(s2))
+# }
+# sample_data_all_ios_len <- countCharOccurrences(" ",sample_data_all[[which(colnames(sample_data_all) %in% "Strategy")]])
+# 
+# sample_data_all_ios_len  <- adply(.data=sample_data_all,.margins=1,function(x,char){
+#   x2 <- gsub(char,"",x[,"Strategy"])
+#   return (nchar(x) - nchar(x2))
+# },char=" ",.progress = "text",.expand=FALSE)
+# 
+# sample_data_all_ios_len  <- pbsapply(sample_data_all[,"Strategy"],function(x) {return(length(strsplit(x,' ')[[1]]))},simplify=FALSE, USE.NAMES=FALSE)
+# 
+# sample_data_all_trim  <- data.frame(sample_data_all,ios_word_count=unlist(sample_data_all_ios_len),stringsAsFactors=FALSE)
+# 
+# rm2(sample_data_all,sample_data_all_ios_len)
+# 
+# sample_data_all_trim2 <- sample_data_all_trim[sample_data_all_trim[,"ios_word_count"]>=100,]
+# 
+# rm2(sample_data_all_trim)
+# 
+# sample_data_all_trim3 <- subset(sample_data_all_trim2,select=-c(ios_word_count))
+# 
+# rm2(sample_data_all_trim2)
+# 
+# row.names(sample_data_all_trim3)  <- seq(nrow(sample_data_all_trim3))
+# 
+# write.csv(sample_data_all_trim3,file=paste(output_directory,"sample_data_all.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
+# 
+# rm2(sample_data_all_trim3)
 
-sample_data_all_trim3 <- subset(sample_data_all_trim2,select=-c(ios_word_count))
 
-rm2(sample_data_all_trim2)
 
-row.names(sample_data_all_trim3)  <- seq(nrow(sample_data_all_trim3))
 
-write.csv(sample_data_all_trim3,file=paste(output_directory,"sample_data_all.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
 
-rm2(sample_data_all_trim3)
+
+
 
 
 ###############################################################################
