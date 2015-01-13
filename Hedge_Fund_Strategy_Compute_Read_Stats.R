@@ -150,63 +150,63 @@ temp_data_cols[,5] <- as.numeric(temp_data_cols[,5])
 temp_data_cols[,6] <- as.character(temp_data_cols[,6])
 temp_data_cols[,7] <- as.character(temp_data_cols[,7])
 
-#Files table
-#file_list <- c("EurekahedgeHF_Excel_aca.csv","EurekahedgeHF_Excel_aca_NAV_AUM.csv","EurekahedgeHF_Excel_aca_Instruments_Traded.csv")
-file_list <- c("EurekahedgeHF_Profile_Strategy_part3.csv")
-files_cols_count <- 2
-files_cols <- temp_data_cols[1:files_cols_count,]
-files_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="filename",stringsAsFactors=FALSE)
-files_cols[2,] <- data.frame(order=2,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="filepath",stringsAsFactors=FALSE)
-files <- as.data.frame(matrix(NA, ncol=files_cols_count, nrow=length(file_list)),stringsAsFactors=FALSE)
-colnames(files) <- files_cols[,6]
-files <- format_function(files,files_cols)
+# #Files table
+# #file_list <- c("EurekahedgeHF_Excel_aca.csv","EurekahedgeHF_Excel_aca_NAV_AUM.csv","EurekahedgeHF_Excel_aca_Instruments_Traded.csv")
+# file_list <- c("EurekahedgeHF_Profile_Strategy_part3.csv")
+# files_cols_count <- 2
+# files_cols <- temp_data_cols[1:files_cols_count,]
+# files_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="filename",stringsAsFactors=FALSE)
+# files_cols[2,] <- data.frame(order=2,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="filepath",stringsAsFactors=FALSE)
+# files <- as.data.frame(matrix(NA, ncol=files_cols_count, nrow=length(file_list)),stringsAsFactors=FALSE)
+# colnames(files) <- files_cols[,6]
+# files <- format_function(files,files_cols)
 
-
-#Populate Percentiles table
-
-#Note: If Confidence_Level is 0.900, 
-#          word_grand  -  this means that if the word is the 10% most common occuring or higher overall word, it is removed (90% removed/10% kept)
-#          word_unique -  this means that if the word is the 10% most common occuring or higher unique word, it is removed (90% removed/10% kept)
-#          id_unique -  this means that if a word is in 10% of the ids or higher, it is removed  (90% removed/10% kept)
-#Note: If Confidence_Level is 0.050, 
-#          word_grand  -  this means that if the word is the 95% most common occuring or higher overall word, it is removed (5% removed/95% kept)
-#          word_unique -  this means that if the word is the 95% most common occuring or higher unique word, it is removed (5% removed/95% kept)
-#          id_unique -  this means that if a word is in 95% of the ids or higher, it is removed  (5% removed/95% kept)
-# As confidence level increases, the words in the dictionary should decrease.
-# A smaller dicitonary means that that smilarity will be less because there are fewer possible words that could be common between two texts 
-# Thus, as confidence level increases, the smilarity scores will decrease
-
-#Percentiles table
-percentiles_cols_count <- 8
-percentiles_cols <- temp_data_cols[1:percentiles_cols_count,]
-percentiles_cols[1,] <- data.frame(order=1,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Confidence_Level",stringsAsFactors=FALSE)
-percentiles_cols[2,] <- data.frame(order=2,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Confidence_Pct",stringsAsFactors=FALSE)
-percentiles_cols[3,] <- data.frame(order=3,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="Confidence_lbl",stringsAsFactors=FALSE)
-percentiles_cols[4,] <- data.frame(order=4,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Significance_Level",stringsAsFactors=FALSE)
-percentiles_cols[5,] <- data.frame(order=5,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Significance_Pct",stringsAsFactors=FALSE)
-percentiles_cols[6,] <- data.frame(order=6,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="Significance_lbl",stringsAsFactors=FALSE)
-percentiles_cols[7,] <- data.frame(order=7,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="Column_lbl",stringsAsFactors=FALSE)
-percentiles_cols[8,] <- data.frame(order=8,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="Column_DV",stringsAsFactors=FALSE)
-
-#percentile_vals <- c(0.990,0.950,0.900)
-percentile_vals <- c(0.900,0.750,0.500,0.250,0.100,0.050)
-#percentile_vals <- c(0.900)
-
-percentiles <- as.data.frame(matrix(NA, ncol=percentiles_cols_count, nrow=length(percentile_vals)),stringsAsFactors=FALSE)
-colnames(percentiles) <- percentiles_cols[,6]
-
-percentiles[,"Confidence_Level"] <- format(as.double(percentile_vals), digits=3)
-percentiles[,"Confidence_Pct"] <- as.double(percentiles[,"Confidence_Level"])*100
-percentiles[,"Confidence_lbl"] <- formatC(percentiles[,"Confidence_Pct"],format="f", digits=1,width=4,  flag="0")
-percentiles[,"Significance_Level"] <- 1-as.double(percentiles[,"Confidence_Level"])
-percentiles[,"Significance_Pct"] <- as.double(percentiles[,"Significance_Level"])*100
-percentiles[,"Significance_lbl"] <- formatC(percentiles[,"Significance_Pct"], format="f",digits=1, width=5,  flag="0")
-percentiles[,"Confidence_lbl"] <-  paste(gsub(pattern="\\.", replacement="", x=percentiles[,"Confidence_lbl"]),"pct",sep="")
-percentiles[,"Significance_lbl"] <- paste(gsub(pattern="\\.", replacement="", x=percentiles[,"Significance_lbl"]),"pct",sep="")
-percentiles[,"Column_lbl"] <- paste("Word_Cutoff_",percentiles[,"Confidence_lbl"],sep="")
-percentiles[,"Column_DV"] <- paste("Word_DV_",percentiles[,"Confidence_lbl"],sep="")
-percentiles <- format_function(percentiles,percentiles_cols)
-percentiles <- percentiles[order(percentiles[,"Confidence_Level"]),]
+# 
+# #Populate Percentiles table
+# 
+# #Note: If Confidence_Level is 0.900, 
+# #          word_grand  -  this means that if the word is the 10% most common occuring or higher overall word, it is removed (90% removed/10% kept)
+# #          word_unique -  this means that if the word is the 10% most common occuring or higher unique word, it is removed (90% removed/10% kept)
+# #          id_unique -  this means that if a word is in 10% of the ids or higher, it is removed  (90% removed/10% kept)
+# #Note: If Confidence_Level is 0.050, 
+# #          word_grand  -  this means that if the word is the 95% most common occuring or higher overall word, it is removed (5% removed/95% kept)
+# #          word_unique -  this means that if the word is the 95% most common occuring or higher unique word, it is removed (5% removed/95% kept)
+# #          id_unique -  this means that if a word is in 95% of the ids or higher, it is removed  (5% removed/95% kept)
+# # As confidence level increases, the words in the dictionary should decrease.
+# # A smaller dicitonary means that that smilarity will be less because there are fewer possible words that could be common between two texts 
+# # Thus, as confidence level increases, the smilarity scores will decrease
+# 
+# #Percentiles table
+# percentiles_cols_count <- 8
+# percentiles_cols <- temp_data_cols[1:percentiles_cols_count,]
+# percentiles_cols[1,] <- data.frame(order=1,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Confidence_Level",stringsAsFactors=FALSE)
+# percentiles_cols[2,] <- data.frame(order=2,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Confidence_Pct",stringsAsFactors=FALSE)
+# percentiles_cols[3,] <- data.frame(order=3,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="Confidence_lbl",stringsAsFactors=FALSE)
+# percentiles_cols[4,] <- data.frame(order=4,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Significance_Level",stringsAsFactors=FALSE)
+# percentiles_cols[5,] <- data.frame(order=5,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Significance_Pct",stringsAsFactors=FALSE)
+# percentiles_cols[6,] <- data.frame(order=6,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="Significance_lbl",stringsAsFactors=FALSE)
+# percentiles_cols[7,] <- data.frame(order=7,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="Column_lbl",stringsAsFactors=FALSE)
+# percentiles_cols[8,] <- data.frame(order=8,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="Column_DV",stringsAsFactors=FALSE)
+# 
+# #percentile_vals <- c(0.990,0.950,0.900)
+# percentile_vals <- c(0.900,0.750,0.500,0.250,0.100,0.050)
+# #percentile_vals <- c(0.900)
+# 
+# percentiles <- as.data.frame(matrix(NA, ncol=percentiles_cols_count, nrow=length(percentile_vals)),stringsAsFactors=FALSE)
+# colnames(percentiles) <- percentiles_cols[,6]
+# 
+# percentiles[,"Confidence_Level"] <- format(as.double(percentile_vals), digits=3)
+# percentiles[,"Confidence_Pct"] <- as.double(percentiles[,"Confidence_Level"])*100
+# percentiles[,"Confidence_lbl"] <- formatC(percentiles[,"Confidence_Pct"],format="f", digits=1,width=4,  flag="0")
+# percentiles[,"Significance_Level"] <- 1-as.double(percentiles[,"Confidence_Level"])
+# percentiles[,"Significance_Pct"] <- as.double(percentiles[,"Significance_Level"])*100
+# percentiles[,"Significance_lbl"] <- formatC(percentiles[,"Significance_Pct"], format="f",digits=1, width=5,  flag="0")
+# percentiles[,"Confidence_lbl"] <-  paste(gsub(pattern="\\.", replacement="", x=percentiles[,"Confidence_lbl"]),"pct",sep="")
+# percentiles[,"Significance_lbl"] <- paste(gsub(pattern="\\.", replacement="", x=percentiles[,"Significance_lbl"]),"pct",sep="")
+# percentiles[,"Column_lbl"] <- paste("Word_Cutoff_",percentiles[,"Confidence_lbl"],sep="")
+# percentiles[,"Column_DV"] <- paste("Word_DV_",percentiles[,"Confidence_lbl"],sep="")
+# percentiles <- format_function(percentiles,percentiles_cols)
+# percentiles <- percentiles[order(percentiles[,"Confidence_Level"]),]
 
 #Readability columns table
 readbl_vars_cols_count <- 4
@@ -218,26 +218,26 @@ readbl_vars_cols[4,] <- data.frame(order=4,isnum=0,ischar=1,isdate=0,isfactor=0,
 readbl_vars <- as.data.frame(matrix(NA, ncol=readbl_vars_cols_count, nrow=1),stringsAsFactors=FALSE)
 colnames(readbl_vars) <- readbl_vars_cols[,6]
 
-#Readability statistics table
-readbl_all_df_cols_count <- 5
-readbl_all_df_cols <- temp_data_cols[1:readbl_all_df_cols_count,]
-readbl_all_df_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="index",stringsAsFactors=FALSE)
-readbl_all_df_cols[2,] <- data.frame(order=2,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="flavour",stringsAsFactors=FALSE)
-readbl_all_df_cols[3,] <- data.frame(order=3,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="raw",stringsAsFactors=FALSE)
-readbl_all_df_cols[4,] <- data.frame(order=4,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="grade",stringsAsFactors=FALSE)
-readbl_all_df_cols[5,] <- data.frame(order=5,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="age",stringsAsFactors=FALSE)
-readbl_all_df <- as.data.frame(matrix(NA, ncol=readbl_all_df_cols_count, nrow=44),stringsAsFactors=FALSE)
-colnames(readbl_all_df) <- readbl_all_df_cols[,6]
-readbl_all_df <- format_function(readbl_all_df,readbl_all_df_cols)
+# #Readability statistics table
+# readbl_all_df_cols_count <- 5
+# readbl_all_df_cols <- temp_data_cols[1:readbl_all_df_cols_count,]
+# readbl_all_df_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="index",stringsAsFactors=FALSE)
+# readbl_all_df_cols[2,] <- data.frame(order=2,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="flavour",stringsAsFactors=FALSE)
+# readbl_all_df_cols[3,] <- data.frame(order=3,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="raw",stringsAsFactors=FALSE)
+# readbl_all_df_cols[4,] <- data.frame(order=4,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="grade",stringsAsFactors=FALSE)
+# readbl_all_df_cols[5,] <- data.frame(order=5,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="age",stringsAsFactors=FALSE)
+# readbl_all_df <- as.data.frame(matrix(NA, ncol=readbl_all_df_cols_count, nrow=44),stringsAsFactors=FALSE)
+# colnames(readbl_all_df) <- readbl_all_df_cols[,6]
+# readbl_all_df <- format_function(readbl_all_df,readbl_all_df_cols)
 
-#Tokens table
-tokens_all_cols_count <- 5
-tokens_all_cols <- temp_data_cols[1:tokens_all_cols_count,]
-tokens_all_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="ID",stringsAsFactors=FALSE)
-tokens_all_cols[2,] <- data.frame(order=2,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="yr",stringsAsFactors=FALSE)
-tokens_all_cols[3,] <- data.frame(order=3,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="token",stringsAsFactors=FALSE)
-tokens_all_cols[4,] <- data.frame(order=4,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="desc",stringsAsFactors=FALSE)
-tokens_all_cols[5,] <- data.frame(order=5,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Remove",stringsAsFactors=FALSE)
+# #Tokens table
+# tokens_all_cols_count <- 5
+# tokens_all_cols <- temp_data_cols[1:tokens_all_cols_count,]
+# tokens_all_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="ID",stringsAsFactors=FALSE)
+# tokens_all_cols[2,] <- data.frame(order=2,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="yr",stringsAsFactors=FALSE)
+# tokens_all_cols[3,] <- data.frame(order=3,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="token",stringsAsFactors=FALSE)
+# tokens_all_cols[4,] <- data.frame(order=4,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="desc",stringsAsFactors=FALSE)
+# tokens_all_cols[5,] <- data.frame(order=5,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Remove",stringsAsFactors=FALSE)
 
 
 ###############################################################################
@@ -399,7 +399,6 @@ for (l in 1:nrow(readbl_vars))
   readability_all_stats_temp <- paste(readability_all_stats, readbl_vars[l,2], sep="")
   readability_all_stats_temp <- gsub(pattern="\\.", replacement="_", x=readability_all_stats_temp)
   
-  
   #sample_data_all <- as.data.table(sample_data_all)
   #temp4 <- data.frame(stri_split_fixed(sample_data_all[[which(colnames(sample_data_all) %in% readbl_vars[l,1])]], "\n", simplify = TRUE),stringsAsFactors=FALSE)
   #tagged_text <- adply(.data=temp4, .margins=1, .fun = function(x){  
@@ -410,7 +409,6 @@ for (l in 1:nrow(readbl_vars))
   #sample_cell_temp <- sample_data_all[1,readbl_vars[l,1]]
   #temp_text <- unlist(strsplit(sample_cell_temp, "\n"))
   #tagged_text <- treetag(temp_text, treetagger="manual",lang="en", TT.options=list(path="C:/TreeTagger", preset="en"),debug=FALSE,format="obj")
-  
   
   #tagged_text <- treetag(temp4[,1], treetagger="manual",lang="en", TT.options=list(path="C:/TreeTagger", preset="en"),debug=FALSE,format="obj")
   
@@ -563,13 +561,14 @@ write.csv(sample_tokens_df_merge_full, file=paste(output_directory,readbl_vars[l
 
 rm2(sample_tokens_df_merge_full,sample_tokens_df_merge)
 
+
+
 rm2(sample_data_all_with_ids,sample_data_all_id_cols,l)
 rm2(myStopwords_all)
 
-rm2(files,file_list,files_cols,files_cols_count)
-rm2(percentiles,percentiles_cols,percentiles_cols_count)
-rm2(readbl_all_df,readbl_all_df_cols,readbl_all_df_cols_count)
-rm2(readbl_vars,readbl_vars_cols,readbl_vars_cols_count)
 rm2(temp_data_cols)
-rm2(tokens_all_cols,tokens_all_cols_count)
-
+#rm2(files,file_list,files_cols,files_cols_count)
+#rm2(percentiles,percentile_vals,percentiles_cols,percentiles_cols_count)
+rm2(readbl_vars,readbl_vars_cols,readbl_vars_cols_count)
+#rm2(readbl_all_df,readbl_all_df_cols,readbl_all_df_cols_count)
+#rm2(tokens_all_cols,tokens_all_cols_count)

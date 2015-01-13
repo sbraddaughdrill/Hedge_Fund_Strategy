@@ -121,7 +121,7 @@ cat("SECTION: LIBRARIES", "\n")
 #Load External Packages
 #"funprog","Snowball","SnowballC"
 external_packages <- c("compare","cwhmisc","data.table","fastmatch","foreign","formatR","gdata","gtools",
-                       "Hmisc","koRpus","mitools","pbapply","plyr","R.oo","reshape2","rJava","RWeka","RWekajars",
+                       "Hmisc","koRpus","limma","mitools","pbapply","plyr","R.oo","reshape2","rJava","RWeka","RWekajars",
                        "splitstackshape","sqldf","stringi","stringr","tcltk","tm")
 invisible(unlist(sapply(external_packages,load_external_packages, repo_str=repo, simplify=FALSE, USE.NAMES=FALSE)))
 installed_packages <- list_installed_packages(external_packages)
@@ -150,16 +150,16 @@ temp_data_cols[,5] <- as.numeric(temp_data_cols[,5])
 temp_data_cols[,6] <- as.character(temp_data_cols[,6])
 temp_data_cols[,7] <- as.character(temp_data_cols[,7])
 
-#Files table
-#file_list <- c("EurekahedgeHF_Excel_aca.csv","EurekahedgeHF_Excel_aca_NAV_AUM.csv","EurekahedgeHF_Excel_aca_Instruments_Traded.csv")
-file_list <- c("EurekahedgeHF_Profile_Strategy_part3.csv")
-files_cols_count <- 2
-files_cols <- temp_data_cols[1:files_cols_count,]
-files_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="filename",stringsAsFactors=FALSE)
-files_cols[2,] <- data.frame(order=2,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="filepath",stringsAsFactors=FALSE)
-files <- as.data.frame(matrix(NA, ncol=files_cols_count, nrow=length(file_list)),stringsAsFactors=FALSE)
-colnames(files) <- files_cols[,6]
-files <- format_function(files,files_cols)
+# #Files table
+# #file_list <- c("EurekahedgeHF_Excel_aca.csv","EurekahedgeHF_Excel_aca_NAV_AUM.csv","EurekahedgeHF_Excel_aca_Instruments_Traded.csv")
+# file_list <- c("EurekahedgeHF_Profile_Strategy_part3.csv")
+# files_cols_count <- 2
+# files_cols <- temp_data_cols[1:files_cols_count,]
+# files_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="filename",stringsAsFactors=FALSE)
+# files_cols[2,] <- data.frame(order=2,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="filepath",stringsAsFactors=FALSE)
+# files <- as.data.frame(matrix(NA, ncol=files_cols_count, nrow=length(file_list)),stringsAsFactors=FALSE)
+# colnames(files) <- files_cols[,6]
+# files <- format_function(files,files_cols)
 
 
 #Populate Percentiles table
@@ -218,26 +218,26 @@ readbl_vars_cols[4,] <- data.frame(order=4,isnum=0,ischar=1,isdate=0,isfactor=0,
 readbl_vars <- as.data.frame(matrix(NA, ncol=readbl_vars_cols_count, nrow=1),stringsAsFactors=FALSE)
 colnames(readbl_vars) <- readbl_vars_cols[,6]
 
-#Readability statistics table
-readbl_all_df_cols_count <- 5
-readbl_all_df_cols <- temp_data_cols[1:readbl_all_df_cols_count,]
-readbl_all_df_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="index",stringsAsFactors=FALSE)
-readbl_all_df_cols[2,] <- data.frame(order=2,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="flavour",stringsAsFactors=FALSE)
-readbl_all_df_cols[3,] <- data.frame(order=3,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="raw",stringsAsFactors=FALSE)
-readbl_all_df_cols[4,] <- data.frame(order=4,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="grade",stringsAsFactors=FALSE)
-readbl_all_df_cols[5,] <- data.frame(order=5,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="age",stringsAsFactors=FALSE)
-readbl_all_df <- as.data.frame(matrix(NA, ncol=readbl_all_df_cols_count, nrow=44),stringsAsFactors=FALSE)
-colnames(readbl_all_df) <- readbl_all_df_cols[,6]
-readbl_all_df <- format_function(readbl_all_df,readbl_all_df_cols)
+# #Readability statistics table
+# readbl_all_df_cols_count <- 5
+# readbl_all_df_cols <- temp_data_cols[1:readbl_all_df_cols_count,]
+# readbl_all_df_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="index",stringsAsFactors=FALSE)
+# readbl_all_df_cols[2,] <- data.frame(order=2,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="flavour",stringsAsFactors=FALSE)
+# readbl_all_df_cols[3,] <- data.frame(order=3,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="raw",stringsAsFactors=FALSE)
+# readbl_all_df_cols[4,] <- data.frame(order=4,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="grade",stringsAsFactors=FALSE)
+# readbl_all_df_cols[5,] <- data.frame(order=5,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="age",stringsAsFactors=FALSE)
+# readbl_all_df <- as.data.frame(matrix(NA, ncol=readbl_all_df_cols_count, nrow=44),stringsAsFactors=FALSE)
+# colnames(readbl_all_df) <- readbl_all_df_cols[,6]
+# readbl_all_df <- format_function(readbl_all_df,readbl_all_df_cols)
 
-#Tokens table
-tokens_all_cols_count <- 5
-tokens_all_cols <- temp_data_cols[1:tokens_all_cols_count,]
-tokens_all_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="ID",stringsAsFactors=FALSE)
-tokens_all_cols[2,] <- data.frame(order=2,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="yr",stringsAsFactors=FALSE)
-tokens_all_cols[3,] <- data.frame(order=3,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="token",stringsAsFactors=FALSE)
-tokens_all_cols[4,] <- data.frame(order=4,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="desc",stringsAsFactors=FALSE)
-tokens_all_cols[5,] <- data.frame(order=5,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Remove",stringsAsFactors=FALSE)
+# #Tokens table
+# tokens_all_cols_count <- 5
+# tokens_all_cols <- temp_data_cols[1:tokens_all_cols_count,]
+# tokens_all_cols[1,] <- data.frame(order=1,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="ID",stringsAsFactors=FALSE)
+# tokens_all_cols[2,] <- data.frame(order=2,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="yr",stringsAsFactors=FALSE)
+# tokens_all_cols[3,] <- data.frame(order=3,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="token",stringsAsFactors=FALSE)
+# tokens_all_cols[4,] <- data.frame(order=4,isnum=0,ischar=1,isdate=0,isfactor=0,colnames="desc",stringsAsFactors=FALSE)
+# tokens_all_cols[5,] <- data.frame(order=5,isnum=1,ischar=0,isdate=0,isfactor=0,colnames="Remove",stringsAsFactors=FALSE)
 
 
 ###############################################################################
@@ -250,21 +250,21 @@ readbl_vars[,2] <- c("_ios")
 readbl_vars[,3] <- c("read_stats_ios_f")
 readbl_vars[,4] <- c("tokens_all_ios_f")
 
-# # remove stopwords
-# myStopwords <- c(stopwords('english'),stopwords('SMART'),"available", "via")
-# myStopwords_no_punct <- gsub(pattern="[^[[:alnum:][:space:]]", replacement="", x=myStopwords)
-# myStopwords_all <- c(myStopwords,myStopwords_no_punct)
-# myStopwords_all <- sort(myStopwords_all)
-# myStopwords_all <- unique(myStopwords_all, incomparables=FALSE)
-# myStopwords_all <- toupper(myStopwords_all)
-# 
-# rm(myStopwords,myStopwords_no_punct)
-# 
-# #idx <- which(myStopwords_all %in% c("R",keep_one_letter_tokens,keep_two_letter_tokens))
-# idx <- which(myStopwords_all %in% c("R"))
-# myStopwords_all <- myStopwords_all[-idx]
-# 
-# rm(idx)
+# remove stopwords
+myStopwords <- c(stopwords('english'),stopwords('SMART'),"available", "via")
+myStopwords_no_punct <- gsub(pattern="[^[[:alnum:][:space:]]", replacement="", x=myStopwords)
+myStopwords_all <- c(myStopwords,myStopwords_no_punct)
+myStopwords_all <- sort(myStopwords_all)
+myStopwords_all <- unique(myStopwords_all, incomparables=FALSE)
+myStopwords_all <- toupper(myStopwords_all)
+
+rm(myStopwords,myStopwords_no_punct)
+
+#idx <- which(myStopwords_all %in% c("R",keep_one_letter_tokens,keep_two_letter_tokens))
+idx <- which(myStopwords_all %in% c("R"))
+myStopwords_all <- myStopwords_all[-idx]
+
+rm(idx)
 
 #measures <- c("word_grand","word_unique","id_unique")
 measures <- c("id_unique")
@@ -287,91 +287,89 @@ keep_two_letter_tokens <- sort(c(keep_two_letter_words,keep_state_abbreviations,
 
 rm2(keep_two_letter_words,keep_state_abbreviations,keep_two_letter_ratings)
 
-
-###############################################################################
-cat("SECTION: IMPORT STRATEGIES", "\n")
-###############################################################################
-
-sample_data_all_id_cols <- c("Fund_ID","yr","pull_trim","pull_trim2","Fund_Name")
-
-sample_data_all <- read.csv(file=paste(output_directory,"text_clean_trim.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
-for(i in which(sapply(sample_data_all,class)=="character"))
-{
-  #sample_data_all[[i]] <- trim(sample_data_all[[i]])
-  sample_data_all[[i]] <- gsub("^\\s+|\\s+$", "", sample_data_all[[i]], perl=TRUE)
-}
-rm2(i)
-
-for (i in 1:ncol(sample_data_all))
-{
-  sample_data_all[,i] <- unknownToNA(sample_data_all[,i], unknown=unknowns_strings,force=TRUE)
-  sample_data_all[,i] <- ifelse(is.na(sample_data_all[,i]),NA, sample_data_all[,i])
-} 
-rm2(i)
-
-# sample_data_all <- ddply(.data=sample_data_all, .variables=c("Fund_ID"), .fun = function(x){
-#   
-#   return(data.frame(Overall_ID=NA,Local_ID=seq(1,nrow(x)),x,stringsAsFactors=FALSE))
-#   
-# }, .progress = "text",.inform = FALSE, .drop = TRUE, .parallel = FALSE, .paropts = NULL)
-
-#sample_data_all <- data.frame(Overall_ID=seq(1,nrow(sample_data_all)),sample_data_all,stringsAsFactors=FALSE)
-#sample_data_all[,"Overall_ID"] <- paste("", formatC(sample_data_all[,"Overall_ID"], width=6, format="d", flag="0"), sep="")
-#sample_data_all[,"Overall_ID"] <- paste("", formatC(seq(1,nrow(sample_data_all)), width=6, format="d", flag="0"), sep="")
-
-sample_data_all <- sample_data_all[order(sample_data_all[,"Fund_ID"],sample_data_all[,"yr"]),]
-row.names(sample_data_all) <- seq(nrow(sample_data_all))
-
-
-###############################################################################
-cat("SECTION: CREATE STRATEGY ID", "\n")
-###############################################################################
-
-sample_data_all_strategy_id0 <- data.frame(Strat_ID=NA,Strategy=unique(sample_data_all[,"Strategy"]),stringsAsFactors=FALSE)
-sample_data_all_strategy_id <- sample_data_all_strategy_id0[!is.na(sample_data_all_strategy_id0[,"Strategy"]),]
-
-sample_data_all_strategy_id[,"Strat_ID"] <- seq(1,nrow(sample_data_all_strategy_id))
-row.names(sample_data_all_strategy_id) <- seq(nrow(sample_data_all_strategy_id))
-
-rm(sample_data_all_strategy_id0)
-
-sample_data_all_with_ids <- merge(sample_data_all,sample_data_all_strategy_id,
-                                  by.x=c("Strategy"), by.y=c("Strategy"), 
-                                  all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
-
-rm2(sample_data_all_strategy_id)
-#rm2(sample_data_all)
-
-sample_data_all_with_ids <- sample_data_all_with_ids[,c("Strat_ID",
-                                                        colnames(sample_data_all_with_ids)[!(colnames(sample_data_all_with_ids) %in% c("Strat_ID"))])]
-
-sample_data_all_with_ids <- sample_data_all_with_ids[,c(sample_data_all_id_cols,
-                                                        colnames(sample_data_all_with_ids)[!(colnames(sample_data_all_with_ids) %in% c(sample_data_all_id_cols))])]
-
-sample_data_all_with_ids <- sample_data_all_with_ids[order(sample_data_all_with_ids[,"Fund_ID"],
-                                                           sample_data_all_with_ids[,"yr"]),] 
-row.names(sample_data_all_with_ids) <- seq(nrow(sample_data_all_with_ids))
-
-rm2(sample_data_all)
-
-
+# 
+# ###############################################################################
+# cat("SECTION: IMPORT STRATEGIES", "\n")
+# ###############################################################################
+# 
+# sample_data_all_id_cols <- c("Fund_ID","yr","pull_trim","pull_trim2","Fund_Name")
+# 
+# sample_data_all <- read.csv(file=paste(output_directory,"text_clean_trim.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
+# for(i in which(sapply(sample_data_all,class)=="character"))
+# {
+#   #sample_data_all[[i]] <- trim(sample_data_all[[i]])
+#   sample_data_all[[i]] <- gsub("^\\s+|\\s+$", "", sample_data_all[[i]], perl=TRUE)
+# }
+# rm2(i)
+# 
+# for (i in 1:ncol(sample_data_all))
+# {
+#   sample_data_all[,i] <- unknownToNA(sample_data_all[,i], unknown=unknowns_strings,force=TRUE)
+#   sample_data_all[,i] <- ifelse(is.na(sample_data_all[,i]),NA, sample_data_all[,i])
+# } 
+# rm2(i)
+# 
+# # sample_data_all <- ddply(.data=sample_data_all, .variables=c("Fund_ID"), .fun = function(x){
+# #   
+# #   return(data.frame(Overall_ID=NA,Local_ID=seq(1,nrow(x)),x,stringsAsFactors=FALSE))
+# #   
+# # }, .progress = "text",.inform = FALSE, .drop = TRUE, .parallel = FALSE, .paropts = NULL)
+# 
+# #sample_data_all <- data.frame(Overall_ID=seq(1,nrow(sample_data_all)),sample_data_all,stringsAsFactors=FALSE)
+# #sample_data_all[,"Overall_ID"] <- paste("", formatC(sample_data_all[,"Overall_ID"], width=6, format="d", flag="0"), sep="")
+# #sample_data_all[,"Overall_ID"] <- paste("", formatC(seq(1,nrow(sample_data_all)), width=6, format="d", flag="0"), sep="")
+# 
+# sample_data_all <- sample_data_all[order(sample_data_all[,"Fund_ID"],sample_data_all[,"yr"]),]
+# row.names(sample_data_all) <- seq(nrow(sample_data_all))
+# 
+# 
+# ###############################################################################
+# cat("SECTION: CREATE STRATEGY ID", "\n")
+# ###############################################################################
+# 
+# sample_data_all_strategy_id0 <- data.frame(Strat_ID=NA,Strategy=unique(sample_data_all[,"Strategy"]),stringsAsFactors=FALSE)
+# sample_data_all_strategy_id <- sample_data_all_strategy_id0[!is.na(sample_data_all_strategy_id0[,"Strategy"]),]
+# 
+# sample_data_all_strategy_id[,"Strat_ID"] <- seq(1,nrow(sample_data_all_strategy_id))
+# row.names(sample_data_all_strategy_id) <- seq(nrow(sample_data_all_strategy_id))
+# 
+# rm(sample_data_all_strategy_id0)
+# 
+# sample_data_all_with_ids <- merge(sample_data_all,sample_data_all_strategy_id,
+#                                   by.x=c("Strategy"), by.y=c("Strategy"), 
+#                                   all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
+# 
+# rm2(sample_data_all_strategy_id)
+# #rm2(sample_data_all)
+# 
+# sample_data_all_with_ids <- sample_data_all_with_ids[,c("Strat_ID",
+#                                                         colnames(sample_data_all_with_ids)[!(colnames(sample_data_all_with_ids) %in% c("Strat_ID"))])]
+# 
+# sample_data_all_with_ids <- sample_data_all_with_ids[,c(sample_data_all_id_cols,
+#                                                         colnames(sample_data_all_with_ids)[!(colnames(sample_data_all_with_ids) %in% c(sample_data_all_id_cols))])]
+# 
+# sample_data_all_with_ids <- sample_data_all_with_ids[order(sample_data_all_with_ids[,"Fund_ID"],
+#                                                            sample_data_all_with_ids[,"yr"]),] 
+# row.names(sample_data_all_with_ids) <- seq(nrow(sample_data_all_with_ids))
+# 
+# rm2(sample_data_all)
 
 
 ###############################################################################
 cat("SECTION: COMPUTE SIMILARITY STATISTICS", "\n")
 ###############################################################################
 
-sample_data_all <- read.csv(file=paste(output_directory,"sample_data_all.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
-
-for(i in which(sapply(sample_data_all,class)=="character"))
-{
-  sample_data_all[[i]] <- trim(sample_data_all[[i]])
-}
-for (i in 1:ncol(sample_data_all))
-{
-  sample_data_all[,i] <- unknownToNA(sample_data_all[,i], unknown=unknowns_strings,force=TRUE)
-  sample_data_all[,i] <- ifelse(is.na(sample_data_all[,i]),NA, sample_data_all[,i])
-} 
+# sample_data_all <- read.csv(file=paste(output_directory,"sample_data_all.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
+# 
+# for(i in which(sapply(sample_data_all,class)=="character"))
+# {
+#   sample_data_all[[i]] <- trim(sample_data_all[[i]])
+# }
+# for (i in 1:ncol(sample_data_all))
+# {
+#   sample_data_all[,i] <- unknownToNA(sample_data_all[,i], unknown=unknowns_strings,force=TRUE)
+#   sample_data_all[,i] <- ifelse(is.na(sample_data_all[,i]),NA, sample_data_all[,i])
+# } 
 
 
 for (m in 1:nrow(readbl_vars))
@@ -392,7 +390,17 @@ for (m in 1:nrow(readbl_vars))
     #tokens_all_temp[,"token"] <- read.csv(file=paste(output_directory,"tokens_all_ios_f.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)[c("token")]
     #tokens_all_temp[,"desc"] <- read.csv(file=paste(output_directory,"tokens_all_ios_f.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)[c("desc")]
     
-    tokens_all_temp <- read.csv(file=paste(output_directory,readbl_vars[m,4],"_full",".csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
+    #tokens_all_temp <- read.csv(file=paste(output_directory,readbl_vars[m,4],"_full",".csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
+    
+    tokens_all_col_names_all <- as.vector(t(read.csv(file=paste(output_directory,readbl_vars[m,4],"_full",".csv",sep=""),header=FALSE,na.strings="NA",stringsAsFactors=FALSE,nrows=1)))
+    tokens_all_col_names_keep <- which(!(tokens_all_col_names_all %in% c("Strat_ID","Strategy")))
+    #tokens_all_temp <- cbc.read.table2(file=paste(final_folder_expand3_path,"EurekahedgeHF_NAV_AUM_Ret.csv",sep="\\"),just.read=tokens_all_col_names_keep,header=TRUE,sep=",")
+    #tokens_all_temp <- as.data.frame(tokens_all_temp,stringsAsFactors=FALSE)
+
+    tokens_all_temp <- read.columns(file=paste(output_directory,readbl_vars[m,4],"_full",".csv",sep=""),required.col=tokens_all_col_names_all[tokens_all_col_names_keep],sep=",",na.strings="NA",stringsAsFactors=FALSE)
+    tokens_all_temp <- as.data.frame(tokens_all_temp,stringsAsFactors=FALSE)
+    
+    rm2(tokens_all_col_names_all,tokens_all_col_names_keep)
     
   } else if (m==2)
   {
@@ -406,21 +414,25 @@ for (m in 1:nrow(readbl_vars))
   
   for(i in which(sapply(tokens_all_temp,class)=="character"))
   {
-    tokens_all_temp[[i]] <- trim(tokens_all_temp[[i]])
+    #tokens_all_temp[[i]] <- trim(tokens_all_temp[[i]])
+    tokens_all_temp[[i]] <- gsub("^\\s+|\\s+$", "", tokens_all_temp[[i]], perl=TRUE)
   }
+  rm(i)
   for (i in 1:ncol(tokens_all_temp))
   {
     tokens_all_temp[,i] <- unknownToNA(tokens_all_temp[,i], unknown=unknowns_strings,force=TRUE)
     tokens_all_temp[,i] <- ifelse(is.na(tokens_all_temp[,i]),NA, tokens_all_temp[,i])
   } 
+  rm(i)
   
   tokens_all_temp <- tokens_all_temp[!(rowSums(is.na(tokens_all_temp[,1:ncol(tokens_all_temp)]))==ncol(tokens_all_temp)),]
   
-  
   tokens_all_temp <- tokens_all_temp[order(tokens_all_temp[,"Fund_ID"],tokens_all_temp[,"yr"]),] 
+  #row.names(tokens_all_temp) <- seq(nrow(tokens_all_temp))
   
   #Trim strings
-  tokens_all_temp[,"token"] <- trim(tokens_all_temp[,"token"])
+  #tokens_all_temp[,"token"] <- trim(tokens_all_temp[,"token"])
+  tokens_all_temp[,"token"] <- gsub("^\\s+|\\s+$", "", tokens_all_temp[,"token"], perl=TRUE)
   
   #Upcase strings
   tokens_all_temp[,"token"] <- toupper(tokens_all_temp[,"token"])
@@ -434,6 +446,7 @@ for (m in 1:nrow(readbl_vars))
     #a <- 1
     tokens_all_temp[,"token"] <- gsub(pattern=" {2,}", replacement=" ", x=tokens_all_temp[,"token"])
   }
+  rm(a)
   
   #Remove numbers
   tokens_all_temp[,"token"]  <- gsub(pattern="\\d", replacement="", x=tokens_all_temp[,"token"])
@@ -447,11 +460,14 @@ for (m in 1:nrow(readbl_vars))
     tokens_all_temp[,"token"]  <- remove_duplicate_symbols(tokens_all_temp[,"token"], saved_symbols)
     
   }
+  rm(a)
   
   #Remove single, leading, and trailing symbols
   tokens_all_temp[,"token"]  <-  remove_single_symbols(tokens_all_temp[,"token"], saved_symbols)
   tokens_all_temp[,"token"]  <-  remove_leading_symbols(tokens_all_temp[,"token"], saved_symbols)
   tokens_all_temp[,"token"]  <-  remove_trailing_symbols(tokens_all_temp[,"token"], saved_symbols)
+  
+  rm(saved_symbols)
   
   #Remove single spaces (run a couple times)
   for (a in 1:5)
@@ -459,7 +475,7 @@ for (m in 1:nrow(readbl_vars))
     #a <- 1
     tokens_all_temp[,"token"]  <- gsub(pattern=" ", replacement="", x=tokens_all_temp[,"token"])
   }
-  
+  rm(a)
   
   #Default Remove to NA
   tokens_all_temp[,"Remove"] <- as.numeric(rep(NA, nrow(tokens_all_temp)))
@@ -485,6 +501,7 @@ for (m in 1:nrow(readbl_vars))
   #==============================================================================;
   
   tokens_all_temp <- tokens_all_temp[order(tokens_all_temp[,"Fund_ID"],tokens_all_temp[,"yr"]),] 
+  #row.names(tokens_all_temp) <- seq(nrow(tokens_all_temp))
   
   tokens_all_temp_dt <- data.table(tokens_all_temp[(tokens_all_temp[,"Remove"]==0),], key = c("Fund_ID","yr"))
   tokens_all_temp1 <- tokens_all_temp_dt[,list(word=stem_words(token,myStopwords_all)),by="Fund_ID,yr"]
@@ -504,6 +521,7 @@ for (m in 1:nrow(readbl_vars))
   
   #Sort tokens_all_temp
   tokens_all_temp  <- tokens_all_temp[order(tokens_all_temp[,"Fund_ID"],tokens_all_temp[,"yr"],tokens_all_temp[,"token"]),]
+  #row.names(tokens_all_temp) <- seq(nrow(tokens_all_temp))
   
   query_tokens_all_temp2 <- ""
   query_tokens_all_temp2 <- paste(query_tokens_all_temp2,"select distinct  Fund_ID, yr, Upper(token) token, Count(token) Count, Remove  ", sep=" ")
@@ -520,6 +538,8 @@ for (m in 1:nrow(readbl_vars))
   
   tokens_all_temp2[,c("uTotal","gTotal","Total_Percentage")] <- subset(data.table(tokens_all_temp2)[, list(uTotal=length(token), gTotal=sum(Count), Total_Percentage=(Count)/sum(Count)),by="yr,Fund_ID"],
                                                                        select=c("uTotal","gTotal","Total_Percentage"))
+  
+  rm(query_tokens_all_temp2)
   
   #==============================================================================;
   cat("SECTION: GLOBAL DICTIONARY (AGGREGATE)", "\n")
@@ -540,6 +560,7 @@ for (m in 1:nrow(readbl_vars))
   global_agg_word_grand_temp <- global_agg_word_grand_temp[!(rowSums(is.na(global_agg_word_grand_temp[,1:ncol(global_agg_word_grand_temp)]))==ncol(global_agg_word_grand_temp)),]
   global_agg_word_grand_temp[,"yr"] <- 9999
   global_agg_word_grand_temp <- global_agg_word_grand_temp[order(global_agg_word_grand_temp[,"yr"], global_agg_word_grand_temp[,identifier],global_agg_word_grand_temp[,"token"]),] 
+  #row.names(global_agg_word_grand_temp) <- seq(nrow(global_agg_word_grand_temp))
   
   global_agg_word_grand_temp3 <- create_global_dictionary_word(global_agg_word_grand_temp,"word_grand",percentiles)
   
@@ -556,6 +577,7 @@ for (m in 1:nrow(readbl_vars))
   global_agg_word_unique_temp[,"yr"] <- 9999
   global_agg_word_unique_temp <- unique(global_agg_word_unique_temp[,c("yr",identifier,"token")], incomparables=FALSE)
   global_agg_word_unique_temp <- global_agg_word_unique_temp[order(global_agg_word_unique_temp[,"yr"], global_agg_word_unique_temp[,identifier],global_agg_word_unique_temp[,"token"]),] 
+  #row.names(global_agg_word_unique_temp) <- seq(nrow(global_agg_word_unique_temp))
   
   global_agg_word_unique_temp3 <- create_global_dictionary_word(global_agg_word_unique_temp,"word_unique",percentiles)
   
@@ -571,17 +593,20 @@ for (m in 1:nrow(readbl_vars))
   global_agg_id_unique_temp[,"yr"] <- 9999
   global_agg_id_unique_temp <- unique(global_agg_id_unique_temp[,c("yr",identifier,"token")], incomparables=FALSE)
   global_agg_id_unique_temp <- global_agg_id_unique_temp[order(global_agg_id_unique_temp[,"yr"], global_agg_id_unique_temp[,identifier],global_agg_id_unique_temp[,"token"]),] 
+  #row.names(global_agg_id_unique_temp) <- seq(nrow(global_agg_id_unique_temp))
   
   #Copy tokens_all_temp to unique_ids_agg
   unique_ids_agg <- tokens_all_temp[tokens_all_temp[,"Remove"]==0,c("yr",identifier,"token")]
   unique_ids_agg <- unique_ids_agg[!(rowSums(is.na(unique_ids_agg[,1:ncol(unique_ids_agg)]))==ncol(unique_ids_agg)),]
   unique_ids_agg[,"yr"] <- 9999
   unique_ids_agg <- unique_ids_agg[order(unique_ids_agg[,"yr"], unique_ids_agg[,identifier]),] 
+  #row.names(unique_ids_agg) <- seq(nrow(unique_ids_agg))
   
   #Get list of all unique words
   unique_ids_agg <- ddply(unique_ids_agg, "yr", function(x) as.data.frame(unique(x[,c("yr",identifier)], incomparables=FALSE)))
   unique_ids_agg <- ddply(unique_ids_agg, "yr", function(x) data.frame(x,nrow=as.numeric(nrow(x))))
   unique_ids_agg <- unique_ids_agg[order(unique_ids_agg[,"yr"], unique_ids_agg[,identifier]),] 
+  #row.names(unique_ids_agg) <- seq(nrow(unique_ids_agg))
   write.csv(unique_ids_agg, file=paste(output_directory,"unique_ids_agg",readbl_vars[m,2],".csv",sep=""),row.names=FALSE)
   
   global_agg_id_unique_temp3 <- create_global_dictionary_id(global_agg_id_unique_temp,"id_unique",percentiles,unique_ids_agg)
@@ -606,7 +631,7 @@ for (m in 1:nrow(readbl_vars))
   global_agg_comb  <- global_agg_comb2[,global_agg_col_vector]
   write.csv(global_agg_comb, file=paste(output_directory,"global_agg_comb",readbl_vars[m,2],".csv",sep=""),row.names=FALSE)
   
-  rm2(global_agg_comb1,global_agg_comb2,global_agg_word_grand_temp3,global_agg_word_unique_temp3,global_agg_id_unique_temp3)
+  rm2(global_agg_comb1,global_agg_comb2,global_agg_word_grand_temp3,global_agg_word_unique_temp3,global_agg_id_unique_temp3,global_agg_col_vector,global_agg_count_vector)
   
   
   #==============================================================================;
@@ -626,10 +651,11 @@ for (m in 1:nrow(readbl_vars))
     progress_function(outer_loop_count=b, outer_loop_start_val=1, outer_loop_end_val=length(measures), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
     
   }
+  rm(b)
   
   assign(paste("global_agg_dv_vector_used",readbl_vars[m,2],sep=""), global_agg_dv_vector_used, envir=.GlobalEnv)
   
-  rm2(global_agg_dv_vector_used)
+  rm2(global_agg_dv_vector_used,global_agg_dv_vector)
   
   
   #==============================================================================;
@@ -644,6 +670,7 @@ for (m in 1:nrow(readbl_vars))
   global_year_word_grand_temp <- tokens_all_temp[tokens_all_temp[,"Remove"]==0,c("yr",identifier,"token")]
   global_year_word_grand_temp <- global_year_word_grand_temp[!(rowSums(is.na(global_year_word_grand_temp[,1:ncol(global_year_word_grand_temp)]))==ncol(global_year_word_grand_temp)),]
   global_year_word_grand_temp <- global_year_word_grand_temp[order(global_year_word_grand_temp[,"yr"], global_year_word_grand_temp[,identifier],global_year_word_grand_temp[,"token"]),] 
+  #row.names(global_year_word_grand_temp) <- seq(nrow(global_year_word_grand_temp))
   
   global_year_word_grand_temp3 <- create_global_dictionary_word(global_year_word_grand_temp,"word_grand",percentiles)
   
@@ -659,6 +686,8 @@ for (m in 1:nrow(readbl_vars))
   global_year_word_unique_temp <- global_year_word_unique_temp[!(rowSums(is.na(global_year_word_unique_temp[,1:ncol(global_year_word_unique_temp)]))==ncol(global_year_word_unique_temp)),]
   global_year_word_unique_temp <- global_year_word_unique_temp[order(global_year_word_unique_temp[,"yr"], global_year_word_unique_temp[,identifier],global_year_word_unique_temp[,"token"]),] 
   global_year_word_unique_temp <- unique(global_year_word_unique_temp[,c("yr",identifier,"token")], incomparables=FALSE)
+  #row.names(global_year_word_unique_temp) <- seq(nrow(global_year_word_unique_temp))
+  
   global_year_word_unique_temp3 <- create_global_dictionary_word(global_year_word_unique_temp,"word_unique",percentiles)
   
   rm2(global_year_word_unique_temp)
@@ -673,16 +702,19 @@ for (m in 1:nrow(readbl_vars))
   global_year_id_unique_temp <- global_year_id_unique_temp[!(rowSums(is.na(global_year_id_unique_temp[,1:ncol(global_year_id_unique_temp)]))==ncol(global_year_id_unique_temp)),]
   global_year_id_unique_temp <- global_year_id_unique_temp[order(global_year_id_unique_temp[,"yr"], global_year_id_unique_temp[,identifier],global_year_id_unique_temp[,"token"]),] 
   global_year_id_unique_temp <- unique(global_year_id_unique_temp[,c("yr",identifier,"token")], incomparables=FALSE)
+  #row.names(global_year_id_unique_temp) <- seq(nrow(global_year_id_unique_temp))
   
   #Copy tokens_all_temp to unique_ids_year
   unique_ids_year <- tokens_all_temp[tokens_all_temp[,"Remove"]==0,c("yr",identifier,"token")]
   unique_ids_year <- unique_ids_year[!(rowSums(is.na(unique_ids_year[,1:ncol(unique_ids_year)]))==ncol(unique_ids_year)),]
   unique_ids_year <- unique_ids_year[order(unique_ids_year[,"yr"], unique_ids_year[,identifier]),] 
+  #row.names(unique_ids_year) <- seq(nrow(unique_ids_year))
   
   #Get list of all unique words
   unique_ids_year <- ddply(unique_ids_year, "yr", function(x) as.data.frame(unique(x[,c("yr",identifier)], incomparables=FALSE)))
   unique_ids_year <- ddply(unique_ids_year, "yr", function(x) data.frame(x,nrow=as.numeric(nrow(x))))
   unique_ids_year <- unique_ids_year[order(unique_ids_year[,"yr"], unique_ids_year[,identifier]),] 
+  #row.names(unique_ids_year) <- seq(nrow(unique_ids_year))
   write.csv(unique_ids_year, file=paste(output_directory,"unique_ids_year",readbl_vars[m,2],".csv",sep=""),row.names=FALSE)
   
   global_year_id_unique_temp3 <- create_global_dictionary_id(global_year_id_unique_temp,"id_unique",percentiles,unique_ids_year)
@@ -710,7 +742,7 @@ for (m in 1:nrow(readbl_vars))
   
   #global_year_comb_diff <- global_year_comb[global_year_comb[,11]!=global_year_comb[,14],]
   
-  rm2(global_year_comb1,global_year_comb2,global_year_word_grand_temp3,global_year_word_unique_temp3,global_year_id_unique_temp3)
+  rm2(global_year_comb1,global_year_comb2,global_year_word_grand_temp3,global_year_word_unique_temp3,global_year_id_unique_temp3,global_year_col_vector,global_year_count_vector)
   
   
   #==============================================================================;
@@ -730,10 +762,11 @@ for (m in 1:nrow(readbl_vars))
     progress_function(outer_loop_count=b, outer_loop_start_val=1, outer_loop_end_val=length(measures), inner_loop_count=1, inner_loop_start_val=1, inner_loop_end_val=1)
     
   }
+  rm(b)
   
   assign(paste("global_year_dv_vector_used",readbl_vars[m,2],sep=""), global_year_dv_vector_used, envir=.GlobalEnv)
   
-  rm2(global_year_dv_vector_used)
+  rm2(global_year_dv_vector_used,global_year_dv_vector)
   rm2(tokens_all_temp)
   
   #OUPUT INDIVIDUAL TOKEN DICTIONARIES
@@ -743,12 +776,14 @@ for (m in 1:nrow(readbl_vars))
   global_agg_tokens[,"yr"] <- 9999
   global_agg_tokens <- unique(global_agg_tokens[,c("yr",identifier,"token")], incomparables=FALSE)
   global_agg_tokens <- global_agg_tokens[order(global_agg_tokens[,"yr"], global_agg_tokens[,identifier],global_agg_tokens[,"token"]),] 
+  #row.names(global_agg_tokens) <- seq(nrow(global_agg_tokens))
   write.csv(global_agg_tokens, file=paste(output_directory,"global_agg_tokens",readbl_vars[m,2],".csv",sep=""),row.names=FALSE)
   
   global_year_tokens <- tokens_all_temp2[tokens_all_temp2[,"Remove"]==0,c("yr",identifier,"token")]
   global_year_tokens <- global_year_tokens[!(rowSums(is.na(global_year_tokens[,1:ncol(global_year_tokens)]))==ncol(global_year_tokens)),]
   global_year_tokens <- unique(global_year_tokens[,c("yr",identifier,"token")], incomparables=FALSE)
   global_year_tokens <- global_year_tokens[order(global_year_tokens[,"yr"], global_year_tokens[,identifier],global_year_tokens[,"token"]),] 
+  #row.names(global_year_tokens) <- seq(nrow(global_year_tokens))
   write.csv(global_year_tokens, file=paste(output_directory,"global_year_tokens",readbl_vars[m,2],".csv",sep=""),row.names=FALSE)
   
   rm2(tokens_all_temp2)
@@ -758,6 +793,7 @@ for (m in 1:nrow(readbl_vars))
   #CREATE PROGRESS OUTPUTS;
   #==============================================================================;
   
+  rm2(identifier)
   rm2(global_agg_comb,unique_ids_agg,global_agg_tokens)
   rm2(global_year_comb,unique_ids_year,global_year_tokens)
   
@@ -767,85 +803,84 @@ for (m in 1:nrow(readbl_vars))
   
 }
 
-rm2(sample_data_all)
+rm2(m)
 rm2(remove_descriptions,remove_punct,remove_phone,remove_tokens)
-rm2(keep_one_letter_words, keep_one_letter_ratings, keep_one_letter_tokens)
-rm2(keep_two_letter_words, keep_state_abbreviations, keep_two_letter_ratings, keep_two_letter_tokens)
+rm2(keep_one_letter_tokens,keep_two_letter_tokens)
+rm2(myStopwords_all)
+
+#==============================================================================;
+cat("SECTION: INDIVIDUAL DICTIONARY - AGGREGATE", "\n")
+#==============================================================================;
+
+identifier <- "Fund_ID"
+
+output_db <- paste(output_directory,"Text_Analysis.s3db",sep="")
+
+for (m in 1:nrow(readbl_vars))
+{
+  
+  #m <- 1
+  #m <- 2
+  
+  if (m==1)
+  {
+    file_type_str <- readbl_vars[m,2]
+    
+  } else if (m==2)
+  {
+    #file_type_str <- readbl_vars[m,2]
+    
+  } else
+  {
+    cat("ERROR WHEN FINDING CORRECT READABILITY COLUMN", "\n")
+    
+  }
+  
+  #AGGREGATE
+  combined_data <- as.data.frame(fread(paste(output_directory,"global_agg_comb",file_type_str,".csv",sep=""),na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
+  tokens_data <- as.data.frame(fread(paste(output_directory,"global_agg_tokens",file_type_str,".csv",sep=""),na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
+  id_data <- as.data.frame(fread(paste(output_directory,"unique_ids_agg",file_type_str,".csv",sep=""),na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
+  
+  for (a in 1:length(measures))
+  {
+    
+    for (b in 1:nrow(percentiles))
+    {
+      #a <- 1
+      #b <- 1
+      
+      create_individual_dictionary(combined_data,"agg",file_type_str,tokens_data,id_data,measures[a],percentiles[b,],output_db,output_directory,identifier)
+      
+      progress_function(outer_loop_count=a, outer_loop_start_val=1, outer_loop_end_val=length(measures), inner_loop_count=b, inner_loop_start_val=1, inner_loop_end_val=nrow(percentiles))
+      
+    }
+  }
+  
+  rm2(combined_data,tokens_data,id_data)
+ 
+}
+
+rm2(output_db)
+
+SQLite Test
+
+Text_Analysis_tables <- ListTables("Text_Analysis.s3db")
+
+Text_Analysis_fields <- ListFields("Text_Analysis.s3db")
+write.csv(Text_Analysis_fields, file=paste(output_directory,"Text_Analysis_fields",".csv",sep=""), row.names=FALSE)
+
+sql_q <- paste("SELECT * FROM ",ta_db_tables[1],"",sep="")
+aaa <- runsql(sql_q,"Text_Analysis.s3db")
+rm2(aaa)
 
 
-# #==============================================================================;
-# cat("SECTION: INDIVIDUAL DICTIONARY - AGGREGATE", "\n")
-# #==============================================================================;
-# 
-# identifier <- "Fund_ID"
-# 
-# output_db <- paste(output_directory,"Text_Analysis.s3db",sep="")
-# 
-# for (m in 1:nrow(readbl_vars))
-# {
-#   
-#   #m <- 1
-#   #m <- 2
-#   
-#   if (m==1)
-#   {
-#     file_type_str <- readbl_vars[m,2]
-#     
-#   } else if (m==2)
-#   {
-#     #file_type_str <- readbl_vars[m,2]
-#     
-#   } else
-#   {
-#     cat("ERROR WHEN FINDING CORRECT READABILITY COLUMN", "\n")
-#     
-#   }
-#   
-#   #AGGREGATE
-#   combined_data <- as.data.frame(fread(paste(output_directory,"global_agg_comb",file_type_str,".csv",sep=""),na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
-#   tokens_data <- as.data.frame(fread(paste(output_directory,"global_agg_tokens",file_type_str,".csv",sep=""),na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
-#   id_data <- as.data.frame(fread(paste(output_directory,"unique_ids_agg",file_type_str,".csv",sep=""),na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
-#   
-#   for (a in 1:length(measures))
-#   {
-#     
-#     for (b in 1:nrow(percentiles))
-#     {
-#       #a <- 1
-#       #b <- 1
-#       
-#       create_individual_dictionary(combined_data,"agg",file_type_str,tokens_data,id_data,measures[a],percentiles[b,],output_db,output_directory,identifier)
-#       
-#       progress_function(outer_loop_count=a, outer_loop_start_val=1, outer_loop_end_val=length(measures), inner_loop_count=b, inner_loop_start_val=1, inner_loop_end_val=nrow(percentiles))
-#       
-#     }
-#   }
-#   
-#   rm2(combined_data,tokens_data,id_data)
-#  
-# }
-# 
-# rm2(output_db)
-
-#SQLite Test
-
-#Text_Analysis_tables <- ListTables("Text_Analysis.s3db")
-
-#Text_Analysis_fields <- ListFields("Text_Analysis.s3db")
-#write.csv(Text_Analysis_fields, file=paste(output_directory,"Text_Analysis_fields",".csv",sep=""), row.names=FALSE)
-
-#sql_q <- paste("SELECT * FROM ",ta_db_tables[1],"",sep="")
-#aaa <- runsql(sql_q,"Text_Analysis.s3db")
-#rm2(aaa)
+agg_id_unique_sim_cosine_normalized_990pct_iois_9999 <- runsql("SELECT * FROM agg_id_unique_sim_cosine_normalized_990pct_iois_9999","Text_Analysis.s3db")
+ExportTable(agg_id_unique_sim_cosine_normalized_990pct_iois_9999,paste(output_directory,"Similarity_Analysis.s3db",sep=""))
+runsql("DROP TABLE agg_id_unique_sim_cosine_normalized_990pct_iois_9999","Text_Analysis.s3db")
+rm2(agg_id_unique_sim_cosine_normalized_990pct_iois_9999)
 
 
-#agg_id_unique_sim_cosine_normalized_990pct_iois_9999 <- runsql("SELECT * FROM agg_id_unique_sim_cosine_normalized_990pct_iois_9999","Text_Analysis.s3db")
-#ExportTable(agg_id_unique_sim_cosine_normalized_990pct_iois_9999,paste(output_directory,"Similarity_Analysis.s3db",sep=""))
-#runsql("DROP TABLE agg_id_unique_sim_cosine_normalized_990pct_iois_9999","Text_Analysis.s3db")
-#rm2(agg_id_unique_sim_cosine_normalized_990pct_iois_9999)
-
-
-#Similarity_Analysis_tables <- ListTables("Similarity_Analysis.s3db")
+Similarity_Analysis_tables <- ListTables("Similarity_Analysis.s3db")
 
 
 #==============================================================================;
@@ -1031,14 +1066,13 @@ cat("DONE", "\n")
 
 
 
-rm2(keep_one_letter_tokens,keep_two_letter_tokens)
+
+rm2(temp_data_cols)
+#rm2(files,file_list,files_cols,files_cols_count)
+rm2(percentiles,percentile_vals,percentiles_cols,percentiles_cols_count)
+rm2(readbl_vars,readbl_vars_cols,readbl_vars_cols_count)
+#rm2(readbl_all_df,readbl_all_df_cols,readbl_all_df_cols_count)
+#rm2(tokens_all_cols,tokens_all_cols_count)
+
+
 rm2(measures)
-
-
-
-
-
-
-
-
-
