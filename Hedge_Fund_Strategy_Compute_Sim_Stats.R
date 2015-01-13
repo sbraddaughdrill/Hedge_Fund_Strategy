@@ -1,10 +1,10 @@
 # TODO: Add comment
 # 
 # Author:  Brad
-# File:    Hedge_Fund_Strategy_Compute_Text_Stats.R
+# File:    Hedge_Fund_Strategy_Compute_Sim_Stats.R
 # Version: 1.0
-# Date:    04.28.2013
-# Purpose: Compute Text Stats
+# Date:    01.05.2015
+# Purpose: Compute Sim Stats
 #
 ###############################################################################
 
@@ -31,6 +31,17 @@ options(max.print = 500)
 
 # Memory limit
 #memory.limit(size = 8183)
+
+#Remove scientific notation if digits less than 100
+options("scipen"=100)
+
+#Uknown Strings
+#unknowns_strings <- c("",".",NA,"na","n/a","n\a","NA","N/A","N\\A","<NA>","null","NULL",NULL,"nan","NaN",NaN,
+#                      NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",NA_character_,
+#                      "NA_character_",NA_real_,"NA_real_")
+unknowns_strings <- c(" ","\n","",".","n/a","na","NA",NA,"<NA>","null","NULL",NULL,"nan","NaN",NaN,Inf,
+                      NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
+                      NA_character_,"NA_character_",NA_real_,"NA_real_")
 
 # Set location (1=HOME,2=WORK,3=LAPTOP,4=CORALSEA FROM HOME,5=CORALSEA FROM WORK,6=CORALSEA FROM LAPTOP)
 Location <- 1
@@ -111,7 +122,7 @@ cat("SECTION: LIBRARIES", "\n")
 #"funprog","Snowball","SnowballC"
 external_packages <- c("compare","cwhmisc","data.table","fastmatch","foreign","formatR","gdata","gtools",
                        "Hmisc","koRpus","mitools","pbapply","plyr","R.oo","reshape2","rJava","RWeka","RWekajars",
-                       "sqldf","stringr","tcltk","tm")
+                       "splitstackshape","sqldf","stringi","stringr","tcltk","tm")
 invisible(unlist(sapply(external_packages,load_external_packages, repo_str=repo, simplify=FALSE, USE.NAMES=FALSE)))
 installed_packages <- list_installed_packages(external_packages)
 
@@ -239,24 +250,30 @@ readbl_vars[,2] <- c("_ios")
 readbl_vars[,3] <- c("read_stats_ios_f")
 readbl_vars[,4] <- c("tokens_all_ios_f")
 
+# # remove stopwords
+# myStopwords <- c(stopwords('english'),stopwords('SMART'),"available", "via")
+# myStopwords_no_punct <- gsub(pattern="[^[[:alnum:][:space:]]", replacement="", x=myStopwords)
+# myStopwords_all <- c(myStopwords,myStopwords_no_punct)
+# myStopwords_all <- sort(myStopwords_all)
+# myStopwords_all <- unique(myStopwords_all, incomparables=FALSE)
+# myStopwords_all <- toupper(myStopwords_all)
+# 
+# rm(myStopwords,myStopwords_no_punct)
+# 
+# #idx <- which(myStopwords_all %in% c("R",keep_one_letter_tokens,keep_two_letter_tokens))
+# idx <- which(myStopwords_all %in% c("R"))
+# myStopwords_all <- myStopwords_all[-idx]
+# 
+# rm(idx)
+
 #measures <- c("word_grand","word_unique","id_unique")
 measures <- c("id_unique")
-
-# remove stopwords
-myStopwords <- c(stopwords('english'),stopwords('SMART'),"available", "via")
-myStopwords_no_punct <- gsub(pattern="[^[[:alnum:][:space:]]", replacement="", x=myStopwords)
-myStopwords_all <- c(myStopwords,myStopwords_no_punct)
-myStopwords_all <- sort(myStopwords_all)
-myStopwords_all <- unique(myStopwords_all, incomparables=FALSE)
-myStopwords_all <- toupper(myStopwords_all)
-
-#idx <- which(myStopwords_all %in% c("R",keep_one_letter_tokens,keep_two_letter_tokens))
-idx <- which(myStopwords_all %in% c("R"))
-myStopwords_all <- myStopwords_all[-idx]
 
 keep_one_letter_words <- c("I")
 keep_one_letter_ratings <- c("A","B","C","D","P")
 keep_one_letter_tokens <- sort(c(keep_one_letter_words,keep_one_letter_ratings))
+
+rm2(keep_one_letter_words,keep_one_letter_ratings)
 
 keep_two_letter_words <- c("AM","AN","AS","AT","BE","BY","DO","EG","EX","HA","ID","IE","IF","IN","IS",
                            "IT","MY","NO","OF","ON","OR","QA","RD","SO","SP","TM","TO","TV","UM","UN",
@@ -268,263 +285,76 @@ keep_state_abbreviations <- c("AK","AL","AR","AZ","CA","CF","CL","CO","CT","DC",
 keep_two_letter_ratings <- c("AA","BA","BB","CA","CC")
 keep_two_letter_tokens <- sort(c(keep_two_letter_words,keep_state_abbreviations,keep_two_letter_ratings))
 
-
-###############################################################################
-cat("SECTION: IMPORT DATA", "\n")
-###############################################################################
-
-#Check to see if final folder exists.  If not, create it.
-final_folder_expand3_path <- paste(normalizePath("F:/Import_Data/Data/Eurekahedge",winslash="\\", mustWork=TRUE), "Final_Expand3", sep = "//", collapse = "//")  
-create_directory(final_folder_expand3_path,remove=1)
-
-#files[,"filename"] <-  gsub(".csv","_org.csv",file_list)
-files[,"filename"] <-  file_list
-files[,"filepath"] <-  unlist(mapply(merge_cols_function,col_one=paste(final_folder_expand3_path,"//",sep=""),col_two=files[,"filename"],separator="", SIMPLIFY=FALSE,USE.NAMES=FALSE))
+rm2(keep_two_letter_words,keep_state_abbreviations,keep_two_letter_ratings)
 
 
 ###############################################################################
-cat("SECTION: FORMAT TEXT", "\n")
+cat("SECTION: IMPORT STRATEGIES", "\n")
 ###############################################################################
 
-sample_data_all <- data.table(read.csv(file=files[1,"filepath"],header=TRUE,na.strings="NA",stringsAsFactors=FALSE))
-setkeyv(sample_data_all,NULL)
+sample_data_all_id_cols <- c("Fund_ID","yr","pull_trim","pull_trim2","Fund_Name")
 
-setorderv(sample_data_all, c("Fund_ID","pull_trim","pull_trim2","yr","month"),c(1,1,1,1,1))
-
-for (k in which(sapply(sample_data_all,class)=="character")) 
-{
-  set(sample_data_all, i=NULL, j=k, value=gsub("^\\s+|\\s+$", "", sample_data_all[[k]], perl=TRUE))
-}
-rm(k)
-for (k in colnames(sample_data_all)) 
-{
-  #k <- 1
-  set(sample_data_all, i=NULL, j=k, value=unknownToNA(sample_data_all[[k]], unknown=unknowns,force=TRUE))
-  set(sample_data_all, i=NULL, j=k, value=ifelse(is.na(sample_data_all[[k]]),NA,sample_data_all[[k]]))
-}
-rm(k)
-
-#Remove multiple spaces (run a couple times)
-for (a in 1:5)
-{
-  #a <- 1
-  sample_data_all[,"Strategy"] <- gsub(pattern=" {2,}", replacement=" ", x=sample_data_all[,"Strategy"])
-  
-}
-
-#Remove double hyphens
-for (a in 1:5)
-{
-  #a <- 1
-  sample_data_all[,"Strategy"] <- gsub(pattern="--", replacement="-", x=sample_data_all[,"Strategy"])
-  
-}
-
-#Remove sections that have less than 100 words
-sample_data_all_ios_len  <- pbsapply(sample_data_all[,"Strategy"],
-                                     function(x) {return(length(strsplit(x,' ')[[1]]))}, 
-                                     simplify=FALSE, USE.NAMES=FALSE)
-sample_data_all_trim  <- data.frame(sample_data_all,ios_word_count=unlist(sample_data_all_ios_len),stringsAsFactors=FALSE)
-
-rm2(sample_data_all,sample_data_all_ios_len)
-
-sample_data_all_trim2 <- sample_data_all_trim[sample_data_all_trim[,"ios_word_count"]>=100,]
-
-rm2(sample_data_all_trim)
-
-sample_data_all_trim3 <- subset(sample_data_all_trim2,select=-c(ios_word_count))
-
-rm2(sample_data_all_trim2)
-
-row.names(sample_data_all_trim3)  <- seq(nrow(sample_data_all_trim3))
-
-write.csv(sample_data_all_trim3,file=paste(output_directory,"sample_data_all.csv",sep=""),na="",quote=TRUE,row.names=FALSE)
-
-rm2(sample_data_all_trim3)
-
-
-###############################################################################
-cat("SECTION: COMPUTE READABILITY STATISTICS", "\n")
-###############################################################################
-
-sample_data_all <- read.csv(file=paste(output_directory,"sample_data_all.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
+sample_data_all <- read.csv(file=paste(output_directory,"text_clean_trim.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
 for(i in which(sapply(sample_data_all,class)=="character"))
 {
-  sample_data_all[[i]] = trim(sample_data_all[[i]])
+  #sample_data_all[[i]] <- trim(sample_data_all[[i]])
+  sample_data_all[[i]] <- gsub("^\\s+|\\s+$", "", sample_data_all[[i]], perl=TRUE)
 }
+rm2(i)
+
 for (i in 1:ncol(sample_data_all))
 {
-  sample_data_all[,i] <- unknownToNA(sample_data_all[,i], unknown=c("",".","n/a","na","NA",NA,"null","NULL",NULL,"nan","NaN",NaN,
-                                                                    NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
-                                                                    NA_character_,"NA_character_",NA_real_,"NA_real_"),force=TRUE)
+  sample_data_all[,i] <- unknownToNA(sample_data_all[,i], unknown=unknowns_strings,force=TRUE)
   sample_data_all[,i] <- ifelse(is.na(sample_data_all[,i]),NA, sample_data_all[,i])
 } 
+rm2(i)
+
+# sample_data_all <- ddply(.data=sample_data_all, .variables=c("Fund_ID"), .fun = function(x){
+#   
+#   return(data.frame(Overall_ID=NA,Local_ID=seq(1,nrow(x)),x,stringsAsFactors=FALSE))
+#   
+# }, .progress = "text",.inform = FALSE, .drop = TRUE, .parallel = FALSE, .paropts = NULL)
+
+#sample_data_all <- data.frame(Overall_ID=seq(1,nrow(sample_data_all)),sample_data_all,stringsAsFactors=FALSE)
+#sample_data_all[,"Overall_ID"] <- paste("", formatC(sample_data_all[,"Overall_ID"], width=6, format="d", flag="0"), sep="")
+#sample_data_all[,"Overall_ID"] <- paste("", formatC(seq(1,nrow(sample_data_all)), width=6, format="d", flag="0"), sep="")
+
+sample_data_all <- sample_data_all[order(sample_data_all[,"Fund_ID"],sample_data_all[,"yr"]),]
+row.names(sample_data_all) <- seq(nrow(sample_data_all))
 
 
-###TEMP - ASSUME TEXT IS SAME EVERY YEAR###
-sample_data_all <- sample_data_all[,c("Fund_ID","Strategy")]
-sample_data_all <- unique(sample_data_all)
+###############################################################################
+cat("SECTION: CREATE STRATEGY ID", "\n")
+###############################################################################
 
-sample_data_all <- data.frame(ID=seq(1,nrow(sample_data_all)),sample_data_all,stringsAsFactors=FALSE)
-sample_data_all[,"ID"] <- paste("", formatC(sample_data_all[,"ID"] , width=6, format="d", flag="0"), sep="")
+sample_data_all_strategy_id0 <- data.frame(Strat_ID=NA,Strategy=unique(sample_data_all[,"Strategy"]),stringsAsFactors=FALSE)
+sample_data_all_strategy_id <- sample_data_all_strategy_id0[!is.na(sample_data_all_strategy_id0[,"Strategy"]),]
 
+sample_data_all_strategy_id[,"Strat_ID"] <- seq(1,nrow(sample_data_all_strategy_id))
+row.names(sample_data_all_strategy_id) <- seq(nrow(sample_data_all_strategy_id))
 
-Dale.Chall_word_list <- read.csv(file=paste(input_directory,"DaleChall_word_list.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
-for(i in which(sapply(Dale.Chall_word_list,class)=="character"))
-{
-  Dale.Chall_word_list[[i]] = trim(Dale.Chall_word_list[[i]])
-}
-for (i in 1:ncol(Dale.Chall_word_list))
-{
-  Dale.Chall_word_list[,i] <- unknownToNA(Dale.Chall_word_list[,i], unknown=c("",".","NA_character_","NA_Real_","NA",NA),force=TRUE)
-  Dale.Chall_word_list[,i] <- ifelse(is.na(Dale.Chall_word_list[,i]),NA, Dale.Chall_word_list[,i])
-} 
+rm(sample_data_all_strategy_id0)
 
-tagged_text_desc_stats <- c("lines","chars.no.space","letters.only","digits","normalized.space")
-hyph_text_en_desc_stats <- c("num.syll")
-readability_stats <- c("ARI", "Coleman.Liau","Flesch.Kincaid", "FOG","SMOG")
-readability_desc_stats <- c("sentences","words","all.chars","punct","conjunctions","prepositions","pronouns",
-                            "foreign","FOG.hard.words","TTR","sntc.per.word","avg.sentc.length","avg.word.length",
-                            "avg.syll.word","sntc.per100","syll.per100","lett.per100")
-readability_all_stats <- c(tagged_text_desc_stats,hyph_text_en_desc_stats,readability_stats,readability_desc_stats)
+sample_data_all_with_ids <- merge(sample_data_all,sample_data_all_strategy_id,
+                                  by.x=c("Strategy"), by.y=c("Strategy"), 
+                                  all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
 
-#token_stats <- c("token","desc","stop","stem")
-token_stats <- c("token","desc")
+rm2(sample_data_all_strategy_id)
+#rm2(sample_data_all)
 
-#sample_data_all_backup <- sample_data_all
-#sample_data_all <- sample_data_all_backup
-#sample_data_all <- sample_data_all[1:50,]
+sample_data_all_with_ids <- sample_data_all_with_ids[,c("Strat_ID",
+                                                        colnames(sample_data_all_with_ids)[!(colnames(sample_data_all_with_ids) %in% c("Strat_ID"))])]
 
+sample_data_all_with_ids <- sample_data_all_with_ids[,c(sample_data_all_id_cols,
+                                                        colnames(sample_data_all_with_ids)[!(colnames(sample_data_all_with_ids) %in% c(sample_data_all_id_cols))])]
 
-for (l in 1:nrow(readbl_vars))
-{
-  #l <- 1
-  
-  readability_all_stats_temp <- paste(readability_all_stats, readbl_vars[l,2], sep="")
-  readability_all_stats_temp <- gsub(pattern="\\.", replacement="_", x=readability_all_stats_temp)
-  
-  sample_results <- pbsapply(sample_data_all[,readbl_vars[l,1]],compute_readability_stats,
-                             tagged_text_desc_measures=tagged_text_desc_stats,
-                             hyph_text_en_desc_measures=hyph_text_en_desc_stats,
-                             readability_measures=readability_stats,
-                             readability_desc_measures=readability_desc_stats,
-                             token_measures=token_stats,
-                             dc_word_list=Dale.Chall_word_list,
-                             stop_words=myStopwords_all,
-                             #treetag_dir="C:/TreeTagger",
-                             #treetag_dir="\\\\tsclient\\C\\TreeTagger",
-                             #treetag_dir="\\tsclient\C\TreeTagger",
-                             treetag_dir=treetag_directory,
-                             debug=FALSE,
-                             simplify=FALSE, USE.NAMES=FALSE)
-  
-  sample_read_stats <- pblapply(sample_results, "[[","readstats")
-  sample_read_stats <- pblapply(seq_along(sample_read_stats), function(x) data.frame(ID=x,sample_read_stats[x],stringsAsFactors=FALSE))
-  sample_read_stats_df <- as.data.frame(do.call(rbind, sample_read_stats),stringsAsFactors=FALSE)
-  
-  rm2(sample_read_stats)
-  
-  sample_read_stats_df[,1] <- paste("", formatC(sample_read_stats_df[,1], width=6, format="d", flag="0"), sep="")
-  colnames(sample_read_stats_df) <- c("ID",readability_all_stats_temp)
-  
-  #sample_data_all_temp <- cbind(subset(sample_data_all,select=c("ID","Fund_ID","yr")),subset(sample_data_all,select=c(readbl_vars[l,1])))
-  #sample_data_all_temp <- subset(sample_data_all,select=c("ID","yr","crsp_fundno"))
-  
-  sample_read_stats_df_merge <- merge(sample_data_all[,c("ID","Fund_ID")], sample_read_stats_df, by.x=c("ID") , by.y=c("ID"), all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
-  
-  rm2(sample_read_stats_df)
-  
-  sample_read_stats_df_merge <- subset(sample_read_stats_df_merge,select=-c(ID))
-  
-  write.csv(sample_read_stats_df_merge, file=paste(output_directory,readbl_vars[l,3],".csv",sep=""),row.names=FALSE)
-  
-  rm2(sample_read_stats_df_merge)
-  
-  sample_tokens <- pblapply(sample_results, "[[","tokens") 
-  sample_tokens <- pblapply(seq_along(sample_tokens), function(x) data.frame(ID=x,sample_tokens[x],stringsAsFactors=FALSE))
-  sample_tokens_df <- as.data.frame(do.call(rbind, sample_tokens),stringsAsFactors=FALSE)
-  
-  rm2(sample_tokens)
-  
-  sample_tokens_df[,1] <- paste("", formatC(sample_tokens_df[,1], width=6, format="d", flag="0"), sep="")
-  colnames(sample_tokens_df) <- c("ID",token_stats)
-  #colnames(sample_tokens_df) <- c(token_stats)
-  
-  sample_tokens_df_merge <- merge(sample_data_all[,c("ID","Fund_ID")], sample_tokens_df, by.x=c("ID") , by.y=c("ID"), all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
-  
-  rm2(sample_tokens_df)
-  
-  sample_tokens_df_merge <- subset(sample_tokens_df_merge,select=-c(ID))
-  
-  write.csv(sample_tokens_df_merge, file=paste(output_directory,readbl_vars[l,4],".csv",sep=""),row.names=FALSE)
-  
-  rm2(sample_tokens_df_merge,sample_results)
-  
-}
+sample_data_all_with_ids <- sample_data_all_with_ids[order(sample_data_all_with_ids[,"Fund_ID"],
+                                                           sample_data_all_with_ids[,"yr"]),] 
+row.names(sample_data_all_with_ids) <- seq(nrow(sample_data_all_with_ids))
 
 rm2(sample_data_all)
-rm2(tagged_text_desc_stats,hyph_text_en_desc_stats,readability_stats,readability_desc_stats,readability_all_stats,token_stats)
 
 
-###############################################################################
-cat("SECTION: TEMP - EXPAND YEARS", "\n")
-###############################################################################
-
-l <- 1
-
-sample_data_all <- read.csv(file=paste(output_directory,"sample_data_all.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
-for(i in which(sapply(sample_data_all,class)=="character"))
-{
-  sample_data_all[[i]] = trim(sample_data_all[[i]])
-}
-for (i in 1:ncol(sample_data_all))
-{
-  sample_data_all[,i] <- unknownToNA(sample_data_all[,i], unknown=c("",".","n/a","na","NA",NA,"null","NULL",NULL,"nan","NaN",NaN,
-                                                                    NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
-                                                                    NA_character_,"NA_character_",NA_real_,"NA_real_"),force=TRUE)
-  sample_data_all[,i] <- ifelse(is.na(sample_data_all[,i]),NA, sample_data_all[,i])
-} 
-
-sample_read_stats_df_merge <- read.csv(file=paste(output_directory,readbl_vars[l,3],".csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
-for(i in which(sapply(sample_read_stats_df_merge,class)=="character"))
-{
-  sample_read_stats_df_merge[[i]] = trim(sample_read_stats_df_merge[[i]])
-}
-for (i in 1:ncol(sample_read_stats_df_merge))
-{
-  sample_read_stats_df_merge[,i] <- unknownToNA(sample_read_stats_df_merge[,i], unknown=c("",".","n/a","na","NA",NA,"null","NULL",NULL,"nan","NaN",NaN,
-                                                                                          NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
-                                                                                          NA_character_,"NA_character_",NA_real_,"NA_real_"),force=TRUE)
-  sample_read_stats_df_merge[,i] <- ifelse(is.na(sample_read_stats_df_merge[,i]),NA, sample_read_stats_df_merge[,i])
-} 
-
-sample_tokens_df_merge <- read.csv(file=paste(output_directory,readbl_vars[l,4],".csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
-for(i in which(sapply(sample_tokens_df_merge,class)=="character"))
-{
-  sample_tokens_df_merge[[i]] = trim(sample_tokens_df_merge[[i]])
-}
-for (i in 1:ncol(sample_tokens_df_merge))
-{
-  sample_tokens_df_merge[,i] <- unknownToNA(sample_tokens_df_merge[,i], unknown=c("",".","n/a","na","NA",NA,"null","NULL",NULL,"nan","NaN",NaN,
-                                                                                  NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
-                                                                                  NA_character_,"NA_character_",NA_real_,"NA_real_"),force=TRUE)
-  sample_tokens_df_merge[,i] <- ifelse(is.na(sample_tokens_df_merge[,i]),NA, sample_tokens_df_merge[,i])
-} 
-
-
-
-sample_read_stats_df_merge_full <- merge(subset(sample_data_all,select=-c(Fund_Name,Strategy)), sample_read_stats_df_merge, 
-                                         by.x=c("Fund_ID") , by.y=c("Fund_ID"), 
-                                         all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
-
-write.csv(sample_read_stats_df_merge_full, file=paste(output_directory,readbl_vars[l,3],"_full",".csv",sep=""),row.names=FALSE)
-
-
-sample_tokens_df_merge_full <- merge(subset(sample_data_all,select=-c(Fund_Name,Strategy)), sample_tokens_df_merge, 
-                                     by.x=c("Fund_ID") , by.y=c("Fund_ID"), 
-                                     all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
-
-write.csv(sample_tokens_df_merge_full, file=paste(output_directory,readbl_vars[l,4],"_full",".csv",sep=""),row.names=FALSE)
 
 
 ###############################################################################
@@ -535,13 +365,11 @@ sample_data_all <- read.csv(file=paste(output_directory,"sample_data_all.csv",se
 
 for(i in which(sapply(sample_data_all,class)=="character"))
 {
-  sample_data_all[[i]] = trim(sample_data_all[[i]])
+  sample_data_all[[i]] <- trim(sample_data_all[[i]])
 }
 for (i in 1:ncol(sample_data_all))
 {
-  sample_data_all[,i] <- unknownToNA(sample_data_all[,i], unknown=c("",".","n/a","na","NA",NA,"null","NULL",NULL,"nan","NaN",NaN,
-                                                                    NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
-                                                                    NA_character_,"NA_character_",NA_real_,"NA_real_"),force=TRUE)
+  sample_data_all[,i] <- unknownToNA(sample_data_all[,i], unknown=unknowns_strings,force=TRUE)
   sample_data_all[,i] <- ifelse(is.na(sample_data_all[,i]),NA, sample_data_all[,i])
 } 
 
@@ -578,13 +406,11 @@ for (m in 1:nrow(readbl_vars))
   
   for(i in which(sapply(tokens_all_temp,class)=="character"))
   {
-    tokens_all_temp[[i]] = trim(tokens_all_temp[[i]])
+    tokens_all_temp[[i]] <- trim(tokens_all_temp[[i]])
   }
   for (i in 1:ncol(tokens_all_temp))
   {
-    tokens_all_temp[,i] <- unknownToNA(tokens_all_temp[,i], unknown=c("",".","n/a","na","NA",NA,"null","NULL",NULL,"nan","NaN",NaN,
-                                                                      NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
-                                                                      NA_character_,"NA_character_",NA_real_,"NA_real_"),force=TRUE)
+    tokens_all_temp[,i] <- unknownToNA(tokens_all_temp[,i], unknown=unknowns_strings,force=TRUE)
     tokens_all_temp[,i] <- ifelse(is.na(tokens_all_temp[,i]),NA, tokens_all_temp[,i])
   } 
   
@@ -1107,11 +933,11 @@ identifier <- "Fund_ID"
 sample_data_all <- read.csv(file=paste(output_directory,"sample_data_all.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
 for(i in which(sapply(sample_data_all,class)=="character"))
 {
-  sample_data_all[[i]] = trim(sample_data_all[[i]])
+  sample_data_all[[i]] <- trim(sample_data_all[[i]])
 }
 for (i in 1:ncol(sample_data_all))
 {
-  sample_data_all[,i] <- unknownToNA(sample_data_all[,i], unknown=c("",".","NA_character_","NA_Real_","NA",NA),force=TRUE)
+  sample_data_all[,i] <- unknownToNA(sample_data_all[,i], unknown=unknowns_strings,force=TRUE)
   sample_data_all[,i] <- ifelse(is.na(sample_data_all[,i]),NA, sample_data_all[,i])
 } 
 
@@ -1199,3 +1025,20 @@ rm2(input_db,output_db)
 #DONE;
 cat("DONE", "\n")
 #==============================================================================;
+
+
+
+
+
+
+rm2(keep_one_letter_tokens,keep_two_letter_tokens)
+rm2(measures)
+
+
+
+
+
+
+
+
+
