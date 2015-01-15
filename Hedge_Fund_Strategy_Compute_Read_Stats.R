@@ -504,6 +504,14 @@ l <- 1
 # } 
 # rm2(i)
 
+sample_data_all_with_ids_trim <- unique(sample_data_all_with_ids[sample_data_all_with_ids[,"yr"]>=2007,c("Fund_ID","yr","Strat_ID")])
+
+sample_data_all_with_ids_trim <- sample_data_all_with_ids_trim[order(sample_data_all_with_ids_trim[,"Fund_ID"],
+                                                                     sample_data_all_with_ids_trim[,"yr"]),]
+row.names(sample_data_all_with_ids_trim) <- seq(nrow(sample_data_all_with_ids_trim))
+
+rm2(sample_data_all_with_ids)
+
 sample_read_stats_df_merge <- read.csv(file=paste(output_directory,readbl_vars[l,3],".csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE)
 for(i in which(sapply(sample_read_stats_df_merge,class)=="character"))
 {
@@ -537,7 +545,7 @@ rm2(i)
 #                                          by.x=c("Fund_ID") , by.y=c("Fund_ID"), 
 #                                          all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
 
-sample_read_stats_df_merge_full <- merge(sample_data_all_with_ids[,c("Fund_ID","yr","Strat_ID")],
+sample_read_stats_df_merge_full <- merge(sample_data_all_with_ids_trim[,c("Fund_ID","yr","Strat_ID")],
                                          sample_read_stats_df_merge, 
                                          by.x=c("Strat_ID") , by.y=c("Strat_ID"), 
                                          all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
@@ -552,7 +560,7 @@ rm2(sample_read_stats_df_merge_full,sample_read_stats_df_merge)
 #                                      by.x=c("Fund_ID") , by.y=c("Fund_ID"), 
 #                                      all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
 
-sample_tokens_df_merge_full <- merge(sample_data_all_with_ids[,c("Fund_ID","yr","Strat_ID")],
+sample_tokens_df_merge_full <- merge(sample_data_all_with_ids_trim[,c("Fund_ID","yr","Strat_ID")],
                                      sample_tokens_df_merge, 
                                      by.x=c("Strat_ID") , by.y=c("Strat_ID"), 
                                      all.x=TRUE, all.y=FALSE, sort=TRUE, suffixes=c(".x",".y"))
@@ -561,9 +569,7 @@ write.csv(sample_tokens_df_merge_full, file=paste(output_directory,readbl_vars[l
 
 rm2(sample_tokens_df_merge_full,sample_tokens_df_merge)
 
-
-
-rm2(sample_data_all_with_ids,sample_data_all_id_cols,l)
+rm2(sample_data_all_with_ids_trim,sample_data_all_id_cols,l)
 rm2(myStopwords_all)
 
 rm2(temp_data_cols)
