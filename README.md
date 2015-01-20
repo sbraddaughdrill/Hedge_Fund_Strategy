@@ -10,8 +10,7 @@ Order of file execution:
   3. Hedge_Fund_Strategy_Compute_Read_Stats.R
   4. Hedge_Fund_Strategy_Compute_Sim_Stats.R
 
-  4. XXXHedge_Fund_Strategy_Analysis.R
-  5. XXXHedge_Fund_Strategy_Data_Combintion.R
+  5. XXXHedge_Fund_Strategy_Data_Combination.R
   6. XXXHedge_Fund_Strategy_Alphas.R
   7. XXXHedge_Fund_Strategy_Descriptive_Stats.R
   8. XXXHedge_Fund_Strategy_Univariate.R

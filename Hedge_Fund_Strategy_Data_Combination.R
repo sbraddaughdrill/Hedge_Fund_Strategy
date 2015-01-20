@@ -1,7 +1,7 @@
 # TODO: Add comment
 # 
 # Author:  Brad
-# File:    Hedge_Fund_Strategy_Data_Combintion.R
+# File:    Hedge_Fund_Strategy_Data_Combination.R
 # Version: 1.0
 # Date:    01.07.2014
 # Purpose: Combine all data sources
@@ -44,9 +44,8 @@ unknowns_strings <- c(" ","\n","",".","n/a","na","NA",NA,"<NA>","null","NULL",NU
                       NA_integer_,"NA_integer_",NA_complex_,"NA_complex_",
                       NA_character_,"NA_character_",NA_real_,"NA_real_")
 
-# Set location (1=HOME,2=WORK,3=CORALSEA FROM HOME,4=CORALSEA FROM WORK,5=CORALSEA FROM LAPTOP) 
-Location <- 3
-
+# Set location (1=HOME,2=WORK,3=LAPTOP,4=CORALSEA FROM HOME,5=CORALSEA FROM WORK,6=CORALSEA FROM LAPTOP)
+Location <- 1
 
 if (Location == 1) {
 
@@ -61,23 +60,26 @@ if (Location == 1) {
   function_directory <- normalizePath("C:/Users/bdaughdr/Dropbox/Research_Methods/R/",winslash="\\", mustWork=TRUE)   
   
 } else if (Location == 3) {
-
-  input_directory <- normalizePath("//tsclient/F/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
-  #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
-  output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
-  function_directory <- normalizePath("//tsclient/F/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)   
+  
+  input_directory <- normalizePath("C:/Users/S.Brad/Dropbox/Research/Fund_Strategies/Data",winslash="\\", mustWork=TRUE)
+  output_directory <- normalizePath("C:/Research_temp2",winslash="\\", mustWork=TRUE)
+  function_directory <- normalizePath("C:/Users/S.Brad/Dropbox/Research_Methods/R", winslash = "\\", mustWork = TRUE)
   
 } else if (Location == 4) {
 
-  input_directory <- normalizePath("//tsclient/C/Users/bdaughdr/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
-  #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
+  input_directory <- normalizePath("//tsclient/F/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
   output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
-  function_directory <- normalizePath("//tsclient/C/Users/bdaughdr/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)       
+  function_directory <- normalizePath("//tsclient/F/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)   
   
 } else if (Location == 5) {
 
+  input_directory <- normalizePath("//tsclient/C/Users/bdaughdr/Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
+  output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
+  function_directory <- normalizePath("//tsclient/C/Users/bdaughdr/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)       
+  
+} else if (Location == 6) {
+
   input_directory <- normalizePath("//tsclient/C/Users/S. Brad Daughdrill/Documents/My Dropbox/Research/Fund_Strategies/Data/", winslash = "\\", mustWork = TRUE)
-  #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
   output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
   function_directory <- normalizePath("//tsclient/C/Users/S. Brad Daughdrill/Documents/My Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)   
   
@@ -110,6 +112,8 @@ external_packages <- c("compare","cwhmisc","data.table","DataCombine","fastmatch
 invisible(unlist(sapply(external_packages,load_external_packages, repo_str=repo, simplify=FALSE, USE.NAMES=FALSE)))
 installed_packages <- list_installed_packages(external_packages)
 
+rm(external_packages,installed_packages,repo)
+
 
 ###############################################################################
 cat("SECTION: SQLITE DATABASES", "\n")
@@ -126,18 +130,19 @@ descriptive_stats_db <- paste(output_directory,"Descriptive_stats.s3db",sep="")
 cat("IMPORT READABILITY TEXT DATA", "\n")
 ###############################################################################
 
-identifier <- "fund_id"
+identifier <- "Fund_ID"
 
 #Import .CSV files
 
-read_stats_ios_f <- as.data.frame(fread(paste(output_directory,"read_stats_ios_f.csv",sep=""),na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
+#read_stats_ios_f <- #as.data.frame(fread(paste(output_directory,"read_stats_ios_f_full.csv",sep=""),na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
+read_stats_ios_f <- as.data.frame(read.csv(file=paste(output_directory,"read_stats_ios_f_full.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
 
 read_stats_ios_f <- trim_by_format(read_stats_ios_f,"character")
 
 read_stats_ios_f <- data.table(read_stats_ios_f)[, (colnames(read_stats_ios_f)) := llply(.SD, vector_clean_na,unknowns=unknowns_strings,.progress = "text"), .SDcols = colnames(read_stats_ios_f)]
 read_stats_ios_f <- as.data.frame(read_stats_ios_f,stringsAsFactors=FALSE)
 
-sample_data_all <- as.data.frame(read.csv(file=paste(output_directory,"sample_data_all.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
+sample_data_all <- as.data.frame(read.csv(file=paste(output_directory,"text_clean_trim.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
 
 sample_data_all <- trim_by_format(sample_data_all,"character")
 
@@ -150,8 +155,8 @@ read_stats_ios_f <- read_stats_ios_f[,!(colnames(read_stats_ios_f) %in% "foreign
 #sample_data_all <- subset(sample_data_all,select=-c(Strategy))
 sample_data_all <- sample_data_all[,!(colnames(sample_data_all) %in% "Strategy")]
 
-colnames(read_stats_ios_f) <- tolower(colnames(read_stats_ios_f))
-colnames(sample_data_all) <- tolower(colnames(sample_data_all))
+#colnames(read_stats_ios_f) <- tolower(colnames(read_stats_ios_f))
+#colnames(sample_data_all) <- tolower(colnames(sample_data_all))
 
 
 ###############################################################################
@@ -190,29 +195,32 @@ for (i in 1:length(text_variables))
     
     temp_input_data_name_full <- paste(temp_input_data_name_short,text_percentages[j],text_variables[i],"avg",sep="_")
     
-    year_sim <- as.data.frame(fread(paste(output_directory,temp_input_data_name_full,".csv",sep=""),na.strings="NA",stringsAsFactors=FALSE),
-                              stringsAsFactors=FALSE)
+    #year_sim <- as.data.frame(fread(paste(output_directory,temp_input_data_name_full,".csv",sep=""),na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
+    year_sim <- as.data.frame(read.csv(file=paste(output_directory,temp_input_data_name_full,".csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
     
-    colnames(year_sim) <- tolower(colnames(year_sim))
+    #colnames(year_sim) <- tolower(colnames(year_sim))
     
     year_sim_char_cols <- colnames(year_sim)[laply(year_sim,class,.progress = "text",.drop = FALSE)=="character"]
     year_sim <- trim_dt(year_sim,year_sim_char_cols)
     year_sim <- as.data.frame(year_sim,stringsAsFactors=FALSE)
     
-    year_sim <- data.table(year_sim)[, (colnames(year_sim)) := llply(.SD, vector_clean_na,unknowns=unknowns_strings,.progress = "text"), 
-                                     .SDcols = colnames(year_sim)]
+    year_sim <- data.table(year_sim)[, (colnames(year_sim)) := llply(.SD, vector_clean_na,unknowns=unknowns_strings,.progress = "text"), .SDcols = colnames(year_sim)]
     year_sim <- as.data.frame(year_sim,stringsAsFactors=FALSE)
     
     year_sim_years <- colnames(year_sim)
     year_sim_years <- year_sim_years[!(year_sim_years==identifier)] 
+    year_sim_years <- gsub("[[:alpha:]]","",year_sim_years)
+    
+    colnames(year_sim) <- c(identifier,year_sim_years)
     
     assign(paste("years",text_variables[i],text_percentages[j],sep="_"), year_sim_years, envir=.GlobalEnv)
     
-    year_sim_stacked0 <- lapply(year_sim_years, function(x,data){ data.frame(identifier=data[,identifier], 
-                                                                             yr=as.integer(x), 
-                                                                             similarity_all_ios=data[,x], stringsAsFactors=FALSE) }, data = year_sim)
+    year_sim_stacked0 <- lapply(year_sim_years, function(x,data){ data.frame(identifier=data[,identifier], yr=as.integer(x), similarity_all_ios=data[,x], stringsAsFactors=FALSE)}, data = year_sim)
     
-    year_sim_stacked <- do.call(rbind, year_sim_stacked0) 
+    #year_sim_stacked <- do.call(rbind, year_sim_stacked0) 
+    year_sim_stacked <- rbindlist(l=year_sim_stacked0, use.names=TRUE, fill=FALSE)
+    year_sim_stacked <- as.data.frame(year_sim_stacked,stringsAsFactors=FALSE) 
+    
     colnames(year_sim_stacked)[match("identifier",names(year_sim_stacked))] <- identifier
     
     year_sim_stacked <- year_sim_stacked[order(year_sim_stacked[,identifier],
@@ -224,12 +232,12 @@ for (i in 1:length(text_variables))
     if (text_variables[i]=="ios")
     {
       year_sim_ios_all_stacked <- merge(year_sim_ios_all_stacked, year_sim_stacked, by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
-                                        all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+                                        all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"))
       
     } else if (text_variables[i]=="pr")
     {
       year_sim_pr_all_stacked <- merge(year_sim_pr_all_stacked, year_sim_stacked, by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
-                                       all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+                                       all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"))
       
     } else
     {

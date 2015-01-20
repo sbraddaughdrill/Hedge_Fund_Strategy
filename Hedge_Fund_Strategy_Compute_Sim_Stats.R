@@ -53,14 +53,14 @@ if (Location == 1) {
   output_directory <- normalizePath("F:/Research_temp2/",winslash="\\", mustWork=TRUE)
   #function_directory <- normalizePath("C:/Users/S.Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
   function_directory <- normalizePath("F:/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
-  treetag_directory <- normalizePath("C:/TreeTagger",winslash="\\", mustWork=TRUE)       
+  #treetag_directory <- normalizePath("C:/TreeTagger",winslash="\\", mustWork=TRUE)       
   
 } else if (Location == 2) {
   
   input_directory <- normalizePath("C:/Users/bdaughdr/Dropbox/Research/Fund_Strategies/Data/",winslash="\\", mustWork=TRUE)
   output_directory <- normalizePath("C:/Research_temp2/",winslash="\\", mustWork=TRUE)
   function_directory <- normalizePath("C:/Users/bdaughdr/Dropbox/Research_Methods/R/",winslash="\\", mustWork=TRUE) 
-  treetag_directory <- normalizePath("C:/TreeTagger",winslash="\\", mustWork=TRUE)    
+  #treetag_directory <- normalizePath("C:/TreeTagger",winslash="\\", mustWork=TRUE)    
   
 } else if (Location == 3) {
   
@@ -76,7 +76,7 @@ if (Location == 1) {
   output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
   #function_directory <- normalizePath("//tsclient/C/Users/S.Brad/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
   function_directory <- normalizePath("//tsclient/F/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
-  treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE) 
+  #treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE) 
   
 } else if (Location == 5) {
   
@@ -84,7 +84,7 @@ if (Location == 1) {
   #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
   output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
   function_directory <- normalizePath("//tsclient/C/Users/bdaughdr/Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
-  treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE)       
+  #treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE)       
   
 } else if (Location == 6) {
   
@@ -92,7 +92,7 @@ if (Location == 1) {
   #output_directory <- normalizePath("//tsclient/C/Research_temp2/", winslash = "\\", mustWork = TRUE)
   output_directory <- normalizePath("C:/Users/bdaughdr/Documents/Research_temp2/", winslash = "\\", mustWork = TRUE)
   function_directory <- normalizePath("//tsclient/C/Users/S. Brad Daughdrill/Documents/My Dropbox/Research_Methods/R/", winslash = "\\", mustWork = TRUE)
-  treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE)       
+  #treetag_directory <- normalizePath("//tsclient/C/TreeTagger",winslash="\\", mustWork=TRUE)       
   
 } else {
   
@@ -974,6 +974,10 @@ for (m in 1:nrow(readbl_vars))
   {
    for (b in 1:nrow(percentiles))
    {
+     #a <- 1
+     #b <- 1
+     #b <- 3
+     
      calculate_cosine_similarity("agg",file_type_str,measures[a],percentiles[b,],input_db,output_db,output_directory,"cosine_normalized",sample_data_all_with_ids,identifier)
      
      progress_function(outer_loop_count=a, outer_loop_start_val=1, outer_loop_end_val=length(measures), inner_loop_count=b, inner_loop_start_val=1, inner_loop_end_val=nrow(percentiles))
