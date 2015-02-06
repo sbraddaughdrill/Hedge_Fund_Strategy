@@ -1065,10 +1065,12 @@ rm2(EurekahedgeHF_Excel_aca_full8_all_fund_ids_expand,EurekahedgeHF_Excel_aca_fu
 cat("CREATE SQUARED VARIABLES", "\n")
 ###############################################################################
 
+#EurekahedgeHF_Excel_aca_full9[,"mktadjret_sq"] <- (EurekahedgeHF_Excel_aca_full9[,"mktadjret_sq"])^2
 #EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret_sq"] <- (EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret_sq"])^2
 #EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret2_sq"] <- (EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret2_sq"])^2
 #EurekahedgeHF_Excel_aca_full9[,"Yearly_Ret2_sq"] <- (EurekahedgeHF_Excel_aca_full9[,"Yearly_Ret2_sq"])^2
 
+EurekahedgeHF_Excel_aca_full9[,"mktadjret_sq"] <- (((1+EurekahedgeHF_Excel_aca_full9[,"mktadjret_sq"])^2)-1)
 EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret_sq"] <- (((1+EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret_sq"])^2)-1)
 EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret2_sq"] <- (((1+EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret2_sq"])^2)-1)
 EurekahedgeHF_Excel_aca_full9[,"Yearly_Ret2_sq"] <- (((1+EurekahedgeHF_Excel_aca_full9[,"Yearly_Ret2_sq"])^2)-1)
@@ -1121,6 +1123,8 @@ EurekahedgeHF_Excel_aca_full9 <- ddply(.data=EurekahedgeHF_Excel_aca_full9,.vari
   
   for (i in 1:nrow(lookup))
   {
+    #cat(lookup[i,"lag_var"], "\n")
+    
     x[,lookup[i,"lag_var"]] <- shift(x[,lookup[i,"org_var"]],-lookup[i,"lag_count"])
   } 
   return(x)
@@ -1787,8 +1791,8 @@ rm2(EurekahedgeHF_Excel_aca_full12)
 #aa <- EurekahedgeHF_Excel_aca_full13[EurekahedgeHF_Excel_aca_full13[,identifier]==6131,c(identifier,"Fund_Name","yr","month","pflow","aum","aum_lag1","monthly_ret")]
 #cc <- bb[bb[,identifier]==6131,c(identifier,"Fund_Name","yr","month","pflow","aum","aum_lag1","monthly_ret")]
 
-#EurekahedgeHF_Excel_aca_full14 <- EurekahedgeHF_Excel_aca_full13
-EurekahedgeHF_Excel_aca_full14 <- EurekahedgeHF_Excel_aca_full13[!is.na(EurekahedgeHF_Excel_aca_full13[,"Fund_Name"]),]
+EurekahedgeHF_Excel_aca_full14 <- EurekahedgeHF_Excel_aca_full13
+#EurekahedgeHF_Excel_aca_full14 <- EurekahedgeHF_Excel_aca_full13[!is.na(EurekahedgeHF_Excel_aca_full13[,"Fund_Name"]),]
 
 #similarity_db_tables <- ListTables(similarity_db)
 #similarity_db_fields <- ListFields(similarity_db)
@@ -1873,15 +1877,21 @@ rm(hash_table)
 
 # Start Similarity
 
-sample_data_all_temp <- sample_data_all[,c(identifier,"yr")]
+#sample_data_all_temp <- sample_data_all[,c(identifier,"yr")]
+sample_data_all_temp <- sim_stats_ios[,c(identifier,"yr")]
 sample_data_all_temp <- unique(sample_data_all_temp,comparables=FALSE)
 sample_data_all_temp <- sample_data_all_temp[order(sample_data_all_temp[,identifier], sample_data_all_temp[,"yr"]),]
 
-temp_stacked_full <- merge(EurekahedgeHF_Excel_aca_full14[,c(identifier,group_column)], sample_data_all_temp[,c("yr",identifier)], 
-                           by.x=c(identifier), by.y=c(identifier), 
-                           all.x=FALSE, all.y=TRUE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
+temp_stacked_id_group_temp <- EurekahedgeHF_Excel_aca_full14[,c(identifier,"yr",group_column)]
+temp_stacked_id_group_temp <- unique(temp_stacked_id_group_temp,comparables=FALSE)
+temp_stacked_id_group_temp <- temp_stacked_id_group_temp[!is.na(temp_stacked_id_group_temp[,c(group_column)]),]
+
+temp_stacked_full <- merge(sample_data_all_temp[,c("yr",identifier)],temp_stacked_id_group_temp,
+                           by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
+                           all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"))
 
 temp_stacked_full <- temp_stacked_full[order(temp_stacked_full[,identifier], temp_stacked_full[,"yr"]),] 
+temp_stacked_full <- temp_stacked_full[!is.na(temp_stacked_full[,c(group_column)]),]
 temp_stacked_full <- unique(temp_stacked_full,comparables=FALSE)
 row.names(temp_stacked_full) <- seq(nrow(temp_stacked_full))
 
@@ -1892,7 +1902,7 @@ text_group_vars <- gsub(" {2,}", " ",text_group_vars, perl=TRUE)
 text_group_vars <- gsub("^\\s+|\\s+$", "",text_group_vars, perl=TRUE)
 text_group_vars <- text_group_vars[!is.na(text_group_vars)]
 text_group_vars <- text_group_vars[!(text_group_vars %in% c("ALTERNATIVE", "TAX PREFERRED"))]
-# 
+
 # #Create empty data.frame for merging
 # for (j in 1:length(text_variables))
 # {
