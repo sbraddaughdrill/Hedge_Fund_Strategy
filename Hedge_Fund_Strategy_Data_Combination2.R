@@ -1065,15 +1065,15 @@ rm2(EurekahedgeHF_Excel_aca_full8_all_fund_ids_expand,EurekahedgeHF_Excel_aca_fu
 cat("CREATE SQUARED VARIABLES", "\n")
 ###############################################################################
 
-#EurekahedgeHF_Excel_aca_full9[,"mktadjret_sq"] <- (EurekahedgeHF_Excel_aca_full9[,"mktadjret_sq"])^2
-#EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret_sq"] <- (EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret_sq"])^2
-#EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret2_sq"] <- (EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret2_sq"])^2
-#EurekahedgeHF_Excel_aca_full9[,"Yearly_Ret2_sq"] <- (EurekahedgeHF_Excel_aca_full9[,"Yearly_Ret2_sq"])^2
+#EurekahedgeHF_Excel_aca_full9[,"mktadjret_sq"] <- (EurekahedgeHF_Excel_aca_full9[,"mktadjret"])^2
+#EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret_sq"] <- (EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret"])^2
+#EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret2_sq"] <- (EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret2"])^2
+#EurekahedgeHF_Excel_aca_full9[,"Yearly_Ret2_sq"] <- (EurekahedgeHF_Excel_aca_full9[,"Yearly_Ret2"])^2
 
-EurekahedgeHF_Excel_aca_full9[,"mktadjret_sq"] <- (((1+EurekahedgeHF_Excel_aca_full9[,"mktadjret_sq"])^2)-1)
-EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret_sq"] <- (((1+EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret_sq"])^2)-1)
-EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret2_sq"] <- (((1+EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret2_sq"])^2)-1)
-EurekahedgeHF_Excel_aca_full9[,"Yearly_Ret2_sq"] <- (((1+EurekahedgeHF_Excel_aca_full9[,"Yearly_Ret2_sq"])^2)-1)
+EurekahedgeHF_Excel_aca_full9[,"mktadjret_sq"] <- (((1+EurekahedgeHF_Excel_aca_full9[,"mktadjret"])^2)-1)
+EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret_sq"] <- (((1+EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret"])^2)-1)
+EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret2_sq"] <- (((1+EurekahedgeHF_Excel_aca_full9[,"Monthly_Ret2"])^2)-1)
+EurekahedgeHF_Excel_aca_full9[,"Yearly_Ret2_sq"] <- (((1+EurekahedgeHF_Excel_aca_full9[,"Yearly_Ret2"])^2)-1)
 
 
 ###############################################################################
@@ -1157,6 +1157,7 @@ rm2(aum_ret_lookup)
 # rm2(EurekahedgeHF_Excel_aca_full8_expand)
 # 
 # #EurekahedgeHF_Excel_aca_full9[EurekahedgeHF_Excel_aca_full9[,c("aum")]==0,c("yr","month","fund_id","aum","aum_lag1","monthly_ret")]
+
 
 ###############################################################################
 cat("CREATE FLOW AND LAG FLOW", "\n")
@@ -1878,7 +1879,7 @@ rm(hash_table)
 # Start Similarity
 
 #sample_data_all_temp <- sample_data_all[,c(identifier,"yr")]
-sample_data_all_temp <- sim_stats_ios[,c(identifier,"yr")]
+sample_data_all_temp <- year_sim_ios_all_stacked[,c(identifier,"yr")]
 sample_data_all_temp <- unique(sample_data_all_temp,comparables=FALSE)
 sample_data_all_temp <- sample_data_all_temp[order(sample_data_all_temp[,identifier], sample_data_all_temp[,"yr"]),]
 
@@ -1894,6 +1895,8 @@ temp_stacked_full <- temp_stacked_full[order(temp_stacked_full[,identifier], tem
 temp_stacked_full <- temp_stacked_full[!is.na(temp_stacked_full[,c(group_column)]),]
 temp_stacked_full <- unique(temp_stacked_full,comparables=FALSE)
 row.names(temp_stacked_full) <- seq(nrow(temp_stacked_full))
+
+rm2(sample_data_all_temp,temp_stacked_id_group_temp)
 
 text_group_vars <- unique(temp_stacked_full[,group_column],comparables=FALSE)
 #text_group_vars <- toupper(text_group_vars)
@@ -1962,7 +1965,6 @@ text_variables_expand <- expand.grid(text_variables,text_group_vars)
 colnames(text_variables_expand) <- c("text_variables",group_column)
 text_variables_expand[sapply(text_variables_expand, is.factor)] <- lapply(text_variables_expand[sapply(text_variables_expand, is.factor)], as.character)
 
-
 year_sim_stacked0 <- dlply(.data=text_variables_expand, .variables=c("text_variables"),.fun=function(x,merged_data,group_var,id_var,percentiles_data,unknowns_strings,sim_db){
   
   # x <- text_variables_expand[text_variables_expand[,"text_variables"]=="ios",]
@@ -2004,7 +2006,10 @@ colnames(year_sim_ios_primary_investment_strategy_combcol_stacked)[1:3] <- c(ide
 year_sim_ios_primary_investment_strategy_combcol_stacked <- year_sim_ios_primary_investment_strategy_combcol_stacked[order(year_sim_ios_primary_investment_strategy_combcol_stacked[,identifier], 
                                                                                                                            year_sim_ios_primary_investment_strategy_combcol_stacked[,"yr"]),]
 
-rm2(group_column,sample_data_all_temp,temp_stacked_full,text_group_vars)
+
+rm2(temp_stacked_full,text_variables_expand)
+rm2(group_column,group_column_u)
+rm2(text_variables,text_group_vars)
 rm2(EurekahedgeHF_Excel_aca_full13)
 
 
