@@ -162,7 +162,7 @@ sample_data_all <- as.data.frame(read.csv(file=paste(output_directory,"text_clea
 #sample_data_all <- trim_by_format(sample_data_all,"character")
 for (k in which(sapply(sample_data_all,class)=="character")) 
 {
-  sample_data_all[[k]] <= gsub("^\\s+|\\s+$", "", sample_data_all[[k]], perl=TRUE)
+  sample_data_all[[k]] <- gsub("^\\s+|\\s+$", "", sample_data_all[[k]], perl=TRUE)
 }
 rm(k)
 
