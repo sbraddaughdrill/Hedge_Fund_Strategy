@@ -288,6 +288,14 @@ colnames(year_sim_ios_all_stacked)[1:2] <- c(identifier,"yr")
 #colnames(year_sim_ios_all_stacked) <- tolower(colnames(year_sim_ios_all_stacked))
 
 
+
+###############################################################################
+cat("IMPORT TONE TEXT DATA", "\n")
+###############################################################################
+
+tone_stats_ios_f <- as.data.frame(read.csv(file=paste(output_directory,"tone_stats_ios.csv",sep=""),header=TRUE,na.strings="NA",stringsAsFactors=FALSE),stringsAsFactors=FALSE)
+
+
 ###############################################################################
 cat("IMPORT CRSP DATA", "\n")
 ###############################################################################
@@ -918,7 +926,8 @@ rm2(EurekahedgeHF_Excel_aca_full6d,crspa_msi_trim)
 cat("WINSORIZE VALUES OF RETURN", "\n")
 ###############################################################################
 
-EurekahedgeHF_Excel_aca_full7b <- EurekahedgeHF_Excel_aca_full7
+EurekahedgeHF_Excel_aca_full7b <- data.frame(EurekahedgeHF_Excel_aca_full7,Monthly_Ret_org=NA,stringsAsFactors=F)
+EurekahedgeHF_Excel_aca_full7b[,"Monthly_Ret_org"] <- EurekahedgeHF_Excel_aca_full7b[,"Monthly_Ret"]
 
 monthly_tna_ret_nav2_vars <- c("Monthly_Ret","Monthly_Ret2","Yearly_Ret2","mktadjret")
 for (i in 1:length(monthly_tna_ret_nav2_vars))
@@ -2210,17 +2219,23 @@ sim_stats_ios <- merge(sim_stats_ios, year_sim_ios_primary_investment_strategy_c
 #sim_stats_ios <- merge(sim_stats_ios, year_sim_ios_branding_name_stacked, 
 #                        by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
 #                         all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"),incomparables=NA)
-sim_stats_ios <- sim_stats_ios[order(sim_stats_ios[,identifier],
-                                     sim_stats_ios[,"yr"],
-                                     sim_stats_ios[,"month"]),]
+sim_stats_ios <- sim_stats_ios[order(sim_stats_ios[,identifier],sim_stats_ios[,"yr"],sim_stats_ios[,"month"]),]
 
-text_stats_ios <- merge(read_stats_ios, sim_stats_ios,
+tone_stats_ios <- merge(EurekahedgeHF_Excel_aca_full14[,c(identifier,"yr","month")], tone_stats_ios_f, 
+                        by.x=c(identifier,"yr"), by.y=c(identifier,"yr"), 
+                        all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"))
+tone_stats_ios <- tone_stats_ios[order(tone_stats_ios[,identifier],tone_stats_ios[,"yr"],tone_stats_ios[,"month"]),]
+
+text_stats_ios0 <- merge(read_stats_ios, sim_stats_ios,
                         by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"),
                         all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"))
+text_stats_ios1 <- merge(text_stats_ios0, tone_stats_ios,
+                         by.x=c(identifier,"yr","month"), by.y=c(identifier,"yr","month"),
+                         all.x=TRUE, all.y=FALSE, sort=FALSE, suffixes=c(".x",".y"))
 
 
 #rm2(year_sim_ios_all_stacked,year_sim_ios_broad_cat_group_stacked)
-rm2(read_stats_ios,sim_stats_ios)
+rm2(read_stats_ios,sim_stats_ios,tone_stats_ios,text_stats_ios0)
 
 
 # ###############################################################################
@@ -2231,7 +2246,7 @@ descriptive_stats_tables <- ListTables(descriptive_stats_db)
 descriptive_stats_fields <- ListFields(descriptive_stats_db)
 
 ExportTable(descriptive_stats_db,"EurekahedgeHF_Excel_aca_full14",EurekahedgeHF_Excel_aca_full14)
-ExportTable(descriptive_stats_db,"text_stats_ios",text_stats_ios)
+ExportTable(descriptive_stats_db,"text_stats_ios",text_stats_ios1)
 
 descriptive_stats_tables <- ListTables(descriptive_stats_db)
 descriptive_stats_fields <- ListFields(descriptive_stats_db)

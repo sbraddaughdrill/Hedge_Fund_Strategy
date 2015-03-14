@@ -122,11 +122,11 @@ rm(external_packages,installed_packages,repo)
 cat("SECTION: SQLITE DATABASES", "\n")
 ###############################################################################
 
-crsp_db <- paste(output_directory,"CRSPMF_Formatted.s3db",sep="")
+#crsp_db <- paste(output_directory,"CRSPMF_Formatted.s3db",sep="")
 #mflinks_db <- paste(output_directory,"MFLinks_Formatted.s3db",sep="")
 #msd_db <- paste(output_directory,"MDMF_Formatted.s3db",sep="")
-similarity_db <- paste(output_directory,"Similarity_Analysis.s3db",sep="")
-descriptive_stats_db <- paste(output_directory,"Descriptive_stats.s3db",sep="")
+#similarity_db <- paste(output_directory,"Similarity_Analysis.s3db",sep="")
+#descriptive_stats_db <- paste(output_directory,"Descriptive_stats.s3db",sep="")
 
 
 ###############################################################################
@@ -143,7 +143,7 @@ read_stats_ios_f <- as.data.frame(read.csv(file=paste(output_directory,"read_sta
 #read_stats_ios_f <- trim_by_format(read_stats_ios_f,"character")
 for (k in which(sapply(read_stats_ios_f,class)=="character")) 
 {
-  read_stats_ios_f[[k]] <= gsub("^\\s+|\\s+$", "", read_stats_ios_f[[k]], perl=TRUE)
+  read_stats_ios_f[[k]] <- gsub("^\\s+|\\s+$", "", read_stats_ios_f[[k]], perl=TRUE)
 }
 rm(k)
 
